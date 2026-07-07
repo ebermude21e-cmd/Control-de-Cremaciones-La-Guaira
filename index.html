@@ -475,7 +475,7 @@ table.flujo tr.saldo td{border-top:2px solid var(--tp);font-weight:800}
   </section>
 </main>
 
-<div class="foot">Sistema de control interno · Gobernación del Estado La Guaira — Operador Seguros La Fe, C.A. · Datos almacenados localmente en este equipo. · <b>v4.2 · exonerado IVA, torta del fondo, conciliación interactiva</b></div>
+<div class="foot">Sistema de control interno · Gobernación del Estado La Guaira — Operador Seguros La Fe, C.A. · Datos almacenados localmente en este equipo. · <b>v4.2 · exonerado IVA, torta interactiva del fondo, conciliación interactiva</b></div>
 
 <!-- Modal Cremación -->
 <div class="modal-bg" id="modalCrem"><div class="modal">
@@ -1409,9 +1409,10 @@ function renderRentabilidad(){
   var sec2='<div class="rsec">Manejo del Flujo de Caja del Fondo</div>';
   var pB2='<div class="panel" style="margin-bottom:20px"><div class="pb" style="padding:6px 4px">'+flujo+'<div style="font-size:11.5px;color:var(--slate);padding:8px 18px 4px">'+hint+'</div></div></div>';
   // cascada
-  var consumo=n2(t.cremIva+t.trasIva+t.gastos);
-  var surplus=n2(t.fondoUsd-consumo);
+  var consumo=n2(t.cremIva+t.trasIva+t.gastos+(t.rentCobra?t.profit:0));
+  var surplus=t.saldoOper;
   var donutSegs=[{l:'Cremaciones',v:t.cremIva,c:'#c0433f'},{l:'Traslados',v:t.trasIva,c:'#a13c38'},{l:'Gastos operativos',v:t.gastos,c:'#B07A00'}];
+  if(t.rentCobra)donutSegs.push({l:'Rentabilidad',v:t.profit,c:'#4B2D8F'});
   if(surplus>0)donutSegs.push({l:'Saldo disponible',v:surplus,c:'#0D7A4E'});
   var dtot=donutSegs.reduce(function(s,x){return s+(x.v>0?x.v:0);},0)||1;
   var R2=70,CC=2*Math.PI*R2,offAcc=0,arcs='';
@@ -1425,11 +1426,11 @@ function renderRentabilidad(){
     '<div style="font-size:11.5px;color:var(--slate);margin-bottom:8px">Fondo recibido vs. total consumido</div>'+
     '<div style="font-size:11.5px;margin-bottom:4px;display:flex;justify-content:space-between"><span>Fondo recibido</span><b class="num" style="color:#0D7A4E">'+fmtUsd(t.fondoUsd)+'</b></div>'+
     '<div style="height:14px;background:var(--line-2);border-radius:5px;overflow:hidden;margin-bottom:9px"><div style="height:100%;width:'+(t.fondoUsd/mx*100)+'%;background:#0D7A4E"></div></div>'+
-    '<div style="font-size:11.5px;margin-bottom:4px;display:flex;justify-content:space-between"><span>Total consumido (cremaciones + traslados + gastos)</span><b class="num" style="color:#c0433f">'+fmtUsd(consumo)+'</b></div>'+
+    '<div style="font-size:11.5px;margin-bottom:4px;display:flex;justify-content:space-between"><span>Total consumido (cremaciones + traslados + gastos'+(t.rentCobra?' + rentabilidad':'')+')</span><b class="num" style="color:#c0433f">'+fmtUsd(consumo)+'</b></div>'+
     '<div style="height:14px;background:var(--line-2);border-radius:5px;overflow:hidden"><div style="height:100%;width:'+(consumo/mx*100)+'%;background:#c0433f"></div></div>'+
     (surplus<0?'<div style="font-size:11.5px;color:#c0433f;margin-top:9px;font-weight:600">▸ Se consumió más de lo recibido: déficit de '+fmtUsd(Math.abs(surplus))+'.</div>':'')+
   '</div>';
-  var casc=(t.fondoUsd||consumo)?('<div class="panel" style="margin-bottom:20px"><div class="ph"><h3>Uso del fondo</h3><span style="color:var(--slate);font-size:11.5px">fondos recibidos menos el consumo (cremaciones, traslados y gastos)</span></div><div class="pb"><div style="display:flex;gap:26px;align-items:center;flex-wrap:wrap"><div style="flex:0 0 auto">'+svg+'</div><div style="flex:1;min-width:240px">'+leg+cmp+'</div></div></div></div>'):'';
+  var casc=(t.fondoUsd||consumo)?('<div class="panel" style="margin-bottom:20px"><div class="ph"><h3>Uso del fondo</h3><span style="color:var(--slate);font-size:11.5px">fondos recibidos menos el consumo (cremaciones, traslados, gastos'+(t.rentCobra?' y rentabilidad':'')+')</span></div><div class="pb"><div style="display:flex;gap:26px;align-items:center;flex-wrap:wrap"><div style="flex:0 0 auto">'+svg+'</div><div style="flex:1;min-width:240px">'+leg+cmp+'</div></div></div></div>'):'';
   // abonos
   var ab='<table class="data" id="rent_abonos_tbl"><thead><tr><th class="c">#</th><th>Fecha</th><th class="r">Monto (Bs.)</th><th class="r">Tasa BCV</th><th class="r">Equiv. USD</th><th>Banco</th><th>Ref.</th><th class="c">Acción</th></tr></thead><tbody>';
   if(ingresos.length){ingresos.slice().sort(function(a,b){return a.fecha<b.fecha?1:-1;}).forEach(function(x,i){ab+='<tr><td class="c num">'+(i+1)+'</td><td class="num">'+fmtDate(x.fecha)+'</td><td class="r num">'+fmtBs(x.bs)+'</td><td class="r num">'+fmtNum(x.tasa,4)+'</td><td class="r num">'+fmtUsd(x.usd)+'</td><td>'+esc(x.banco||'—')+'</td><td class="num">'+esc(x.ref||'—')+'</td><td class="c" style="white-space:nowrap"><button class="btn ghost icon sm" onclick="openIngreso(\''+x.id+'\')">✎</button> <button class="btn ghost icon sm" style="color:var(--danger);border-color:var(--danger)" onclick="delIngreso(\''+x.id+'\')">🗑</button></td></tr>';});}
