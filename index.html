@@ -224,11 +224,11 @@
 
 <nav class="tabs"><div class="tabsinner">
   <button data-view="dashboard" class="active">Panel Ejecutivo</button>
+  <button data-view="rentabilidad">Rentabilidad</button>
   <button data-view="cremaciones">Cremaciones</button>
   <button data-view="pagos">Pagos a Crematorios</button>
   <button data-view="gastos">Gastos Operativos</button>
   <button data-view="reportes">Reportes</button>
-  <button data-view="rentabilidad">Rentabilidad</button>
   <button data-view="conciliacion">Conciliación</button>
   <button data-view="config">Configuración</button>
 </div></nav>
@@ -451,7 +451,7 @@
   </section>
 </main>
 
-<div class="foot">Sistema de control interno · Gobernación del Estado La Guaira — Operador Seguros La Fe, C.A. · Datos almacenados localmente en este equipo. · <b>v3.8 · rentabilidad, fondo y traslado paramétrico</b></div>
+<div class="foot">Sistema de control interno · Gobernación del Estado La Guaira — Operador Seguros La Fe, C.A. · Datos almacenados localmente en este equipo. · <b>v3.9 · saldo del fondo vs costo y dashboard accionistas</b></div>
 
 <!-- Modal Cremación -->
 <div class="modal-bg" id="modalCrem"><div class="modal">
@@ -1313,11 +1313,12 @@ function rentTotals(){
   var gs=0;gastos.forEach(function(g){gs+=usdOf(g.bs,g.tasa);});gs=n2(gs);
   var profit=n2(facturado-costo-gs);
   var fondoBs=0,fondoUsd=0;ingresos.forEach(function(x){fondoBs+=Number(x.bs)||0;fondoUsd+=Number(x.usd)||0;});fondoBs=n2(fondoBs);fondoUsd=n2(fondoUsd);
-  var saldoUsd=n2(fondoUsd-facturado);
-  var rem=facturado,saldoBs=0;
+  var saldoUsd=n2(fondoUsd-costo);
+  var rem=costo,saldoBs=0;
   ingresos.slice().sort(function(a,b){return (a.fecha||'')<(b.fecha||'')?-1:1;}).forEach(function(x){var u=Number(x.usd)||0,t=Number(x.tasa)||0;if(rem>=u){rem=n2(rem-u);}else{saldoBs+=n2(u-rem)*t;rem=0;}});
   saldoBs=n2(saldoBs);
-  return {facturado:facturado,costo:costo,gastos:gs,profit:profit,margen:facturado>0?n2(profit/facturado*100):0,fondoBs:fondoBs,fondoUsd:fondoUsd,saldoUsd:saldoUsd,saldoBs:saldoBs,n:cremaciones.length};
+  var gananciaProm=cremaciones.length?n2(profit/cremaciones.length):0;
+  return {facturado:facturado,costo:costo,gastos:gs,profit:profit,gananciaProm:gananciaProm,margen:facturado>0?n2(profit/facturado*100):0,fondoBs:fondoBs,fondoUsd:fondoUsd,saldoUsd:saldoUsd,saldoBs:saldoBs,superavit:saldoUsd>=0,n:cremaciones.length};
 }
 function rentByCrem(){var m={};cremaciones.forEach(function(c){var k=c.crematorio;if(!m[k])m[k]={crematorio:k,n:0,ing:0,costo:0};m[k].n++;m[k].ing+=govRate(c.fecha);m[k].costo+=tarifaUsd(k);});return Object.keys(m).map(function(k){var o=m[k];o.ing=n2(o.ing);o.costo=n2(o.costo);o.util=n2(o.ing-o.costo);o.margen=o.ing>0?n2(o.util/o.ing*100):0;return o;}).sort(function(a,b){return b.n-a.n;});}
 function ingFechaChange(){var f=document.getElementById('fIngFecha').value;var r=bcvRate(f);if(r>0)document.getElementById('fIngTasa').value=r;calcIngUsd();}
@@ -1341,18 +1342,19 @@ function renderRentabilidad(){
   var host=document.getElementById('rentabilidadHost');if(!host)return;
   document.getElementById('rentGov').textContent=fmtUsd(govRateHoy());
   var t=rentTotals(),by=rentByCrem();
+  var sColor=t.superavit?'#0D7A4E':'#c0433f',sLbl=t.superavit?'superávit del fondo':'déficit del fondo';
   var kFondo='<div class="kpigrid" style="margin-bottom:18px">'+
-    '<div class="kpi"><div class="lbl">Fondo recibido (USD)</div><div class="big num" style="color:#0D7A4E">'+fmtUsd(t.fondoUsd)+'</div><div class="alt num">'+fmtNum(ingresos.length,0)+' abono(s)</div></div>'+
-    '<div class="kpi"><div class="lbl">Fondo recibido (Bs)</div><div class="big num" style="color:#0D7A4E">'+fmtBs(t.fondoBs)+'</div><div class="alt num">total abonado</div></div>'+
-    '<div class="kpi"><div class="lbl">Saldo del fondo (USD)</div><div class="big num" style="color:#245e94">'+fmtUsd(t.saldoUsd)+'</div><div class="alt num">recibido − facturado</div></div>'+
-    '<div class="kpi"><div class="lbl">Saldo del fondo (Bs)</div><div class="big num" style="color:#245e94">'+fmtBs(t.saldoBs)+'</div><div class="alt num">FIFO · tasa de recepción</div></div>'+
+    '<div class="kpi"><div class="lbl">Fondo recibido (USD)</div><div class="big num" style="color:#0D7A4E">'+fmtUsd(t.fondoUsd)+'</div><div class="alt num">'+fmtNum(ingresos.length,0)+' abono(s) · '+fmtBs(t.fondoBs)+'</div></div>'+
+    '<div class="kpi"><div class="lbl">Costo total de cremaciones (USD)</div><div class="big num" style="color:#9d2f2c">'+fmtUsd(t.costo)+'</div><div class="alt num">'+fmtNum(t.n,0)+' cremaciones cargadas</div></div>'+
+    '<div class="kpi" style="border-top:3px solid '+sColor+'"><div class="lbl" style="color:'+sColor+'">Saldo del fondo (USD)</div><div class="big num" style="color:'+sColor+'">'+fmtUsd(t.saldoUsd)+'</div><div class="alt num" style="color:'+sColor+'">'+sLbl+' · recibido − costo</div></div>'+
   '</div>';
+  var gColor=t.profit>=0?'':'style="color:#c0433f"';
   var kRent='<div class="kpigrid" style="margin-bottom:18px">'+
     '<div class="kpi"><div class="lbl">Ingresos facturados</div><div class="big num" style="color:#0D7A4E">'+fmtUsd(t.facturado)+'</div><div class="alt num">'+fmtNum(t.n,0)+' × tarifa Gobernación</div></div>'+
     '<div class="kpi"><div class="lbl">Costo de cremaciones</div><div class="big num" style="color:#9d2f2c">'+fmtUsd(t.costo)+'</div><div class="alt num">tarifa con IVA y traslado</div></div>'+
     '<div class="kpi"><div class="lbl">Gastos operativos</div><div class="big num" style="color:#8a5e00">'+fmtUsd(t.gastos)+'</div><div class="alt num">equivalente USD</div></div>'+
-    '<div class="kpi accent"><div class="lbl">Utilidad (profit)</div><div class="big num">'+fmtUsd(t.profit)+'</div><div class="alt num">margen '+fmtNum(t.margen,1)+'%</div></div>'+
-    '<div class="kpi"><div class="lbl">Utilidad por cremación</div><div class="big num">'+fmtUsd(t.n?n2(t.profit/t.n):0)+'</div><div class="alt num">promedio con gastos</div></div>'+
+    '<div class="kpi accent"><div class="lbl">Ganancia total</div><div class="big num" '+gColor+'>'+fmtUsd(t.profit)+'</div><div class="alt num">margen '+fmtNum(t.margen,1)+'%</div></div>'+
+    '<div class="kpi accent"><div class="lbl">Ganancia promedio por servicio</div><div class="big num">'+fmtUsd(t.gananciaProm)+'</div><div class="alt num">ganancia ÷ '+fmtNum(t.n,0)+' cremaciones</div></div>'+
   '</div>';
   // cascada
   var steps=[{l:'Ingresos facturados',v:t.facturado,c:'#0D7A4E',sign:1},{l:'Costo cremaciones',v:-t.costo,c:'#c0433f',sign:-1},{l:'Gastos operativos',v:-t.gastos,c:'#B07A00',sign:-1},{l:'Utilidad neta',v:t.profit,c:'#4B2D8F',sign:0,final:true}];
@@ -1378,28 +1380,52 @@ function renderRentabilidad(){
 }
 function exportRentabilidadExcel(){
   var t=rentTotals(),by=rentByCrem();
-  var s1='<table><thead><tr><th>Indicador</th><th>USD</th><th>Bs.</th></tr></thead><tbody>'+
-    '<tr><td>Fondo recibido</td><td>'+fmtUsd(t.fondoUsd)+'</td><td>'+fmtBs(t.fondoBs)+'</td></tr>'+
-    '<tr><td>Ingresos facturados ('+t.n+' × tarifa Gobernación)</td><td>'+fmtUsd(t.facturado)+'</td><td>—</td></tr>'+
-    '<tr><td>Costo de cremaciones</td><td>'+fmtUsd(t.costo)+'</td><td>—</td></tr>'+
-    '<tr><td>Gastos operativos</td><td>'+fmtUsd(t.gastos)+'</td><td>—</td></tr>'+
-    '<tr><td>Utilidad (profit)</td><td>'+fmtUsd(t.profit)+'</td><td>—</td></tr>'+
-    '<tr><td>Margen</td><td>'+fmtNum(t.margen,1)+'%</td><td>—</td></tr>'+
-    '<tr><td>Saldo del fondo</td><td>'+fmtUsd(t.saldoUsd)+'</td><td>'+fmtBs(t.saldoBs)+'</td></tr>'+
-    '</tbody></table>';
-  var s2='<br><table><thead><tr><th>Crematorio</th><th>Cremaciones</th><th>Tarifa costo</th><th>Ingreso</th><th>Costo</th><th>Utilidad</th><th>Margen</th></tr></thead><tbody>';
-  by.forEach(function(o){s2+='<tr><td>'+esc(o.crematorio)+'</td><td>'+fmtNum(o.n,0)+'</td><td>'+fmtUsd(tarifaUsd(o.crematorio))+'</td><td>'+fmtUsd(o.ing)+'</td><td>'+fmtUsd(o.costo)+'</td><td>'+fmtUsd(o.util)+'</td><td>'+fmtNum(o.margen,1)+'%</td></tr>';});
-  s2+='</tbody></table>';
-  var s3='<br><table><thead><tr><th>Fecha abono</th><th>Monto Bs.</th><th>Tasa BCV</th><th>Equiv. USD</th><th>Banco</th><th>Ref.</th></tr></thead><tbody>';
-  ingresos.slice().sort(function(a,b){return a.fecha<b.fecha?-1:1;}).forEach(function(x){s3+='<tr><td>'+fmtDate(x.fecha)+'</td><td>'+fmtBs(x.bs)+'</td><td>'+fmtNum(x.tasa,4)+'</td><td>'+fmtUsd(x.usd)+'</td><td>'+esc(x.banco||'')+'</td><td>'+esc(x.ref||'')+'</td></tr>';});
-  s3+='</tbody></table>';
-  var titulo='<div class="title">Dashboard de Rentabilidad — '+esc(cfg.entidad)+'</div><div class="meta">Operador: '+esc(cfg.operador)+' · Tarifa Gobernación vigente: '+fmtUsd(govRateHoy())+' · Emitido: '+fmtDate(today())+'</div>';
-  var h2='<div class="meta" style="margin-top:10px;font-weight:bold">Resumen ejecutivo</div>'+s1+'<div class="meta" style="margin-top:10px;font-weight:bold">Utilidad por crematorio</div>'+s2+'<div class="meta" style="margin-top:10px;font-weight:bold">Abonos recibidos (fondo)</div>'+s3;
-  excelFromTableRaw(titulo+h2,'Dashboard_Rentabilidad','Rentabilidad');
+  var sBg=t.superavit?'#1E7A4D':'#B0332F',sTxt=t.superavit?'SUPERÁVIT':'DÉFICIT';
+  var W='style="width:100%;border-collapse:collapse"';
+  var cover='<table '+W+'><tr>'+
+    (LAFE_LOGO&&LAFE_LOGO.length>20?'<td style="width:96px;border:none;background:#2D1860;text-align:center;padding:14px"><img src="'+LAFE_LOGO+'" width="70"></td>':'')+
+    '<td style="border:none;background:#2D1860;color:#fff;padding:16px 20px">'+
+      '<div style="font-family:Georgia;font-size:20px;font-weight:bold">Informe de Rentabilidad del Operativo de Cremaciones</div>'+
+      '<div style="font-size:12px;color:#E5C229;font-weight:bold;margin-top:3px">'+esc(cfg.operador)+' — Convenio con '+esc(cfg.entidad)+'</div>'+
+      '<div style="font-size:10px;color:#cfc6e6;margin-top:6px">Emitido: '+fmtDate(today())+' · Tarifa Gobernación vigente: '+fmtUsd(govRateHoy())+' por cremación · Expresado en dólares (USD)</div>'+
+    '</td></tr></table><br>';
+  function secTitle(txt){return '<table '+W+'><tr><td style="border:none;background:#4B2D8F;color:#fff;font-family:Arial;font-size:12px;font-weight:bold;padding:7px 12px;letter-spacing:.04em">'+txt+'</td></tr></table>';}
+  var s1=secTitle('1 · Resumen ejecutivo del fondo (USD)')+
+    '<table '+W+'><thead><tr><th>Indicador</th><th style="text-align:right">Monto (USD)</th><th>Detalle</th></tr></thead><tbody>'+
+    '<tr><td>Fondo recibido de la Gobernación</td><td class="n">'+fmtUsd(t.fondoUsd)+'</td><td>'+fmtNum(ingresos.length,0)+' abono(s) · '+fmtBs(t.fondoBs)+'</td></tr>'+
+    '<tr><td>Costo total de cremaciones cargadas</td><td class="n">'+fmtUsd(t.costo)+'</td><td>'+fmtNum(t.n,0)+' cremaciones (tarifa con IVA y traslado)</td></tr>'+
+    '<tr style="font-weight:bold"><td style="background:'+sBg+';color:#fff">Saldo del fondo ('+sTxt+')</td><td class="n" style="background:'+sBg+';color:#fff">'+fmtUsd(t.saldoUsd)+'</td><td style="background:'+sBg+';color:#fff">Fondo recibido − costo de cremaciones</td></tr>'+
+    '</tbody></table><br>';
+  var s2=secTitle('2 · Rentabilidad del negocio (USD)')+
+    '<table '+W+'><thead><tr><th>Concepto</th><th style="text-align:right">Monto (USD)</th></tr></thead><tbody>'+
+    '<tr><td>Ingresos facturados a la Gobernación ('+fmtNum(t.n,0)+' × '+fmtUsd(govRateHoy())+')</td><td class="n">'+fmtUsd(t.facturado)+'</td></tr>'+
+    '<tr><td>(−) Costo de cremaciones</td><td class="n">'+fmtUsd(t.costo)+'</td></tr>'+
+    '<tr><td>(−) Gastos operativos</td><td class="n">'+fmtUsd(t.gastos)+'</td></tr>'+
+    '<tr style="font-weight:bold;background:#ECE8F4"><td>Ganancia total</td><td class="n">'+fmtUsd(t.profit)+'</td></tr>'+
+    '<tr><td>Margen sobre ingresos</td><td class="n">'+fmtNum(t.margen,1)+'%</td></tr>'+
+    '<tr><td>Ganancia promedio por servicio</td><td class="n">'+fmtUsd(t.gananciaProm)+'</td></tr>'+
+    '</tbody></table><br>';
+  var s3=secTitle('3 · Utilidad por crematorio (USD)')+
+    '<table '+W+'><thead><tr><th>Crematorio</th><th style="text-align:right">Cremaciones</th><th style="text-align:right">Tarifa costo</th><th style="text-align:right">Ingreso</th><th style="text-align:right">Costo</th><th style="text-align:right">Utilidad</th><th style="text-align:right">Margen</th></tr></thead><tbody>';
+  var sc=0,si=0,sco=0,su=0;by.forEach(function(o){sc+=o.n;si+=o.ing;sco+=o.costo;su+=o.util;s3+='<tr><td>'+esc(o.crematorio)+'</td><td class="n">'+fmtNum(o.n,0)+'</td><td class="n">'+fmtUsd(tarifaUsd(o.crematorio))+'</td><td class="n">'+fmtUsd(o.ing)+'</td><td class="n">'+fmtUsd(o.costo)+'</td><td class="n">'+fmtUsd(o.util)+'</td><td class="n">'+fmtNum(o.margen,1)+'%</td></tr>';});
+  s3+='<tr style="font-weight:bold;background:#ECE8F4"><td>TOTAL</td><td class="n">'+fmtNum(sc,0)+'</td><td></td><td class="n">'+fmtUsd(n2(si))+'</td><td class="n">'+fmtUsd(n2(sco))+'</td><td class="n">'+fmtUsd(n2(su))+'</td><td class="n">'+(si>0?fmtNum(su/si*100,1):'0')+'%</td></tr></tbody></table><br>';
+  var s4=secTitle('4 · Abonos recibidos de la Gobernación')+
+    '<table '+W+'><thead><tr><th>Fecha</th><th style="text-align:right">Monto (Bs.)</th><th style="text-align:right">Tasa BCV</th><th style="text-align:right">Equivalente (USD)</th><th>Banco</th><th>Referencia</th></tr></thead><tbody>';
+  if(ingresos.length)ingresos.slice().sort(function(a,b){return a.fecha<b.fecha?-1:1;}).forEach(function(x){s4+='<tr><td>'+fmtDate(x.fecha)+'</td><td class="n">'+fmtBs(x.bs)+'</td><td class="n">'+fmtNum(x.tasa,4)+'</td><td class="n">'+fmtUsd(x.usd)+'</td><td>'+esc(x.banco||'')+'</td><td>'+esc(x.ref||'')+'</td></tr>';});
+  else s4+='<tr><td colspan="6" style="text-align:center;color:#888">Sin abonos registrados.</td></tr>';
+  s4+='<tr style="font-weight:bold;background:#ECE8F4"><td>TOTAL FONDO</td><td class="n">'+fmtBs(t.fondoBs)+'</td><td></td><td class="n">'+fmtUsd(t.fondoUsd)+'</td><td colspan="2"></td></tr></tbody></table><br>';
+  var notas=secTitle('Notas metodológicas')+
+    '<table '+W+'><tbody>'+
+    '<tr><td style="font-size:10px;color:#444">• Cifras expresadas en dólares (USD). El fondo recibido se convierte de bolívares a la tasa BCV del día de cada abono.<br>'+
+    '• Costo de cremaciones = tarifa (base + traslado por crematorio) + IVA. El traslado es paramétrico por empresa.<br>'+
+    '• Ingresos facturados = tarifa de la Gobernación vigente × número de cremaciones prestadas.<br>'+
+    '• Ganancia total = ingresos facturados − costo de cremaciones − gastos operativos.<br>'+
+    '• Saldo del fondo = fondo recibido − costo total de cremaciones (verde = superávit, rojo = déficit).</td></tr></tbody></table>';
+  excelFromTableRaw(cover+s1+s2+s3+s4+notas,'Dashboard_Rentabilidad_Accionistas','Rentabilidad');
 }
 function excelFromTableRaw(inner,filename,sheet){
-  var head='<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="UTF-8"><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>'+sheet+'</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--><style>table{border-collapse:collapse;margin-bottom:6px}th{background:#3A1D6E;color:#fff;border:1px solid #2E1A5E;padding:6px 9px;font-family:Arial;font-size:11px}td{border:1px solid #ccc;padding:5px 9px;font-family:Arial;font-size:11px}.title{font-family:Georgia;font-size:15px;font-weight:bold;color:#3A1D6E}.meta{font-size:10px;color:#6A6280}</style></head><body>';
-  var blob=new Blob([head+inner+'</body></html>'],{type:'application/vnd.ms-excel'});downloadBlob(blob,filename+'.xls');toast('Excel generado');
+  var head='<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="UTF-8"><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>'+sheet+'</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--><style>table{border-collapse:collapse;margin-bottom:2px}th{background:#3A1D6E;color:#fff;border:1px solid #2E1A5E;padding:7px 10px;font-family:Arial;font-size:11px;text-align:left}td{border:1px solid #d5d0e2;padding:6px 10px;font-family:Arial;font-size:11px}td.n{text-align:right;font-family:Consolas,Arial}</style></head><body>';
+  var blob=new Blob([head+inner+'</body></html>'],{type:'application/vnd.ms-excel'});downloadBlob(blob,filename+'.xls');toast('Excel dashboard generado');
 }
 
 /* ===== Agregaciones ===== */
