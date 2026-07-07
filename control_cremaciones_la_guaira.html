@@ -327,7 +327,7 @@ table.flujo tr.saldo td{border-top:2px solid var(--tp);font-weight:800}
       <button class="btn ghost sm" onclick="exportPagosExcel()">⬇ Exportar</button>
     </div>
     <div class="tablewrap"><table class="data">
-      <thead><tr><th class="c">#</th><th>Fecha de pago</th><th>Crematorio</th><th class="c">Cremaciones pagadas</th><th class="r">Monto USD</th><th class="r">Subtotal (Bs)</th><th class="r">IVA (Bs)</th><th class="r">Ret. IVA (Bs)</th><th class="r">Ret. ISLR (Bs)</th><th class="r">Neto factura (Bs)</th><th class="r">Transferido (Bs)</th><th class="r">Dif. (Bs)</th><th>Banco</th><th>Ref.</th><th class="c">Factura</th><th class="c">Transf.</th><th class="c">Acción</th></tr></thead>
+      <thead><tr><th class="c">#</th><th>Fecha de pago</th><th>Crematorio</th><th class="c">Cremaciones pagadas</th><th class="r">Monto USD</th><th class="r">Subtotal (Bs)</th><th class="r">IVA (Bs)</th><th class="r">Exonerado (Bs)</th><th class="r">Ret. IVA (Bs)</th><th class="r">Ret. ISLR (Bs)</th><th class="r">Neto factura (Bs)</th><th class="r">Transferido (Bs)</th><th class="r">Dif. (Bs)</th><th>Banco</th><th>Ref.</th><th class="c">Factura</th><th class="c">Transf.</th><th class="c">Acción</th></tr></thead>
       <tbody id="tbPagos"></tbody><tfoot id="tfPagos"></tfoot></table></div>
   </section>
 
@@ -475,7 +475,7 @@ table.flujo tr.saldo td{border-top:2px solid var(--tp);font-weight:800}
   </section>
 </main>
 
-<div class="foot">Sistema de control interno · Gobernación del Estado La Guaira — Operador Seguros La Fe, C.A. · Datos almacenados localmente en este equipo. · <b>v4.1 · nuevos crematorios, saldo ejecutivo y validación de carga</b></div>
+<div class="foot">Sistema de control interno · Gobernación del Estado La Guaira — Operador Seguros La Fe, C.A. · Datos almacenados localmente en este equipo. · <b>v4.2 · exonerado IVA, torta del fondo, conciliación interactiva</b></div>
 
 <!-- Modal Cremación -->
 <div class="modal-bg" id="modalCrem"><div class="modal">
@@ -507,6 +507,10 @@ table.flujo tr.saldo td{border-top:2px solid var(--tp);font-weight:800}
     <div class="grid2" style="margin-top:10px">
       <label class="fld"><span class="cap">Subtotal de la factura (Bs.)</span><input type="number" step="0.01" id="fPagoSubtotal" oninput="calcPagoRet()" placeholder="Base imponible"></label>
       <label class="fld"><span class="cap">Monto de la transferencia (Bs.)</span><input type="number" step="0.01" id="fPagoTransferBs" oninput="calcPagoRet()" placeholder="Lo efectivamente transferido"></label>
+    </div>
+    <div class="grid2" style="margin-top:10px">
+      <label class="fld"><span class="cap">Monto exonerado de IVA (Bs.)</span><input type="number" step="0.01" id="fPagoExonerado" oninput="calcPagoRet()" placeholder="Ánforas u otros conceptos sin IVA"></label>
+      <label class="fld"><span class="cap">Retención de IVA aplicada</span><select id="fPagoRetIvaSel" onchange="calcPagoRet()"><option value="75">75% del IVA</option><option value="100">100% del IVA</option></select></label>
     </div>
     <div class="tarifabox" id="fPagoRetBox" style="margin-top:14px"></div>
     <div class="grid2" style="margin-top:14px">
@@ -657,7 +661,7 @@ function govRate(fecha){var list=(cfg.govTarifas||[]).filter(function(v){return 
 function govRateHoy(){return govRate(today());}
 var cats=load(K.cats,DEFAULT_CATS.slice());
 var logos=load(K.logos,{});
-if(!logos['__valles_custom__'] && logos['__valles_ver__']!==VALLES_LOGO_VER){logos[VALLES_KEY]=VALLES_LOGO;logos['__valles_ver__']=VALLES_LOGO_VER;save(K.logos,logos);}
+if(logos['__valles_removed__']!==1){delete logos[VALLES_KEY];delete logos['Cinerario Vallés'];logos['__valles_removed__']=1;save(K.logos,logos);}
 if(!logos['__inst_custom__'] && logos['__inst_ver__']!==INST_LOGO_VER){logos['__inst__']=LAFE_LOGO;logos['__inst_ver__']=INST_LOGO_VER;save(K.logos,logos);}
 
 /* ===== Utilidades ===== */
@@ -1018,23 +1022,26 @@ function openPagoAtt(id,which){var p=pagos.find(function(x){return x.id===id;});
 function calcPagoMonto(){var c=document.getElementById('fPagoCrem').value,cant=Number(document.getElementById('fPagoCant').value)||0;document.getElementById('fPagoMonto').textContent=fmtUsd(cant*tarifaUsd(c));}
 function pagoRetVals(){
   var S=Number(document.getElementById('fPagoSubtotal').value)||0;
-  var ivaP=Number(cfg.ivaPct)||0,riP=Number(cfg.retIvaPct)||0,rislrP=Number(cfg.retIslrPct)||0;
-  var iva=S*ivaP/100,total=S+iva,retIva=iva*riP/100,retIslr=S*rislrP/100,neto=total-retIva-retIslr;
+  var E=Number(document.getElementById('fPagoExonerado').value)||0;
+  var selEl=document.getElementById('fPagoRetIvaSel');
+  var ivaP=Number(cfg.ivaPct)||0,riP=selEl?(Number(selEl.value)||Number(cfg.retIvaPct)||0):(Number(cfg.retIvaPct)||0),rislrP=Number(cfg.retIslrPct)||0;
+  var iva=S*ivaP/100,total=S+iva+E,retIva=iva*riP/100,retIslr=S*rislrP/100,neto=total-retIva-retIslr;
   var T=Number(document.getElementById('fPagoTransferBs').value)||0;
-  return {S:S,ivaP:ivaP,riP:riP,rislrP:rislrP,iva:iva,total:total,retIva:retIva,retIslr:retIslr,neto:neto,T:T,diff:T-neto};
+  return {S:S,E:E,ivaP:ivaP,riP:riP,rislrP:rislrP,iva:iva,total:total,retIva:retIva,retIslr:retIslr,neto:neto,T:T,diff:T-neto};
 }
 function calcPagoRet(){
   var v=pagoRetVals();var box=document.getElementById('fPagoRetBox');if(!box)return;
   var r=bcvRate(document.getElementById('fPagoFecha').value);
-  var hay=(v.S||v.T);
+  var hay=(v.S||v.T||v.E);
   var difStyle=(Math.abs(v.diff)>=0.01&&hay)?' style="color:var(--danger)"':'';
   var h='';
-  h+='<div class="row"><span>IVA ('+fmtNum(v.ivaP,0)+'%)</span><b class="num">'+fmtBs(v.iva)+'</b></div>';
+  h+='<div class="row"><span>IVA ('+fmtNum(v.ivaP,0)+'% del subtotal)</span><b class="num">'+fmtBs(v.iva)+'</b></div>';
+  if(v.E)h+='<div class="row"><span>Monto exonerado de IVA</span><b class="num">'+fmtBs(v.E)+'</b></div>';
   h+='<div class="row"><span>Total factura</span><b class="num">'+fmtBs(v.total)+'</b></div>';
   h+='<div class="row"><span>Retención IVA ('+fmtNum(v.riP,0)+'% del IVA)</span><b class="num">− '+fmtBs(v.retIva)+'</b></div>';
   h+='<div class="row"><span>Retención ISLR ('+fmtNum(v.rislrP,0)+'% del subtotal)</span><b class="num">− '+fmtBs(v.retIslr)+'</b></div>';
   h+='<div class="row tot"><span>Neto a pagar (abonado en cuenta)</span><span class="num">'+fmtBs(v.neto)+'</span></div>';
-  h+='<div class="row"><span>Equivalente del neto en USD (tasa '+fmtNum(r,2)+')</span><b class="num">'+((v.S&&r>0)?fmtUsd(v.neto/r):'—')+'</b></div>';
+  h+='<div class="row"><span>Equivalente del neto en USD (tasa '+fmtNum(r,2)+')</span><b class="num">'+(((v.S||v.E)&&r>0)?fmtUsd(v.neto/r):'—')+'</b></div>';
   h+='<div class="row"'+difStyle+'><span>Diferencia (transferencia − neto)</span><b class="num">'+(hay?fmtBs(v.diff):'—')+'</b></div>';
   box.innerHTML=h;
 }
@@ -1045,6 +1052,7 @@ function openPago(id){
     document.getElementById('mPagoTitle').textContent='Editar pago';
     document.getElementById('fPagoId').value=p.id;document.getElementById('fPagoCrem').value=p.crematorio;document.getElementById('fPagoFecha').value=p.fecha;document.getElementById('fPagoCant').value=p.cantidad;document.getElementById('fPagoObs').value=p.obs||'';
     document.getElementById('fPagoSubtotal').value=p.subtotal||'';document.getElementById('fPagoTransferBs').value=p.transferBs||'';
+    document.getElementById('fPagoExonerado').value=p.exonerado||'';document.getElementById('fPagoRetIvaSel').value=String(p.retIvaPct||cfg.retIvaPct||75);
     document.getElementById('fPagoBanco').value=p.banco||'';document.getElementById('fPagoRef').value=p.ref||'';
     _attFactura=p.factura||null;_attFacturaName=p.facturaName||'';_attTransfer=p.transfer||null;_attTransferName=p.transferName||'';
     document.getElementById('fPagoFacturaName').textContent=p.facturaName||(p.factura?'archivo adjunto':'—');
@@ -1053,6 +1061,7 @@ function openPago(id){
     document.getElementById('mPagoTitle').textContent='Registrar pago';
     document.getElementById('fPagoId').value='';document.getElementById('fPagoFecha').value=today();document.getElementById('fPagoCant').value='';document.getElementById('fPagoObs').value='';
     document.getElementById('fPagoSubtotal').value='';document.getElementById('fPagoTransferBs').value='';
+    document.getElementById('fPagoExonerado').value='';document.getElementById('fPagoRetIvaSel').value=String(cfg.retIvaPct||75);
     document.getElementById('fPagoBanco').value='';document.getElementById('fPagoRef').value='';
   }
   calcPagoMonto();calcPagoRet();document.getElementById('modalPago').classList.add('open');
@@ -1064,7 +1073,7 @@ function savePago(){
   if(!banco||!ref){toast('Indique el banco emisor y el N° de transferencia para el control');return;}
   var v=pagoRetVals();
   var rec={id:document.getElementById('fPagoId').value||uid(),crematorio:crem,fecha:fecha,cantidad:Math.round(cant),
-    subtotal:n2(v.S),iva:n2(v.iva),total:n2(v.total),retIva:n2(v.retIva),retIslr:n2(v.retIslr),neto:n2(v.neto),transferBs:n2(v.T),diff:n2(v.diff),banco:banco,ref:ref,
+    subtotal:n2(v.S),exonerado:n2(v.E),iva:n2(v.iva),total:n2(v.total),retIva:n2(v.retIva),retIvaPct:v.riP,retIslr:n2(v.retIslr),neto:n2(v.neto),transferBs:n2(v.T),diff:n2(v.diff),banco:banco,ref:ref,
     factura:_attFactura||null,facturaName:_attFacturaName||'',transfer:_attTransfer||null,transferName:_attTransferName||'',obs:document.getElementById('fPagoObs').value.trim()};
   var snapshot=pagos.slice();
   var i=pagos.findIndex(function(x){return x.id===rec.id;});if(i>=0)pagos[i]=rec;else pagos.push(rec);
@@ -1075,23 +1084,23 @@ function delPago(id){var p=pagos.find(function(x){return x.id===id;});if(!p)retu
 function filteredPagos(){var fc=document.getElementById('pFilterCrem').value;return pagos.filter(function(p){return !fc||p.crematorio===fc;}).sort(function(a,b){return a.fecha<b.fecha?1:-1;});}
 function renderPagos(){
   var rows=filteredPagos(),tb=document.getElementById('tbPagos'),tf=document.getElementById('tfPagos');
-  if(!rows.length){tb.innerHTML='<tr><td colspan="17"><div class="empty"><div class="em-t">Sin pagos registrados</div>Use “＋ Registrar pago”.</div></td></tr>';tf.innerHTML='';return;}
-  var sCant=0,sUsd=0,sSub=0,sIva=0,sRiva=0,sRislr=0,sNeto=0,sTrans=0;
+  if(!rows.length){tb.innerHTML='<tr><td colspan="18"><div class="empty"><div class="em-t">Sin pagos registrados</div>Use “＋ Registrar pago”.</div></td></tr>';tf.innerHTML='';return;}
+  var sCant=0,sUsd=0,sSub=0,sIva=0,sExo=0,sRiva=0,sRislr=0,sNeto=0,sTrans=0;
   tb.innerHTML=rows.map(function(p,i){var m=(Number(p.cantidad)||0)*tarifaUsd(p.crematorio);sCant+=Number(p.cantidad)||0;sUsd+=m;
-    var sub=Number(p.subtotal)||0,iva=Number(p.iva)||0,riva=Number(p.retIva)||0,rislr=Number(p.retIslr)||0,neto=Number(p.neto)||0,tbs=Number(p.transferBs)||0,dif=Number(p.diff)||(tbs-neto);
-    sSub+=sub;sIva+=iva;sRiva+=riva;sRislr+=rislr;sNeto+=neto;sTrans+=tbs;
+    var sub=Number(p.subtotal)||0,iva=Number(p.iva)||0,exo=Number(p.exonerado)||0,riva=Number(p.retIva)||0,rislr=Number(p.retIslr)||0,neto=Number(p.neto)||0,tbs=Number(p.transferBs)||0,dif=Number(p.diff)||(tbs-neto);
+    sSub+=sub;sIva+=iva;sExo+=exo;sRiva+=riva;sRislr+=rislr;sNeto+=neto;sTrans+=tbs;
     var fa=p.factura?'<button class="attlink" onclick="openPagoAtt(\''+p.id+'\',\'factura\')">Ver</button>':'—';
     var tr=p.transfer?'<button class="attlink" onclick="openPagoAtt(\''+p.id+'\',\'transfer\')">Ver</button>':'—';
     var difc=(Math.abs(dif)>=0.01&&(neto||tbs))?' style="color:var(--danger)"':'';
-    return '<tr><td class="c num">'+(i+1)+'</td><td class="num">'+fmtDate(p.fecha)+'</td><td>'+esc(p.crematorio)+'</td><td class="c num">'+fmtNum(p.cantidad,0)+'</td><td class="r num">'+fmtUsd(m)+'</td><td class="r num">'+(sub?fmtBs(sub):'—')+'</td><td class="r num">'+(iva?fmtBs(iva):'—')+'</td><td class="r num">'+(riva?fmtBs(riva):'—')+'</td><td class="r num">'+(rislr?fmtBs(rislr):'—')+'</td><td class="r num">'+(neto?fmtBs(neto):'—')+'</td><td class="r num">'+(tbs?fmtBs(tbs):'—')+'</td><td class="r num"'+difc+'>'+((neto||tbs)?fmtBs(dif):'—')+'</td><td>'+esc(p.banco||'—')+'</td><td class="num">'+esc(p.ref||'—')+'</td><td class="c">'+fa+'</td><td class="c">'+tr+'</td><td class="c" style="white-space:nowrap"><button class="btn ghost icon sm" onclick="openPago(\''+p.id+'\')">✎</button> <button class="btn ghost icon sm" style="color:var(--danger);border-color:var(--danger)" onclick="delPago(\''+p.id+'\')">🗑</button></td></tr>';
+    return '<tr><td class="c num">'+(i+1)+'</td><td class="num">'+fmtDate(p.fecha)+'</td><td>'+esc(p.crematorio)+'</td><td class="c num">'+fmtNum(p.cantidad,0)+'</td><td class="r num">'+fmtUsd(m)+'</td><td class="r num">'+(sub?fmtBs(sub):'—')+'</td><td class="r num">'+(iva?fmtBs(iva):'—')+'</td><td class="r num">'+(exo?fmtBs(exo):'—')+'</td><td class="r num">'+(riva?fmtBs(riva):'—')+'</td><td class="r num">'+(rislr?fmtBs(rislr):'—')+'</td><td class="r num">'+(neto?fmtBs(neto):'—')+'</td><td class="r num">'+(tbs?fmtBs(tbs):'—')+'</td><td class="r num"'+difc+'>'+((neto||tbs)?fmtBs(dif):'—')+'</td><td>'+esc(p.banco||'—')+'</td><td class="num">'+esc(p.ref||'—')+'</td><td class="c">'+fa+'</td><td class="c">'+tr+'</td><td class="c" style="white-space:nowrap"><button class="btn ghost icon sm" onclick="openPago(\''+p.id+'\')">✎</button> <button class="btn ghost icon sm" style="color:var(--danger);border-color:var(--danger)" onclick="delPago(\''+p.id+'\')">🗑</button></td></tr>';
   }).join('');
-  tf.innerHTML='<tr><td colspan="3" class="r">TOTAL ('+rows.length+' pagos)</td><td class="c num">'+fmtNum(sCant,0)+'</td><td class="r num">'+fmtUsd(sUsd)+'</td><td class="r num">'+fmtBs(sSub)+'</td><td class="r num">'+fmtBs(sIva)+'</td><td class="r num">'+fmtBs(sRiva)+'</td><td class="r num">'+fmtBs(sRislr)+'</td><td class="r num">'+fmtBs(sNeto)+'</td><td class="r num">'+fmtBs(sTrans)+'</td><td class="r num">'+fmtBs(sTrans-sNeto)+'</td><td colspan="5"></td></tr>';
+  tf.innerHTML='<tr><td colspan="3" class="r">TOTAL ('+rows.length+' pagos)</td><td class="c num">'+fmtNum(sCant,0)+'</td><td class="r num">'+fmtUsd(sUsd)+'</td><td class="r num">'+fmtBs(sSub)+'</td><td class="r num">'+fmtBs(sIva)+'</td><td class="r num">'+fmtBs(sExo)+'</td><td class="r num">'+fmtBs(sRiva)+'</td><td class="r num">'+fmtBs(sRislr)+'</td><td class="r num">'+fmtBs(sNeto)+'</td><td class="r num">'+fmtBs(sTrans)+'</td><td class="r num">'+fmtBs(sTrans-sNeto)+'</td><td colspan="5"></td></tr>';
 }
 function exportPagosExcel(){
   var rows=filteredPagos();if(!rows.length){toast('Sin pagos para exportar');return;}
-  var h='<table><thead><tr><th>#</th><th>Fecha de pago</th><th>Crematorio</th><th>Cremaciones pagadas</th><th>Monto USD</th><th>Subtotal Bs</th><th>IVA Bs</th><th>Total Bs</th><th>Ret. IVA Bs</th><th>Ret. ISLR Bs</th><th>Neto Bs</th><th>Transferido Bs</th><th>Diferencia Bs</th><th>Banco</th><th>N° transferencia</th><th>Factura</th><th>Transferencia</th><th>Observaciones</th></tr></thead><tbody>',sc=0,su=0;
-  rows.forEach(function(p,i){var m=(Number(p.cantidad)||0)*tarifaUsd(p.crematorio);sc+=Number(p.cantidad)||0;su+=m;h+='<tr><td>'+(i+1)+'</td><td>'+fmtDate(p.fecha)+'</td><td>'+esc(p.crematorio)+'</td><td>'+fmtNum(p.cantidad,0)+'</td><td>'+fmtUsd(m)+'</td><td>'+fmtBs(p.subtotal||0)+'</td><td>'+fmtBs(p.iva||0)+'</td><td>'+fmtBs(p.total||0)+'</td><td>'+fmtBs(p.retIva||0)+'</td><td>'+fmtBs(p.retIslr||0)+'</td><td>'+fmtBs(p.neto||0)+'</td><td>'+fmtBs(p.transferBs||0)+'</td><td>'+fmtBs(p.diff||0)+'</td><td>'+esc(p.banco||'')+'</td><td>'+esc(p.ref||'')+'</td><td>'+(p.factura?'Sí':'No')+'</td><td>'+(p.transfer?'Sí':'No')+'</td><td>'+esc(p.obs||'')+'</td></tr>';});
-  h+='</tbody><tfoot><tr><td colspan="3">TOTAL</td><td>'+fmtNum(sc,0)+'</td><td>'+fmtUsd(su)+'</td><td colspan="13"></td></tr></tfoot></table>';
+  var h='<table><thead><tr><th>#</th><th>Fecha de pago</th><th>Crematorio</th><th>Cremaciones pagadas</th><th>Monto USD</th><th>Subtotal Bs</th><th>IVA Bs</th><th>Exonerado Bs</th><th>Total Bs</th><th>Ret. IVA %</th><th>Ret. IVA Bs</th><th>Ret. ISLR Bs</th><th>Neto Bs</th><th>Transferido Bs</th><th>Diferencia Bs</th><th>Banco</th><th>N° transferencia</th><th>Factura</th><th>Transferencia</th><th>Observaciones</th></tr></thead><tbody>',sc=0,su=0;
+  rows.forEach(function(p,i){var m=(Number(p.cantidad)||0)*tarifaUsd(p.crematorio);sc+=Number(p.cantidad)||0;su+=m;h+='<tr><td>'+(i+1)+'</td><td>'+fmtDate(p.fecha)+'</td><td>'+esc(p.crematorio)+'</td><td>'+fmtNum(p.cantidad,0)+'</td><td>'+fmtUsd(m)+'</td><td>'+fmtBs(p.subtotal||0)+'</td><td>'+fmtBs(p.iva||0)+'</td><td>'+fmtBs(p.exonerado||0)+'</td><td>'+fmtBs(p.total||0)+'</td><td>'+fmtNum(p.retIvaPct!=null?p.retIvaPct:(cfg.retIvaPct||0),0)+'%</td><td>'+fmtBs(p.retIva||0)+'</td><td>'+fmtBs(p.retIslr||0)+'</td><td>'+fmtBs(p.neto||0)+'</td><td>'+fmtBs(p.transferBs||0)+'</td><td>'+fmtBs(p.diff||0)+'</td><td>'+esc(p.banco||'')+'</td><td>'+esc(p.ref||'')+'</td><td>'+(p.factura?'Sí':'No')+'</td><td>'+(p.transfer?'Sí':'No')+'</td><td>'+esc(p.obs||'')+'</td></tr>';});
+  h+='</tbody><tfoot><tr><td colspan="3">TOTAL</td><td>'+fmtNum(sc,0)+'</td><td>'+fmtUsd(su)+'</td><td colspan="15"></td></tr></tfoot></table>';
   excelFromTable(h,'Pagos_a_Crematorios','Pagos');
 }
 
@@ -1303,13 +1312,13 @@ function renderConciliacion(){
   chip.style.display='';document.getElementById('padronCount').textContent=fmtNum(padron.length,0);
   document.getElementById('padronUpd').textContent=padronMeta.updated?('act. '+fmtDate(padronMeta.updated.slice(0,10))):'';
   var R=conciliar();
-  var k='<div class="kpigrid" style="margin-bottom:18px">'+
+  var k='<div class="kpigrid" style="margin-bottom:8px">'+
     '<div class="kpi"><div class="lbl">Expedientes en padrón</div><div class="big num">'+fmtNum(R.totalPad,0)+'</div><div class="alt num">registro maestro</div></div>'+
     '<div class="kpi"><div class="lbl">Cremaciones registradas</div><div class="big num">'+fmtNum(R.totalCrem,0)+'</div><div class="alt num">en el sistema</div></div>'+
-    '<div class="kpi"><div class="lbl">Conciliados</div><div class="big num" style="color:#0D7A4E">'+fmtNum(R.coincid,0)+'</div><div class="alt num">'+R.porCodigo+' por código · '+R.porNombre.length+' por nombre</div></div>'+
-    '<div class="kpi accent"><div class="lbl">Faltan por registrar</div><div class="big num">'+fmtNum(R.faltan.length,0)+'</div><div class="alt num">del padrón, sin cremación</div></div>'+
-    '<div class="kpi"><div class="lbl">No respaldados</div><div class="big num" style="color:#B07A00">'+fmtNum(R.noResp.length,0)+'</div><div class="alt num">cremación sin padrón</div></div>'+
-  '</div>';
+    '<div class="kpi clickable" onclick="concShow(\'nombre\')"><div class="lbl">Conciliados ▸</div><div class="big num" style="color:#0D7A4E">'+fmtNum(R.coincid,0)+'</div><div class="alt num">'+R.porCodigo+' por código · '+R.porNombre.length+' por nombre</div></div>'+
+    '<div class="kpi accent clickable" onclick="concShow(\'faltan\')"><div class="lbl">Faltan por registrar ▸</div><div class="big num">'+fmtNum(R.faltan.length,0)+'</div><div class="alt num">del padrón, sin cremación</div></div>'+
+    '<div class="kpi clickable" onclick="concShow(\'noresp\')"><div class="lbl">No respaldados ▸</div><div class="big num" style="color:#B07A00">'+fmtNum(R.noResp.length,0)+'</div><div class="alt num">cremación sin padrón</div></div>'+
+  '</div><div style="font-size:11.5px;color:var(--slate);margin-bottom:16px">▸ Haga clic en una tarjeta para ver su detalle.</div>';
   var t1='<table class="data" id="conc_faltan_tbl"><thead><tr><th class="c">#</th><th>Código expediente</th><th>Difunto</th><th>Crematorio</th><th>Lote</th><th>Estado</th></tr></thead><tbody>';
   if(R.faltan.length)R.faltan.forEach(function(p,i){t1+='<tr><td class="c num">'+(i+1)+'</td><td class="num">'+esc(p.code)+'</td><td>'+esc(p.nombre||'—')+'</td><td>'+esc(p.cnom||'—')+'</td><td class="num">'+esc(p.lote||'—')+'</td><td>'+esc(p.estado||'—')+'</td></tr>';});
   else t1+='<tr><td colspan="6" class="c" style="padding:20px;color:#0D7A4E">✓ Todos los expedientes del padrón están registrados como cremación.</td></tr>';
@@ -1320,14 +1329,23 @@ function renderConciliacion(){
   else t2+='<tr><td colspan="6" class="c" style="padding:20px;color:#0D7A4E">✓ Todas las cremaciones están respaldadas en el padrón.</td></tr>';
   t2+='</tbody><tfoot><tr><td colspan="6" class="r">'+R.noResp.length+' cremación(es) sin respaldo en el padrón</td></tr></tfoot></table>';
   var p2='<div class="panel" style="margin-bottom:20px"><div class="ph"><h3>No respaldados en el padrón</h3><span style="color:var(--slate);font-size:11.5px">Cremaciones cuyo expediente no aparece en el padrón</span></div><div class="pb" style="padding:0"><div class="tablewrap" style="border:none;box-shadow:none">'+t2+'</div><div class="rfoot" style="padding:12px 18px;justify-content:flex-end;border-top:1px solid var(--line-2)"><button class="btn ghost sm" onclick="exportConc(\'conc_noresp_tbl\',\'Cremaciones_no_respaldadas\')">⬇ Exportar</button></div></div></div>';
-  var p3='';
+  var p3;
   if(R.porNombre.length){var t3='<table class="data" id="conc_nombre_tbl"><thead><tr><th class="c">#</th><th>Difunto</th><th>Código en padrón</th><th>Expediente en cremación</th></tr></thead><tbody>';
     R.porNombre.forEach(function(p,i){t3+='<tr><td class="c num">'+(i+1)+'</td><td>'+esc(p.rec.nombre||'—')+'</td><td class="num">'+esc(p.rec.code)+'</td><td class="num">'+esc((p.crem&&p.crem.exp)||'—')+'</td></tr>';});
     t3+='</tbody></table>';
     p3='<div class="panel" style="margin-bottom:20px"><div class="ph"><h3>Conciliados por nombre — revisar código</h3><span style="color:var(--slate);font-size:11.5px">Coinciden en nombre pero el código de expediente difiere</span></div><div class="pb" style="padding:0"><div class="tablewrap" style="border:none;box-shadow:none">'+t3+'</div><div class="rfoot" style="padding:12px 18px;justify-content:flex-end;border-top:1px solid var(--line-2)"><button class="btn ghost sm" onclick="exportConc(\'conc_nombre_tbl\',\'Conciliados_por_nombre\')">⬇ Exportar</button></div></div></div>';}
+  else p3='<div class="panel" style="margin-bottom:20px"><div class="ph"><h3>Conciliados</h3></div><div class="pb"><div style="font-size:12.5px;color:var(--slate)">'+R.porCodigo+' expediente(s) conciliados por código. No hay conciliaciones por nombre pendientes de revisar.</div></div></div>';
   var pd='';
   if(R.dups.length){pd='<div class="panel" style="margin-bottom:20px"><div class="ph"><h3>Códigos duplicados en el padrón</h3></div><div class="pb"><div style="font-size:12.5px;color:var(--slate)">'+R.dups.map(function(d){return esc(d.code)+' — '+esc(d.nombre||'');}).join('<br>')+'</div></div></div>';}
-  host.innerHTML=k+p1+p2+p3+pd;
+  host.innerHTML=k+'<div id="det_faltan" style="display:none">'+p1+'</div><div id="det_noresp" style="display:none">'+p2+'</div><div id="det_nombre" style="display:none">'+p3+'</div>'+pd;
+}
+var _concShown='';
+function concShow(which){
+  var ids={faltan:'det_faltan',noresp:'det_noresp',nombre:'det_nombre'};
+  if(_concShown===which){document.getElementById(ids[which]).style.display='none';_concShown='';return;}
+  _concShown=which;
+  Object.keys(ids).forEach(function(kk){var el=document.getElementById(ids[kk]);if(el)el.style.display=(kk===which)?'':'none';});
+  var t=document.getElementById(ids[which]);if(t&&t.scrollIntoView)t.scrollIntoView({behavior:'smooth',block:'start'});
 }
 function exportConc(tid,name){var el=document.getElementById(tid);if(!el){toast('Sin datos');return;}excelFromTable('<table>'+el.innerHTML+'</table>',name,'Conciliacion');}
 
@@ -1375,6 +1393,7 @@ function renderRentabilidad(){
     '<div class="kpi"><div class="lbl">Monto Servicios Prestados Gobernación</div><div class="big num" style="color:#0D7A4E">'+fmtUsd(t.facturado)+'</div><div class="alt num">'+fmtUsd(govRateHoy())+' × '+fmtNum(t.n,0)+' cremaciones efectuadas</div></div>'+
     '<div class="kpi"><div class="lbl">Cremaciones Totales con IVA</div><div class="big num" style="color:#9d2f2c">'+fmtUsd(t.cremIva)+'</div><div class="alt num">base + IVA (todas)</div></div>'+
     '<div class="kpi"><div class="lbl">Traslados con IVA</div><div class="big num" style="color:#9d2f2c">'+fmtUsd(t.trasIva)+'</div><div class="alt num">traslado + IVA</div></div>'+
+    '<div class="kpi" style="border-top:3px solid #7a5cc0;background:#faf9fe"><div class="lbl">Cremaciones + Traslados con IVA</div><div class="big num" style="color:#4B2D8F">'+fmtUsd(n2(t.cremIva+t.trasIva))+'</div><div class="alt num">= Total Cremaciones Ejecutadas (Panel)</div></div>'+
     '<div class="kpi"><div class="lbl">Gastos Operativos</div><div class="big num" style="color:#8a5e00">'+fmtUsd(t.gastos)+'</div><div class="alt num">equivalente USD</div></div>'+
     '<div class="kpi accent"><div class="lbl">Ganancia</div><div class="big num" '+(t.profit<0?'style="color:#c0433f"':'')+'>'+fmtUsd(t.profit)+'</div><div class="alt num">margen '+fmtNum(t.margen,1)+'% · '+fmtUsd(t.gananciaProm)+' /servicio</div></div>'+
   '</div>';
@@ -1390,13 +1409,27 @@ function renderRentabilidad(){
   var sec2='<div class="rsec">Manejo del Flujo de Caja del Fondo</div>';
   var pB2='<div class="panel" style="margin-bottom:20px"><div class="pb" style="padding:6px 4px">'+flujo+'<div style="font-size:11.5px;color:var(--slate);padding:8px 18px 4px">'+hint+'</div></div></div>';
   // cascada
-  var steps=[{l:'Servicios Gobernación',v:t.facturado,c:'#0D7A4E',sign:1},{l:'Cremaciones',v:-t.cremIva,c:'#c0433f',sign:-1},{l:'Traslados',v:-t.trasIva,c:'#a13c38',sign:-1},{l:'Gastos operativos',v:-t.gastos,c:'#B07A00',sign:-1},{l:'Ganancia',v:t.profit,c:'#4B2D8F',sign:0,final:true}];
-  var maxv=Math.max(t.facturado,1),H=220;var cum=0;
-  var bars=steps.map(function(s){var lo,hi;if(s.final){lo=0;hi=t.profit;}else if(s.sign>0){lo=0;hi=s.v;cum=s.v;}else{hi=cum;cum=n2(cum+s.v);lo=cum;}var bottom=Math.max(0,lo/maxv*H),height=Math.max(2,(hi-lo)/maxv*H);
-    var lbl=(s.sign<0?'− ':'')+fmtUsd(Math.abs(s.v));
-    return '<div style="flex:1;display:flex;flex-direction:column;align-items:center;height:100%;justify-content:flex-end"><div style="height:'+(H-bottom-height)+'px"></div><div style="font-size:11.5px;font-weight:700;color:'+s.c+';margin-bottom:5px">'+lbl+'</div><div style="width:100%;max-width:80px;background:'+s.c+';border-radius:6px 6px 0 0;height:'+height+'px"></div><div style="font-size:11px;color:var(--slate);margin-top:7px;text-align:center">'+s.l+'</div></div>';
-  }).join('');
-  var casc='<div class="panel" style="margin-bottom:20px"><div class="ph"><h3>Cascada de utilidad</h3><span style="color:var(--slate);font-size:11.5px">de servicios a ganancia</span></div><div class="pb"><div style="display:flex;align-items:flex-end;justify-content:space-around;height:'+(H+40)+'px;gap:14px;padding:0 6px">'+bars+'</div></div></div>';
+  var consumo=n2(t.cremIva+t.trasIva+t.gastos);
+  var surplus=n2(t.fondoUsd-consumo);
+  var donutSegs=[{l:'Cremaciones',v:t.cremIva,c:'#c0433f'},{l:'Traslados',v:t.trasIva,c:'#a13c38'},{l:'Gastos operativos',v:t.gastos,c:'#B07A00'}];
+  if(surplus>0)donutSegs.push({l:'Saldo disponible',v:surplus,c:'#0D7A4E'});
+  var dtot=donutSegs.reduce(function(s,x){return s+(x.v>0?x.v:0);},0)||1;
+  var R2=70,CC=2*Math.PI*R2,offAcc=0,arcs='';
+  donutSegs.forEach(function(s){if(s.v<=0)return;var len=s.v/dtot*CC;arcs+='<circle cx="100" cy="100" r="'+R2+'" fill="none" stroke="'+s.c+'" stroke-width="30" stroke-dasharray="'+len.toFixed(2)+' '+(CC-len).toFixed(2)+'" stroke-dashoffset="'+(-offAcc).toFixed(2)+'" transform="rotate(-90 100 100)"/>';offAcc+=len;});
+  var cColor=surplus>=0?'#0D7A4E':'#c0433f',cTop=surplus>=0?'Saldo disponible':'Déficit del fondo',cBig=fmtUsd(Math.abs(surplus));
+  var ring=(surplus<0)?'<circle cx="100" cy="100" r="86" fill="none" stroke="#c0433f" stroke-width="2" stroke-dasharray="4 4"/>':'';
+  var svg='<svg viewBox="0 0 200 200" width="190" height="190">'+arcs+ring+'<text x="100" y="90" text-anchor="middle" font-size="9.5" fill="#6b6880">'+cTop+'</text><text x="100" y="112" text-anchor="middle" font-size="19" font-weight="800" fill="'+cColor+'">'+cBig+'</text></svg>';
+  var leg=donutSegs.map(function(s){return '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:12.5px;padding:5px 0"><span style="display:inline-flex;align-items:center;gap:8px"><span style="width:11px;height:11px;border-radius:3px;background:'+s.c+';display:inline-block"></span>'+s.l+'</span><b class="num" style="color:'+s.c+'">'+fmtUsd(s.v)+'</b></div>';}).join('');
+  var mx=Math.max(t.fondoUsd,consumo,1);
+  var cmp='<div style="margin-top:10px;border-top:1px solid var(--line-2);padding-top:12px">'+
+    '<div style="font-size:11.5px;color:var(--slate);margin-bottom:8px">Fondo recibido vs. total consumido</div>'+
+    '<div style="font-size:11.5px;margin-bottom:4px;display:flex;justify-content:space-between"><span>Fondo recibido</span><b class="num" style="color:#0D7A4E">'+fmtUsd(t.fondoUsd)+'</b></div>'+
+    '<div style="height:14px;background:var(--line-2);border-radius:5px;overflow:hidden;margin-bottom:9px"><div style="height:100%;width:'+(t.fondoUsd/mx*100)+'%;background:#0D7A4E"></div></div>'+
+    '<div style="font-size:11.5px;margin-bottom:4px;display:flex;justify-content:space-between"><span>Total consumido (cremaciones + traslados + gastos)</span><b class="num" style="color:#c0433f">'+fmtUsd(consumo)+'</b></div>'+
+    '<div style="height:14px;background:var(--line-2);border-radius:5px;overflow:hidden"><div style="height:100%;width:'+(consumo/mx*100)+'%;background:#c0433f"></div></div>'+
+    (surplus<0?'<div style="font-size:11.5px;color:#c0433f;margin-top:9px;font-weight:600">▸ Se consumió más de lo recibido: déficit de '+fmtUsd(Math.abs(surplus))+'.</div>':'')+
+  '</div>';
+  var casc=(t.fondoUsd||consumo)?('<div class="panel" style="margin-bottom:20px"><div class="ph"><h3>Uso del fondo</h3><span style="color:var(--slate);font-size:11.5px">fondos recibidos menos el consumo (cremaciones, traslados y gastos)</span></div><div class="pb"><div style="display:flex;gap:26px;align-items:center;flex-wrap:wrap"><div style="flex:0 0 auto">'+svg+'</div><div style="flex:1;min-width:240px">'+leg+cmp+'</div></div></div></div>'):'';
   // abonos
   var ab='<table class="data" id="rent_abonos_tbl"><thead><tr><th class="c">#</th><th>Fecha</th><th class="r">Monto (Bs.)</th><th class="r">Tasa BCV</th><th class="r">Equiv. USD</th><th>Banco</th><th>Ref.</th><th class="c">Acción</th></tr></thead><tbody>';
   if(ingresos.length){ingresos.slice().sort(function(a,b){return a.fecha<b.fecha?1:-1;}).forEach(function(x,i){ab+='<tr><td class="c num">'+(i+1)+'</td><td class="num">'+fmtDate(x.fecha)+'</td><td class="r num">'+fmtBs(x.bs)+'</td><td class="r num">'+fmtNum(x.tasa,4)+'</td><td class="r num">'+fmtUsd(x.usd)+'</td><td>'+esc(x.banco||'—')+'</td><td class="num">'+esc(x.ref||'—')+'</td><td class="c" style="white-space:nowrap"><button class="btn ghost icon sm" onclick="openIngreso(\''+x.id+'\')">✎</button> <button class="btn ghost icon sm" style="color:var(--danger);border-color:var(--danger)" onclick="delIngreso(\''+x.id+'\')">🗑</button></td></tr>';});}
@@ -1466,8 +1499,10 @@ function excelFromTableRaw(inner,filename,sheet){
 }
 
 /* ===== Agregaciones ===== */
-function pagadasByCrem(c){var n=0;pagos.forEach(function(p){if(p.crematorio===c)n+=Number(p.cantidad)||0;});return n;}
-function pagoInfoByCrem(c){var lote=pagos.filter(function(p){return p.crematorio===c;}).sort(function(a,b){return a.fecha<b.fecha?-1:1;});var out=[];lote.forEach(function(p){var q=Math.max(0,Math.round(Number(p.cantidad)||0));for(var k=0;k<q;k++)out.push({banco:p.banco||'',ref:p.ref||'',fecha:p.fecha||''});});return out;}
+function cremCanon(name){var s=String(name||'');s=s.split('—')[0];s=s.split(' - ')[0];return normStr(s);}
+function cremMatch(a,b){return cremCanon(a)===cremCanon(b);}
+function pagadasByCrem(c){var n=0;pagos.forEach(function(p){if(cremMatch(p.crematorio,c))n+=Number(p.cantidad)||0;});return n;}
+function pagoInfoByCrem(c){var lote=pagos.filter(function(p){return cremMatch(p.crematorio,c);}).sort(function(a,b){return a.fecha<b.fecha?-1:1;});var out=[];lote.forEach(function(p){var q=Math.max(0,Math.round(Number(p.cantidad)||0));for(var k=0;k<q;k++)out.push({banco:p.banco||'',ref:p.ref||'',fecha:p.fecha||''});});return out;}
 function aggByCrematorio(){
   var map={};crematorios.forEach(function(c){map[c]=0;});
   cremaciones.forEach(function(r){if(map[r.crematorio]==null)map[r.crematorio]=0;map[r.crematorio]++;});
@@ -1719,7 +1754,7 @@ function delCategoria(i){var c=cats[i];if(gastos.some(function(r){return r.cat==
 function exportJSON(){var data={version:6,exported:new Date().toISOString(),cfg:cfg,crematorios:crematorios,cats:cats,logos:logos,cremaciones:cremaciones,pagos:pagos,gastos:gastos,tasas:tasas,padron:padron,padronMeta:padronMeta,ingresos:ingresos};var blob=new Blob([JSON.stringify(data)],{type:'application/json'});downloadBlob(blob,'respaldo_cremaciones_'+today()+'.json');toast('Respaldo exportado');}
 function importJSON(ev){var f=ev.target.files[0];if(!f)return;var rd=new FileReader();rd.onload=function(){try{var d=JSON.parse(rd.result);if(!confirm('Esto reemplazará todos los datos actuales por los del respaldo. ¿Continuar?'))return;if(d.cfg)cfg=Object.assign({},DEFAULT_CFG,d.cfg);if(Array.isArray(d.crematorios))crematorios=d.crematorios;if(Array.isArray(d.cats))cats=d.cats;if(d.logos&&typeof d.logos==='object')logos=d.logos;if(Array.isArray(d.cremaciones))cremaciones=d.cremaciones;if(Array.isArray(d.pagos))pagos=d.pagos;if(Array.isArray(d.gastos))gastos=d.gastos;if(d.tasas&&typeof d.tasas==='object')tasas=d.tasas;if(Array.isArray(d.padron))padron=d.padron;if(d.padronMeta&&typeof d.padronMeta==='object')padronMeta=d.padronMeta;if(Array.isArray(d.ingresos))ingresos=d.ingresos;save(K.ingresos,ingresos);save(K.padron,padron);save(K.padronMeta,padronMeta);save(K.tasas,tasas);save(K.cfg,cfg);save(K.crematorios,crematorios);save(K.cats,cats);save(K.logos,logos);save(K.crem,cremaciones);save(K.pagos,pagos);save(K.gasto,gastos);refreshSelects();fillConfigForm();refreshHeader();renderCrem();renderPagos();renderGasto();renderDashboard();toast('Respaldo importado');}catch(e){alert('Archivo inválido: '+e.message);}};rd.readAsText(f);ev.target.value='';}
 function wipeCremaciones(){if(!confirm('¿Borrar TODAS las cremaciones cargadas? Se conservan pagos, gastos, abonos y padrón. Exporte un respaldo antes.'))return;if(!confirm('Confirmación final: se eliminarán todas las cremaciones de este equipo.'))return;cremaciones=[];save(K.crem,cremaciones);renderCrem();renderDashboard();renderPagos();if(document.getElementById('rentabilidadHost'))renderRentabilidad();if(document.getElementById('conciliacionHost'))renderConciliacion();toast('Cremaciones borradas');}
-function wipe(){if(!confirm('¿Borrar TODOS los datos? Esta acción no se puede deshacer. Exporte un respaldo antes.'))return;if(!confirm('Confirmación final: se eliminará toda la información de este equipo.'))return;[K.crem,K.pagos,K.gasto,K.cfg,K.crematorios,K.cats,K.logos,K.tasas,K.padron,K.padronMeta,K.ingresos,K.rentCobra].forEach(function(k){localStorage.removeItem(k);});cremaciones=[];pagos=[];gastos=[];padron=[];padronMeta={updated:'',fname:''};ingresos=[];rentCobra=true;cfg=Object.assign({},DEFAULT_CFG);crematorios=DEFAULT_CREMATORIOS.slice();cfg.traslados={};crematorios.forEach(function(c){cfg.traslados[c]=Number(DEFAULT_CFG.traslados[c])||0;});cfg.govTarifas=[{desde:'',hasta:'',monto:410}];crematorios=DEFAULT_CREMATORIOS.slice();cats=DEFAULT_CATS.slice();tasas=Object.assign({},DEFAULT_TASAS);save(K.tasas,tasas);logos={};logos[VALLES_KEY]=VALLES_LOGO;logos['__valles_ver__']=VALLES_LOGO_VER;logos['__inst__']=LAFE_LOGO;logos['__inst_ver__']=INST_LOGO_VER;save(K.logos,logos);refreshSelects();fillConfigForm();refreshHeader();renderCrem();renderPagos();renderGasto();renderDashboard();toast('Datos borrados');}
+function wipe(){if(!confirm('¿Borrar TODOS los datos? Esta acción no se puede deshacer. Exporte un respaldo antes.'))return;if(!confirm('Confirmación final: se eliminará toda la información de este equipo.'))return;[K.crem,K.pagos,K.gasto,K.cfg,K.crematorios,K.cats,K.logos,K.tasas,K.padron,K.padronMeta,K.ingresos,K.rentCobra].forEach(function(k){localStorage.removeItem(k);});cremaciones=[];pagos=[];gastos=[];padron=[];padronMeta={updated:'',fname:''};ingresos=[];rentCobra=true;cfg=Object.assign({},DEFAULT_CFG);crematorios=DEFAULT_CREMATORIOS.slice();cfg.traslados={};crematorios.forEach(function(c){cfg.traslados[c]=Number(DEFAULT_CFG.traslados[c])||0;});cfg.govTarifas=[{desde:'',hasta:'',monto:410}];crematorios=DEFAULT_CREMATORIOS.slice();cats=DEFAULT_CATS.slice();tasas=Object.assign({},DEFAULT_TASAS);save(K.tasas,tasas);logos={};logos['__valles_removed__']=1;logos['__inst__']=LAFE_LOGO;logos['__inst_ver__']=INST_LOGO_VER;save(K.logos,logos);refreshSelects();fillConfigForm();refreshHeader();renderCrem();renderPagos();renderGasto();renderDashboard();toast('Datos borrados');}
 
 /* ===== Modales ===== */
 function closeModal(id){document.getElementById(id).classList.remove('open');}
