@@ -167,6 +167,23 @@
     .kpi,.panel{box-shadow:none;border:1px solid #999}
     @page{margin:12mm}
   }
+.bcvchip{display:inline-flex;align-items:center;gap:10px;padding:8px 16px;border-radius:12px;background:linear-gradient(135deg,#fff, #f6f3fb);border:1px solid var(--line);box-shadow:0 2px 10px rgba(75,45,143,.08)}
+.bcvchip .lbl{font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--tp)}
+.bcvchip .val{font-size:19px;font-weight:800;color:var(--tp2);line-height:1}
+.bcvchip .dt{font-size:10.5px;color:var(--slate)}
+.bcvchip .cur{font-size:10.5px;color:var(--slate);font-weight:600}
+.ppbar{display:flex;height:24px;border-radius:7px;overflow:hidden;background:var(--line-2);box-shadow:inset 0 0 0 1px var(--line)}
+.ppbar .paid{background:linear-gradient(180deg,#2f7cc0,#245e94)}
+.ppbar .pend{background:linear-gradient(180deg,#c0433f,#9d2f2c)}
+.pplegend{display:flex;justify-content:space-between;gap:12px;font-size:11.5px;margin-top:6px;flex-wrap:wrap}
+.pplegend .pd{display:inline-flex;align-items:center;gap:6px}
+.pplegend .sw{width:10px;height:10px;border-radius:3px;display:inline-block}
+.ppitem{padding:12px 0;border-bottom:1px solid var(--line-2)}
+.ppitem:last-child{border-bottom:none}
+.ppitem .pphead{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:7px;gap:10px}
+.ppitem .ppname{font-weight:700;color:var(--ink);font-size:13.5px}
+.ppitem . pppct{font-weight:800}
+.ppitem .pppct{font-weight:800;font-size:12.5px;color:var(--tp)}
 </style>
 <style>
   .attlink{color:var(--steel);cursor:pointer;text-decoration:underline;font-size:12.5px;background:none;border:none;padding:0;font-family:inherit}
@@ -218,31 +235,31 @@
   <!-- DASHBOARD -->
   <section class="view active" id="v-dashboard">
     <div class="viewhead">
-      <div><h2>Panel Ejecutivo</h2><div class="lead">Cremaciones efectuadas y su estado de pago. El monto se calcula con tarifa fija en dólares por cremación.</div></div>
-      <button class="btn ghost" onclick="go('reportes')">Ir a Reportes ▸</button>
+      <div><h2>Panel Ejecutivo</h2><div class="lead">Cremaciones efectuadas y su estado de pago. El monto se calcula con tarifa fija en dólares por cremación (IVA incluido).</div></div>
+      <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+        <div class="bcvchip"><span class="lbl">Tasa BCV hoy</span><span class="val num" id="bcvHoy">—</span><span class="cur">Bs/USD</span><span class="dt" id="bcvHoyFecha"></span></div>
+        <button class="btn ghost" onclick="go('reportes')">Ir a Reportes ▸</button>
+      </div>
     </div>
     <div class="kpigrid">
-      <div class="kpi"><div class="lbl">Cremaciones efectuadas</div><div class="big num" id="kCremN">0</div><div class="alt num" id="kCremMonto">$ 0.00</div></div>
-      <div class="kpi"><div class="lbl">Cremaciones pagadas</div><div class="big num" id="kPagN">0</div><div class="alt num" id="kPagMonto">$ 0.00 pagado</div></div>
-      <div class="kpi"><div class="lbl">Monto pagado (transferido)</div><div class="big num" id="kPagadoUsd">$ 0.00</div><div class="alt num" id="kPagadoBs">Bs. 0,00</div></div>
-      <div class="kpi accent"><div class="lbl">Saldo por pagar</div><div class="big num" id="kSaldo">$ 0.00</div><div class="alt num" id="kSaldoN">0 pendientes</div></div>
+      <div class="kpi"><div class="lbl">Adeudado con IVA (total)</div><div class="big num" id="kAdeuUsd">$ 0.00</div><div class="alt num" id="kAdeuN">0 cremaciones</div></div>
+      <div class="kpi"><div class="lbl">Pagado con IVA</div><div class="big num" id="kPagUsd">$ 0.00</div><div class="alt num" id="kPagN">0 cremaciones</div></div>
+      <div class="kpi accent"><div class="lbl">Pendiente de pago con IVA</div><div class="big num" id="kSaldo">$ 0.00</div><div class="alt num" id="kSaldoN">0 pendientes</div></div>
+      <div class="kpi"><div class="lbl">Monto transferido</div><div class="big num" id="kPagadoUsd">$ 0.00</div><div class="alt num" id="kPagadoBs">Bs. 0,00</div></div>
       <div class="kpi"><div class="lbl">Gastos operativos</div><div class="big num" id="kGastoUsd">$ 0.00</div><div class="alt num" id="kGastoBs">Bs. 0,00</div></div>
     </div>
     <div class="panelrow">
-      <div class="panel"><div class="ph"><h3>Cremaciones por crematorio</h3><span class="num" id="dcTotal" style="color:var(--slate);font-size:12px"></span></div>
+      <div class="panel"><div class="ph"><h3>Cremaciones Realizadas por Crematorios</h3><span class="num" id="dcTotal" style="color:var(--slate);font-size:12px"></span></div>
         <div class="pb"><div class="donutwrap"><div class="donut" id="donutCrem"><div class="center"><div class="n num" id="donutCenterN">0</div><div class="t">Cremaciones</div></div></div><div class="legend" id="legendCrem"></div></div>
         <div style="font-size:11.5px;color:var(--slate);margin-top:10px">▸ Haga clic en un crematorio para ver el detalle.</div></div></div>
       <div class="panel"><div class="ph"><h3>Gastos por categoría</h3></div><div class="pb"><div class="barlist" id="barsGasto"></div>
         <div style="font-size:11.5px;color:var(--slate);margin-top:8px">▸ Haga clic en una categoría para ver el detalle.</div></div></div>
     </div>
 
-    <div class="panel" style="margin-bottom:20px"><div class="ph"><h3>Cremaciones por crematorio — comparativo</h3><span style="color:var(--slate);font-size:11.5px">▸ Clic para ver el detalle</span></div>
-      <div class="pb"><div class="barlist" id="barsCrem"></div></div></div>
-
-    <div class="panel" style="margin-bottom:20px"><div class="ph"><h3>Estado de pagos a crematorios</h3><span style="color:var(--slate);font-size:11.5px">Pagadas vs. efectuadas · ▸ clic para ver detalle</span></div><div class="pb" style="padding:0">
-      <div class="tablewrap" style="border:none;box-shadow:none"><table class="data" id="tblResumenCrem">
-        <thead><tr><th>Crematorio</th><th class="c">Efectuadas</th><th class="c">Pagadas</th><th class="c">Pend.</th><th class="r">Monto USD</th><th class="r">Pagado USD</th><th class="r">Saldo USD</th></tr></thead>
-        <tbody id="tbResumenCrem"></tbody><tfoot id="tfResumenCrem"></tfoot></table></div></div></div>
+    <div class="panel" style="margin-bottom:20px"><div class="ph"><h3>Pagadas vs. pendientes de pago por crematorio</h3><span style="color:var(--slate);font-size:11.5px">Montos con IVA · ▸ clic para ver el detalle</span></div>
+      <div class="pb"><div id="barsCrem"></div>
+        <div class="pplegend" style="margin-top:12px;border-top:1px solid var(--line-2);padding-top:10px"><span class="pd"><span class="sw" style="background:#2f7cc0"></span>Pagadas</span><span class="pd"><span class="sw" style="background:#c0433f"></span>Pendientes de pago</span></div>
+      </div></div>
 
     <div class="panel"><div class="ph"><h3>Reporte de Cremaciones por días</h3><span style="color:var(--slate);font-size:11.5px">Histórico diario · ▸ clic en un día para ver el detalle</span></div>
       <div class="pb" style="padding:0">
@@ -285,7 +302,7 @@
       <button class="btn ghost sm" onclick="exportPagosExcel()">⬇ Exportar</button>
     </div>
     <div class="tablewrap"><table class="data">
-      <thead><tr><th class="c">#</th><th>Fecha de pago</th><th>Crematorio</th><th class="c">Cremaciones pagadas</th><th class="r">Monto USD</th><th class="r">Neto factura (Bs)</th><th class="r">Transferido (Bs)</th><th class="r">Dif. (Bs)</th><th class="c">Factura</th><th class="c">Transf.</th><th class="c">Acción</th></tr></thead>
+      <thead><tr><th class="c">#</th><th>Fecha de pago</th><th>Crematorio</th><th class="c">Cremaciones pagadas</th><th class="r">Monto USD</th><th class="r">Subtotal (Bs)</th><th class="r">IVA (Bs)</th><th class="r">Ret. IVA (Bs)</th><th class="r">Ret. ISLR (Bs)</th><th class="r">Neto factura (Bs)</th><th class="r">Transferido (Bs)</th><th class="r">Dif. (Bs)</th><th>Banco</th><th>Ref.</th><th class="c">Factura</th><th class="c">Transf.</th><th class="c">Acción</th></tr></thead>
       <tbody id="tbPagos"></tbody><tfoot id="tfPagos"></tfoot></table></div>
   </section>
 
@@ -313,7 +330,7 @@
       <div class="ph"><h3>Relación de pago para Tesorería</h3></div>
       <div class="pb"><div class="toolbar" style="margin-bottom:0">
         <select id="pagoCremSel" class="grow"><option value="">Todos los crematorios (con cremaciones)</option></select>
-        <select id="pagoModo"><option value="saldo">Mostrar saldo por pagar</option><option value="total">Mostrar total facturado</option></select>
+        <select id="pagoModo"><option value="saldo">Mostrar saldo por pagar</option><option value="total">Mostrar total facturado</option><option value="pendiente">Solo cremaciones pendientes</option><option value="pagado">Solo cremaciones pagadas</option></select>
         <button class="btn gold" onclick="buildPagoTesoreria()">Generar relación de pago</button>
       </div></div>
     </div>
@@ -393,7 +410,7 @@
   </section>
 </main>
 
-<div class="foot">Sistema de control interno · Gobernación del Estado La Guaira — Operador Seguros La Fe, C.A. · Datos almacenados localmente en este equipo. · <b>v3.4 · carga incremental (upsert)</b></div>
+<div class="foot">Sistema de control interno · Gobernación del Estado La Guaira — Operador Seguros La Fe, C.A. · Datos almacenados localmente en este equipo. · <b>v3.5 · pagos, retenciones y tasa BCV</b></div>
 
 <!-- Modal Cremación -->
 <div class="modal-bg" id="modalCrem"><div class="modal">
@@ -427,6 +444,10 @@
       <label class="fld"><span class="cap">Monto de la transferencia (Bs.)</span><input type="number" step="0.01" id="fPagoTransferBs" oninput="calcPagoRet()" placeholder="Lo efectivamente transferido"></label>
     </div>
     <div class="tarifabox" id="fPagoRetBox" style="margin-top:14px"></div>
+    <div class="grid2" style="margin-top:14px">
+      <label class="fld"><span class="cap">Banco emisor de la transferencia <span class="req">*</span></span><input id="fPagoBanco" placeholder="Ej. Banesco, Venezuela, Mercantil…"></label>
+      <label class="fld"><span class="cap">N° de referencia / transferencia <span class="req">*</span></span><input id="fPagoRef" placeholder="Número de la operación"></label>
+    </div>
     <div class="grid2" style="margin-top:14px">
       <label class="fld">Copia de factura (imagen o PDF)
         <div style="display:flex;gap:8px;align-items:center"><button class="btn ghost sm" onclick="document.getElementById('fPagoFactura').click()">📎 Adjuntar</button><span id="fPagoFacturaName" style="font-size:12px;color:var(--slate)">—</span></div>
@@ -475,6 +496,15 @@
     <button class="btn ghost" id="mImportErr" onclick="exportImportErrors()">⬇ Exportar filas con problema</button>
     <button class="btn ghost" onclick="closeModal('modalImport')">Cancelar</button>
     <button class="btn gold" id="mImportOk" onclick="commitImport()">Cargar cremaciones</button>
+  </div>
+</div></div>
+
+<div class="modal-bg" id="modalImportGasto"><div class="modal" style="max-width:900px">
+  <div class="mh"><h3>Revisión de la carga de gastos</h3><button class="xbtn" onclick="closeModal('modalImportGasto')">×</button></div>
+  <div class="mb imprep" id="mGastoImpBody" style="max-height:66vh;overflow:auto"></div>
+  <div class="mf">
+    <button class="btn ghost" onclick="closeModal('modalImportGasto')">Cancelar</button>
+    <button class="btn gold" id="mGastoImpOk" onclick="commitGastoImport()">Cargar / actualizar</button>
   </div>
 </div></div>
 
@@ -678,6 +708,11 @@ function normDate(v){
   if(/^\d{4}-\d{2}-\d{2}/.test(s))return s.slice(0,10);
   var m=s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})$/);
   if(m){var y=m[3];if(y.length===2)y='20'+y;return y+'-'+m[2].padStart(2,'0')+'-'+m[1].padStart(2,'0');}
+  var s2=s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  var mm=s2.match(/^(\d{1,2})[\s\-\/.]+([a-z]{3,})[\s\-\/.]+(\d{2,4})$/)||s2.match(/^([a-z]{3,})[\s\-\/.]+(\d{1,2})[\s\-\/.,]+(\d{2,4})$/);
+  if(mm){var mon={ene:1,jan:1,feb:2,mar:3,abr:4,apr:4,may:5,jun:6,jul:7,ago:8,aug:8,sep:9,set:9,oct:10,nov:11,dic:12,dec:12};
+    var mname,dd,yy;if(/^\d/.test(mm[1])){dd=mm[1];mname=mm[2];yy=mm[3];}else{mname=mm[1];dd=mm[2];yy=mm[3];}
+    var mo=mon[mname.slice(0,3)];if(mo){if(yy.length===2)yy='20'+yy;return yy+'-'+String(mo).padStart(2,'0')+'-'+String(dd).padStart(2,'0');}}
   return '';
 }
 function resolveCrem(input){var n=normStr(input);if(!n)return null;for(var i=0;i<crematorios.length;i++){if(normStr(crematorios[i])===n)return crematorios[i];}for(var j=0;j<crematorios.length;j++){var lead=normStr(crematorios[j].split('—')[0]);if(lead&&(n===lead||n.indexOf(lead)>=0||lead.indexOf(n)>=0))return crematorios[j];}if(n.indexOf('charall')>=0){for(var k=0;k<crematorios.length;k++){if(esCharallave(crematorios[k]))return crematorios[k];}}return null;}
@@ -909,6 +944,7 @@ function openPago(id){
     document.getElementById('mPagoTitle').textContent='Editar pago';
     document.getElementById('fPagoId').value=p.id;document.getElementById('fPagoCrem').value=p.crematorio;document.getElementById('fPagoFecha').value=p.fecha;document.getElementById('fPagoCant').value=p.cantidad;document.getElementById('fPagoObs').value=p.obs||'';
     document.getElementById('fPagoSubtotal').value=p.subtotal||'';document.getElementById('fPagoTransferBs').value=p.transferBs||'';
+    document.getElementById('fPagoBanco').value=p.banco||'';document.getElementById('fPagoRef').value=p.ref||'';
     _attFactura=p.factura||null;_attFacturaName=p.facturaName||'';_attTransfer=p.transfer||null;_attTransferName=p.transferName||'';
     document.getElementById('fPagoFacturaName').textContent=p.facturaName||(p.factura?'archivo adjunto':'—');
     document.getElementById('fPagoTransferName').textContent=p.transferName||(p.transfer?'archivo adjunto':'—');
@@ -916,15 +952,18 @@ function openPago(id){
     document.getElementById('mPagoTitle').textContent='Registrar pago';
     document.getElementById('fPagoId').value='';document.getElementById('fPagoFecha').value=today();document.getElementById('fPagoCant').value='';document.getElementById('fPagoObs').value='';
     document.getElementById('fPagoSubtotal').value='';document.getElementById('fPagoTransferBs').value='';
+    document.getElementById('fPagoBanco').value='';document.getElementById('fPagoRef').value='';
   }
   calcPagoMonto();calcPagoRet();document.getElementById('modalPago').classList.add('open');
 }
 function savePago(){
   var crem=document.getElementById('fPagoCrem').value,fecha=document.getElementById('fPagoFecha').value,cant=Number(document.getElementById('fPagoCant').value)||0;
   if(!crem||!fecha||cant<=0){toast('Complete crematorio, fecha y cantidad (>0)');return;}
+  var banco=document.getElementById('fPagoBanco').value.trim(),ref=document.getElementById('fPagoRef').value.trim();
+  if(!banco||!ref){toast('Indique el banco emisor y el N° de transferencia para el control');return;}
   var v=pagoRetVals();
   var rec={id:document.getElementById('fPagoId').value||uid(),crematorio:crem,fecha:fecha,cantidad:Math.round(cant),
-    subtotal:n2(v.S),iva:n2(v.iva),total:n2(v.total),retIva:n2(v.retIva),retIslr:n2(v.retIslr),neto:n2(v.neto),transferBs:n2(v.T),diff:n2(v.diff),
+    subtotal:n2(v.S),iva:n2(v.iva),total:n2(v.total),retIva:n2(v.retIva),retIslr:n2(v.retIslr),neto:n2(v.neto),transferBs:n2(v.T),diff:n2(v.diff),banco:banco,ref:ref,
     factura:_attFactura||null,facturaName:_attFacturaName||'',transfer:_attTransfer||null,transferName:_attTransferName||'',obs:document.getElementById('fPagoObs').value.trim()};
   var snapshot=pagos.slice();
   var i=pagos.findIndex(function(x){return x.id===rec.id;});if(i>=0)pagos[i]=rec;else pagos.push(rec);
@@ -935,21 +974,23 @@ function delPago(id){var p=pagos.find(function(x){return x.id===id;});if(!p)retu
 function filteredPagos(){var fc=document.getElementById('pFilterCrem').value;return pagos.filter(function(p){return !fc||p.crematorio===fc;}).sort(function(a,b){return a.fecha<b.fecha?1:-1;});}
 function renderPagos(){
   var rows=filteredPagos(),tb=document.getElementById('tbPagos'),tf=document.getElementById('tfPagos');
-  if(!rows.length){tb.innerHTML='<tr><td colspan="11"><div class="empty"><div class="em-t">Sin pagos registrados</div>Use “＋ Registrar pago”.</div></td></tr>';tf.innerHTML='';return;}
-  var sCant=0,sUsd=0,sNeto=0,sTrans=0;
-  tb.innerHTML=rows.map(function(p,i){var m=(Number(p.cantidad)||0)*tarifaUsd(p.crematorio);sCant+=Number(p.cantidad)||0;sUsd+=m;var neto=Number(p.neto)||0,tbs=Number(p.transferBs)||0,dif=Number(p.diff)||(tbs-neto);sNeto+=neto;sTrans+=tbs;
+  if(!rows.length){tb.innerHTML='<tr><td colspan="17"><div class="empty"><div class="em-t">Sin pagos registrados</div>Use “＋ Registrar pago”.</div></td></tr>';tf.innerHTML='';return;}
+  var sCant=0,sUsd=0,sSub=0,sIva=0,sRiva=0,sRislr=0,sNeto=0,sTrans=0;
+  tb.innerHTML=rows.map(function(p,i){var m=(Number(p.cantidad)||0)*tarifaUsd(p.crematorio);sCant+=Number(p.cantidad)||0;sUsd+=m;
+    var sub=Number(p.subtotal)||0,iva=Number(p.iva)||0,riva=Number(p.retIva)||0,rislr=Number(p.retIslr)||0,neto=Number(p.neto)||0,tbs=Number(p.transferBs)||0,dif=Number(p.diff)||(tbs-neto);
+    sSub+=sub;sIva+=iva;sRiva+=riva;sRislr+=rislr;sNeto+=neto;sTrans+=tbs;
     var fa=p.factura?'<button class="attlink" onclick="openPagoAtt(\''+p.id+'\',\'factura\')">Ver</button>':'—';
     var tr=p.transfer?'<button class="attlink" onclick="openPagoAtt(\''+p.id+'\',\'transfer\')">Ver</button>':'—';
     var difc=(Math.abs(dif)>=0.01&&(neto||tbs))?' style="color:var(--danger)"':'';
-    return '<tr><td class="c num">'+(i+1)+'</td><td class="num">'+fmtDate(p.fecha)+'</td><td>'+esc(p.crematorio)+'</td><td class="c num">'+fmtNum(p.cantidad,0)+'</td><td class="r num">'+fmtUsd(m)+'</td><td class="r num">'+(neto?fmtBs(neto):'—')+'</td><td class="r num">'+(tbs?fmtBs(tbs):'—')+'</td><td class="r num"'+difc+'>'+((neto||tbs)?fmtBs(dif):'—')+'</td><td class="c">'+fa+'</td><td class="c">'+tr+'</td><td class="c" style="white-space:nowrap"><button class="btn ghost icon sm" onclick="openPago(\''+p.id+'\')">✎</button> <button class="btn ghost icon sm" style="color:var(--danger);border-color:var(--danger)" onclick="delPago(\''+p.id+'\')">🗑</button></td></tr>';
+    return '<tr><td class="c num">'+(i+1)+'</td><td class="num">'+fmtDate(p.fecha)+'</td><td>'+esc(p.crematorio)+'</td><td class="c num">'+fmtNum(p.cantidad,0)+'</td><td class="r num">'+fmtUsd(m)+'</td><td class="r num">'+(sub?fmtBs(sub):'—')+'</td><td class="r num">'+(iva?fmtBs(iva):'—')+'</td><td class="r num">'+(riva?fmtBs(riva):'—')+'</td><td class="r num">'+(rislr?fmtBs(rislr):'—')+'</td><td class="r num">'+(neto?fmtBs(neto):'—')+'</td><td class="r num">'+(tbs?fmtBs(tbs):'—')+'</td><td class="r num"'+difc+'>'+((neto||tbs)?fmtBs(dif):'—')+'</td><td>'+esc(p.banco||'—')+'</td><td class="num">'+esc(p.ref||'—')+'</td><td class="c">'+fa+'</td><td class="c">'+tr+'</td><td class="c" style="white-space:nowrap"><button class="btn ghost icon sm" onclick="openPago(\''+p.id+'\')">✎</button> <button class="btn ghost icon sm" style="color:var(--danger);border-color:var(--danger)" onclick="delPago(\''+p.id+'\')">🗑</button></td></tr>';
   }).join('');
-  tf.innerHTML='<tr><td colspan="3" class="r">TOTAL ('+rows.length+' pagos)</td><td class="c num">'+fmtNum(sCant,0)+'</td><td class="r num">'+fmtUsd(sUsd)+'</td><td class="r num">'+fmtBs(sNeto)+'</td><td class="r num">'+fmtBs(sTrans)+'</td><td class="r num">'+fmtBs(sTrans-sNeto)+'</td><td colspan="3"></td></tr>';
+  tf.innerHTML='<tr><td colspan="3" class="r">TOTAL ('+rows.length+' pagos)</td><td class="c num">'+fmtNum(sCant,0)+'</td><td class="r num">'+fmtUsd(sUsd)+'</td><td class="r num">'+fmtBs(sSub)+'</td><td class="r num">'+fmtBs(sIva)+'</td><td class="r num">'+fmtBs(sRiva)+'</td><td class="r num">'+fmtBs(sRislr)+'</td><td class="r num">'+fmtBs(sNeto)+'</td><td class="r num">'+fmtBs(sTrans)+'</td><td class="r num">'+fmtBs(sTrans-sNeto)+'</td><td colspan="5"></td></tr>';
 }
 function exportPagosExcel(){
   var rows=filteredPagos();if(!rows.length){toast('Sin pagos para exportar');return;}
-  var h='<table><thead><tr><th>#</th><th>Fecha de pago</th><th>Crematorio</th><th>Cremaciones pagadas</th><th>Monto USD</th><th>Subtotal Bs</th><th>IVA Bs</th><th>Total Bs</th><th>Ret. IVA Bs</th><th>Ret. ISLR Bs</th><th>Neto Bs</th><th>Transferido Bs</th><th>Diferencia Bs</th><th>Factura</th><th>Transferencia</th><th>Observaciones</th></tr></thead><tbody>',sc=0,su=0;
-  rows.forEach(function(p,i){var m=(Number(p.cantidad)||0)*tarifaUsd(p.crematorio);sc+=Number(p.cantidad)||0;su+=m;h+='<tr><td>'+(i+1)+'</td><td>'+fmtDate(p.fecha)+'</td><td>'+esc(p.crematorio)+'</td><td>'+fmtNum(p.cantidad,0)+'</td><td>'+fmtUsd(m)+'</td><td>'+fmtBs(p.subtotal||0)+'</td><td>'+fmtBs(p.iva||0)+'</td><td>'+fmtBs(p.total||0)+'</td><td>'+fmtBs(p.retIva||0)+'</td><td>'+fmtBs(p.retIslr||0)+'</td><td>'+fmtBs(p.neto||0)+'</td><td>'+fmtBs(p.transferBs||0)+'</td><td>'+fmtBs(p.diff||0)+'</td><td>'+(p.factura?'Sí':'No')+'</td><td>'+(p.transfer?'Sí':'No')+'</td><td>'+esc(p.obs||'')+'</td></tr>';});
-  h+='</tbody><tfoot><tr><td colspan="3">TOTAL</td><td>'+fmtNum(sc,0)+'</td><td>'+fmtUsd(su)+'</td><td colspan="11"></td></tr></tfoot></table>';
+  var h='<table><thead><tr><th>#</th><th>Fecha de pago</th><th>Crematorio</th><th>Cremaciones pagadas</th><th>Monto USD</th><th>Subtotal Bs</th><th>IVA Bs</th><th>Total Bs</th><th>Ret. IVA Bs</th><th>Ret. ISLR Bs</th><th>Neto Bs</th><th>Transferido Bs</th><th>Diferencia Bs</th><th>Banco</th><th>N° transferencia</th><th>Factura</th><th>Transferencia</th><th>Observaciones</th></tr></thead><tbody>',sc=0,su=0;
+  rows.forEach(function(p,i){var m=(Number(p.cantidad)||0)*tarifaUsd(p.crematorio);sc+=Number(p.cantidad)||0;su+=m;h+='<tr><td>'+(i+1)+'</td><td>'+fmtDate(p.fecha)+'</td><td>'+esc(p.crematorio)+'</td><td>'+fmtNum(p.cantidad,0)+'</td><td>'+fmtUsd(m)+'</td><td>'+fmtBs(p.subtotal||0)+'</td><td>'+fmtBs(p.iva||0)+'</td><td>'+fmtBs(p.total||0)+'</td><td>'+fmtBs(p.retIva||0)+'</td><td>'+fmtBs(p.retIslr||0)+'</td><td>'+fmtBs(p.neto||0)+'</td><td>'+fmtBs(p.transferBs||0)+'</td><td>'+fmtBs(p.diff||0)+'</td><td>'+esc(p.banco||'')+'</td><td>'+esc(p.ref||'')+'</td><td>'+(p.factura?'Sí':'No')+'</td><td>'+(p.transfer?'Sí':'No')+'</td><td>'+esc(p.obs||'')+'</td></tr>';});
+  h+='</tbody><tfoot><tr><td colspan="3">TOTAL</td><td>'+fmtNum(sc,0)+'</td><td>'+fmtUsd(su)+'</td><td colspan="13"></td></tr></tfoot></table>';
   excelFromTable(h,'Pagos_a_Crematorios','Pagos');
 }
 
@@ -982,28 +1023,38 @@ function renderGasto(){
   tf.innerHTML='<tr><td colspan="7" class="r">TOTALES ('+rows.length+' gastos)</td><td class="r num">'+fmtBs(sBs)+'</td><td></td><td class="r num">'+fmtUsd(sUsd)+'</td><td></td></tr>';
 }
 function colIndexGasto(headers){var map={};headers.forEach(function(h,i){var n=normStr(h);if(n.indexOf('fecha')>=0)map.fecha=i;else if(n.indexOf('categor')>=0)map.cat=i;else if(n.indexOf('concepto')>=0||n.indexOf('descrip')>=0)map.concepto=i;else if(n.indexOf('proveedor')>=0||n.indexOf('benefic')>=0||n.indexOf('empresa')>=0||n.indexOf('pagadora')>=0)map.prov=i;else if(n.indexOf('monto')>=0||n.indexOf('costo')>=0||n.indexOf('importe')>=0)map.bs=i;else if(n.indexOf('tasa')>=0)map.tasa=i;else if(n.indexOf('forma')>=0)map.forma=i;else if(n.indexOf('comprob')>=0||n.indexOf('factura')>=0||n.indexOf('recibo')>=0)map.comp=i;else if(n.indexOf('observ')>=0)map.obs=i;});return map;}
-function resolveCat(input){var n=normStr(input);if(!n)return null;for(var i=0;i<cats.length;i++){if(normStr(cats[i])===n)return cats[i];}return null;}
+function catCanon(s){var n=normStr(s).replace(/[^a-z0-9 ]/g,' ').replace(/\s+/g,' ').trim();return n.split(' ').map(function(w){if(w.length>3){if(/ces$/.test(w))return w.slice(0,-3)+'z';if(/ones$/.test(w))return w.slice(0,-2);if(/s$/.test(w))return w.slice(0,-1);}return w;}).filter(Boolean).join(' ');}
+function resolveCat(input){var c=catCanon(input);if(!c)return null;for(var i=0;i<cats.length;i++){if(catCanon(cats[i])===c)return cats[i];}return null;}
+var _gastoPreview=null;
 function importGastoExcel(ev){
-  var f=ev.target.files[0];if(!f)return;var rd=new FileReader();
+  var f=ev.target.files[0];if(!f)return;var fname=f.name;var rd=new FileReader();
   rd.onload=function(){
     try{
       var wb=XLSX.read(new Uint8Array(rd.result),{type:'array',cellDates:true});
       var sh=wb.Sheets['Gastos']||wb.Sheets[wb.SheetNames[0]];
       var aoa=XLSX.utils.sheet_to_json(sh,{header:1,defval:'',raw:true});
       var hIdx=-1;for(var i=0;i<Math.min(aoa.length,10);i++){var j=normStr((aoa[i]||[]).join(' '));if(j.indexOf('fecha')>=0&&j.indexOf('concepto')>=0&&(j.indexOf('monto')>=0||j.indexOf('costo')>=0||j.indexOf('importe')>=0)){hIdx=i;break;}}
-      if(hIdx<0){alert('No se encontró la fila de encabezados (Fecha, Concepto, Monto…). Use la plantilla oficial de gastos.');return;}
+      if(hIdx<0){alert('No se encontró la fila de encabezados (Fecha, Concepto, Monto…).\nUse la plantilla oficial de gastos: botón «Plantilla».');return;}
       var map=colIndexGasto(aoa[hIdx]);
-      if(map.fecha==null||map.concepto==null||map.bs==null){alert('Faltan columnas obligatorias (Fecha, Concepto, Monto).');return;}
-      var nuevos=[],updates={},errores=0,nuevasCat=[];
+      if(map.fecha==null||map.concepto==null||map.bs==null){alert('Faltan columnas obligatorias en el encabezado.\nDeben existir: Fecha, Concepto y Monto (Bs.).');return;}
+      var nuevos=[],updates={},errores=[],nuevasCat=[],nuevasCatMap={};
       var exIdx={};gastos.forEach(function(r){var k=gastoKey(r.fecha,r.concepto,r.prov,r.bs,r.comp);(exIdx[k]=exIdx[k]||[]).push(r.id);});
       var seen={};
       for(var r=hIdx+1;r<aoa.length;r++){
         var row=aoa[r];if(!row||!row.some(function(c){return String(c).trim()!=='';}))continue;
-        var fecha=normDate(row[map.fecha]),concepto=String(row[map.concepto]||'').trim();
-        var bs=Number(String(row[map.bs]).toString().replace(/[^\d.,-]/g,'').replace(/\.(?=\d{3}(\D|$))/g,'').replace(',','.'));
+        var rawFecha=map.fecha!=null?row[map.fecha]:'',rawMonto=map.bs!=null?row[map.bs]:'';
+        var concepto=String(row[map.concepto]||'').trim();
+        var fecha=normDate(rawFecha);
+        var bs=Number(String(rawMonto==null?'':rawMonto).toString().replace(/[^\d.,-]/g,'').replace(/\.(?=\d{3}(\D|$))/g,'').replace(',','.'));
         var tasa=map.tasa!=null&&String(row[map.tasa]).trim()!==''?Number(String(row[map.tasa]).toString().replace(',','.')):bcvRate(fecha);
-        if(!fecha||!concepto||!bs||!isFinite(bs)||bs<=0||!tasa||!isFinite(tasa)||tasa<=0){errores++;continue;}
-        var cat=resolveCat(row[map.cat]);if(!cat){cat=(map.cat!=null?String(row[map.cat]||'').trim():'')||'Otros';if(cats.indexOf(cat)<0&&nuevasCat.indexOf(cat)<0)nuevasCat.push(cat);}
+        var fallas=[];
+        if(!fecha)fallas.push('Fecha no reconocida: «'+String(rawFecha||'(vacía)')+'» (use DD/MM/AAAA o 1-Jul-26)');
+        if(!concepto)fallas.push('Falta el concepto');
+        if(!bs||!isFinite(bs)||bs<=0)fallas.push('Monto inválido: «'+String(rawMonto||'(vacío)')+'»');
+        if(!tasa||!isFinite(tasa)||tasa<=0)fallas.push('Sin tasa BCV para esa fecha');
+        if(fallas.length){errores.push({fila:r+1,concepto:concepto||'(sin concepto)',motivo:fallas.join(' · ')});continue;}
+        var cat=resolveCat(row[map.cat]);
+        if(!cat){var raw=(map.cat!=null?String(row[map.cat]||'').trim():'')||'Otros';var cc=catCanon(raw);if(nuevasCatMap[cc])cat=nuevasCatMap[cc];else{cat=raw;nuevasCatMap[cc]=raw;nuevasCat.push(raw);}}
         var comp=map.comp!=null?String(row[map.comp]||'').trim():'';
         var prov=map.prov!=null?String(row[map.prov]||'').trim():'';
         var rec={fecha:fecha,cat:cat,concepto:concepto,prov:prov,bs:n2(bs),tasa:Number(tasa),forma:map.forma!=null?String(row[map.forma]||'').trim():'',comp:comp,obs:map.obs!=null?String(row[map.obs]||'').trim():''};
@@ -1012,20 +1063,38 @@ function importGastoExcel(ev){
         if(arr&&occ<arr.length){var mid=arr[occ];updates[mid]=Object.assign({},updates[mid]||{},rec,{id:mid});}
         else{rec.id=uid();nuevos.push(rec);}
       }
-      var totalUpd=Object.keys(updates).length;
-      if(!nuevos.length&&!totalUpd){alert('No se encontraron filas válidas.'+(errores?'\nOmitidas por datos incompletos: '+errores:''));return;}
       var setFinal=nuevos.concat(Object.keys(updates).map(function(id){return updates[id];}));
-      var tb=setFinal.reduce(function(s,v){return s+v.bs;},0),tu=setFinal.reduce(function(s,v){return s+usdOf(v.bs,v.tasa);},0);
-      var msg='Nuevos: '+nuevos.length+' · Actualizados: '+totalUpd+'\nTotal del archivo: '+fmtBs(tb)+' · '+fmtUsd(tu);
-      if(errores)msg+='\nOmitidas por datos incompletos: '+errores;
-      if(nuevasCat.length)msg+='\nNuevas categorías: '+nuevasCat.join(', ');
-      msg+='\n\nLos gastos existentes (por comprobante, o fecha+concepto+empresa pagadora+monto) se actualizan sin duplicar. ¿Continuar?';if(!confirm(msg))return;
-      nuevasCat.forEach(function(c){if(cats.indexOf(c)<0)cats.push(c);});if(nuevasCat.length)save(K.cats,cats);
-      Object.keys(updates).forEach(function(id){var i=gastos.findIndex(function(x){return x.id===id;});if(i>=0)Object.assign(gastos[i],updates[id]);});
-      gastos=gastos.concat(nuevos);save(K.gasto,gastos);refreshSelects();renderChips();renderGasto();renderDashboard();toast(nuevos.length+' nuevos · '+totalUpd+' actualizados');
+      _gastoPreview={fname:fname,nuevos:nuevos,updates:updates,errores:errores,nuevasCat:nuevasCat,
+        totalBs:setFinal.reduce(function(s,v){return s+v.bs;},0),totalUsd:setFinal.reduce(function(s,v){return s+usdOf(v.bs,v.tasa);},0)};
+      renderGastoImportReport();
     }catch(e){alert('No se pudo leer el archivo: '+e.message);}
   };
   rd.readAsArrayBuffer(f);ev.target.value='';
+}
+function renderGastoImportReport(){
+  var P=_gastoPreview;if(!P)return;var totalUpd=Object.keys(P.updates).length;
+  var h='<div style="padding:16px 18px">';
+  h+='<div style="font-size:13px;color:var(--slate);margin-bottom:10px">Archivo: <b style="color:var(--ink)">'+esc(P.fname)+'</b></div>';
+  h+='<div class="summbar" style="margin:0 0 14px"><span style="color:#0D7A4E">Nuevos: <b>'+fmtNum(P.nuevos.length,0)+'</b></span><div class="sep"></div><span>Actualizados: <b>'+fmtNum(totalUpd,0)+'</b></span><div class="sep"></div><span>Total archivo: <b class="num">'+fmtBs(P.totalBs)+' · '+fmtUsd(P.totalUsd)+'</b></span><div class="sep"></div><span class="err">Con error: <b>'+P.errores.length+'</b></span></div>';
+  if(P.nuevasCat.length)h+='<div style="font-size:12.5px;margin-bottom:12px;padding:10px 12px;background:var(--line-2);border-radius:8px">Categorías nuevas que se crearán: <b>'+P.nuevasCat.map(esc).join('</b>, <b>')+'</b></div>';
+  if(P.errores.length){h+='<h4 style="margin:0 0 6px" class="err">Filas con error ('+P.errores.length+') — no se cargarán</h4><table style="margin-bottom:8px"><thead><tr><th class="c">Fila</th><th>Concepto</th><th>Error detectado</th></tr></thead><tbody>';
+    P.errores.slice(0,200).forEach(function(e){h+='<tr><td class="c num">'+e.fila+'</td><td>'+esc(e.concepto)+'</td><td class="err">'+esc(e.motivo)+'</td></tr>';});
+    h+='</tbody></table>';if(P.errores.length>200)h+='<div style="font-size:12px;color:var(--slate)">… y '+(P.errores.length-200)+' más.</div>';}
+  else h+='<div style="font-size:12.5px;color:#0D7A4E;margin-bottom:6px">✓ Todas las filas son válidas.</div>';
+  h+='<div style="font-size:12px;color:var(--slate);margin-top:8px">Los gastos existentes se actualizan sin duplicar (por comprobante, o fecha + concepto + empresa pagadora + monto). La tasa BCV se toma de la fecha de cada gasto.</div>';
+  h+='</div>';
+  document.getElementById('mGastoImpBody').innerHTML=h;
+  var ok=document.getElementById('mGastoImpOk');ok.textContent='Cargar / actualizar ('+fmtNum(P.nuevos.length+totalUpd,0)+')';ok.style.display=(P.nuevos.length||totalUpd)?'':'none';
+  document.getElementById('modalImportGasto').classList.add('open');
+}
+function commitGastoImport(){
+  var P=_gastoPreview;if(!P){closeModal('modalImportGasto');return;}var totalUpd=Object.keys(P.updates).length;
+  if(!P.nuevos.length&&!totalUpd){closeModal('modalImportGasto');return;}
+  P.nuevasCat.forEach(function(c){if(cats.indexOf(c)<0)cats.push(c);});if(P.nuevasCat.length)save(K.cats,cats);
+  Object.keys(P.updates).forEach(function(id){var i=gastos.findIndex(function(x){return x.id===id;});if(i>=0)Object.assign(gastos[i],P.updates[id]);});
+  gastos=gastos.concat(P.nuevos);save(K.gasto,gastos);_gastoPreview=null;
+  refreshSelects();renderChips();renderGasto();renderDashboard();closeModal('modalImportGasto');
+  toast(P.nuevos.length+' nuevos · '+totalUpd+' actualizados');
 }
 function downloadTemplateGasto(){downloadEmbedded(GASTO_TEMPLATE_B64,'Plantilla_Carga_Gastos_La_Guaira.xlsx');}
 
@@ -1051,10 +1120,12 @@ function totals(){
 var _aggCrem=[],_aggCat=[];
 function renderDashboard(){
   var t=totals();
-  document.getElementById('kCremN').textContent=fmtNum(t.cN,0);
-  document.getElementById('kCremMonto').textContent=fmtUsd(t.montoUsd)+' facturado';
-  document.getElementById('kPagN').textContent=fmtNum(t.pagCount,0);
-  document.getElementById('kPagMonto').textContent=fmtUsd(t.pagUsd)+' pagado';
+  var rHoy=bcvRate(today()),lrd=lastRateDate();
+  var bh=document.getElementById('bcvHoy');if(bh){bh.textContent=rHoy>0?fmtNum(rHoy,4):'—';document.getElementById('bcvHoyFecha').textContent=lrd?('al '+fmtDate(tasas[today()]!=null?today():lrd)):'';}
+  document.getElementById('kAdeuUsd').textContent=fmtUsd(t.montoUsd);
+  document.getElementById('kAdeuN').textContent=fmtNum(t.cN,0)+' cremaciones';
+  document.getElementById('kPagUsd').textContent=fmtUsd(t.pagUsd);
+  document.getElementById('kPagN').textContent=fmtNum(t.pagCount,0)+' cremaciones';
   document.getElementById('kSaldo').textContent=fmtUsd(t.saldoUsd);
   document.getElementById('kSaldoN').textContent=fmtNum(t.pendCount,0)+' pendientes';
   document.getElementById('kPagadoBs').textContent=fmtBs(t.pagadoBs);
@@ -1076,11 +1147,15 @@ function renderDashboard(){
   document.getElementById('barsGasto').innerHTML=cat.length?cat.map(function(c,i){return '<div class="bl clickable" onclick="openDetailCatIdx('+i+')"><div class="blhead"><span class="nm">'+esc(c.cat)+'</span><span class="vv num">'+fmtBs(c.bs)+' · '+fmtUsd(c.usd)+'</span></div><div class="bartrack"><div class="barfill" style="width:'+(c.bs/maxG*100)+'%"></div></div></div>';}).join(''):'<div class="empty" style="padding:10px">Sin gastos registrados.</div>';
 
   var maxC=agg.reduce(function(m,a){return Math.max(m,a.cant);},0)||1;
-  document.getElementById('barsCrem').innerHTML=agg.length?agg.map(function(a,i){return '<div class="bl clickable" onclick="openDetailCremIdx('+i+')"><div class="blhead"><span class="nm">'+esc(a.crematorio)+'</span><span class="vv num">'+fmtNum(a.cant,0)+' cremaciones · '+a.pagadas+' pagadas · '+fmtUsd(a.montoUsd)+'</span></div><div class="bartrack"><div class="barfill" style="width:'+(a.cant/maxC*100)+'%"></div></div></div>';}).join(''):'<div class="empty" style="padding:10px">Sin cremaciones registradas.</div>';
-
-  var used=aggByCrematorio(),sc=0,sp=0,spd=0,sm=0,smp=0,ss=0;
-  document.getElementById('tbResumenCrem').innerHTML=used.map(function(a){sc+=a.cant;sp+=a.pagCap;spd+=a.pendientes;sm+=a.montoUsd;smp+=a.pagadoUsd;ss+=a.saldoUsd;return '<tr class="clickable" onclick="openDetailCrem('+jsq(a.crematorio)+')"><td>'+esc(a.crematorio)+'</td><td class="c num">'+fmtNum(a.cant,0)+'</td><td class="c num">'+fmtNum(a.pagadas,0)+'</td><td class="c num">'+fmtNum(a.pendientes,0)+'</td><td class="r num">'+fmtUsd(a.montoUsd)+'</td><td class="r num">'+fmtUsd(a.pagadoUsd)+'</td><td class="r num">'+fmtUsd(a.saldoUsd)+'</td></tr>';}).join('');
-  document.getElementById('tfResumenCrem').innerHTML='<tr><td class="r">TOTAL</td><td class="c num">'+fmtNum(sc,0)+'</td><td class="c num">'+fmtNum(sp,0)+'</td><td class="c num">'+fmtNum(spd,0)+'</td><td class="r num">'+fmtUsd(sm)+'</td><td class="r num">'+fmtUsd(smp)+'</td><td class="r num">'+fmtUsd(ss)+'</td></tr>';
+  document.getElementById('barsCrem').innerHTML=agg.length?agg.map(function(a,i){
+    var tot=a.cant||1,pPct=a.pagCap/tot*100,dPct=a.pendientes/tot*100,pctPag=a.cant?(a.pagCap/a.cant*100):0;
+    return '<div class="ppitem clickable" onclick="openDetailCremIdx('+i+')">'+
+      '<div class="pphead"><span class="ppname">'+esc(a.crematorio)+'</span><span class="pppct">'+fmtNum(pctPag,1)+'% pagado</span></div>'+
+      '<div class="ppbar">'+(pPct>0?'<div class="paid" style="width:'+pPct+'%"></div>':'')+(dPct>0?'<div class="pend" style="width:'+dPct+'%"></div>':'')+'</div>'+
+      '<div class="pplegend"><span class="pd" style="color:#245e94"><span class="sw" style="background:#2f7cc0"></span>Pagadas: <b>'+fmtNum(a.pagCap,0)+'</b> · '+fmtUsd(a.pagadoUsd)+'</span>'+
+      '<span class="pd" style="color:#9d2f2c">Pendientes: <b>'+fmtNum(a.pendientes,0)+'</b> · '+fmtUsd(a.saldoUsd)+'<span class="sw" style="background:#c0433f"></span></span></div>'+
+    '</div>';
+  }).join(''):'<div class="empty" style="padding:10px">Sin cremaciones registradas.</div>';
 
   var dias=aggByDia(),acC=0,tdu=0;
   document.getElementById('tbDias').innerHTML=dias.length?dias.map(function(d){acC+=d.cant;tdu+=d.usd;return '<tr class="clickable" onclick="openDetailDia('+jsq(d.fecha)+')"><td class="num">'+fmtDate(d.fecha)+'</td><td class="c num">'+fmtNum(d.cant,0)+'</td><td class="r num">'+fmtUsd(d.usd)+'</td><td class="c num">'+fmtNum(acC,0)+'</td></tr>';}).join(''):'<tr><td colspan="4"><div class="empty" style="padding:20px">Sin cremaciones registradas.</div></td></tr>';
@@ -1124,12 +1199,16 @@ function buildPagoTesoreria(){
 function pagoRelacion(c,idx,modo){
   var rows=cremaciones.filter(function(r){return r.crematorio===c;}).sort(function(a,b){return a.fecha<b.fecha?-1:1;});
   var tar=tarifaUsd(c),tb=tarifaBreak(c);
-  var body=rows.map(function(r,i){return '<tr><td class="c num">'+(i+1)+'</td><td class="num">'+fechaCrem(r.fecha)+'</td><td class="num">'+esc(r.exp||'—')+'</td><td>'+esc(r.nombre)+'</td><td class="num">'+esc(r.cod||'—')+'</td><td class="r num">'+fmtUsd(tar)+'</td></tr>';}).join('');
-  var cant=rows.length,total=n2(cant*tar),pag=Math.min(pagadasByCrem(c),cant),pagUsd=n2(pag*tar),pend=Math.max(cant-pag,0),saldoUsd=n2(pend*tar);
+  var cant=rows.length,pag=Math.min(pagadasByCrem(c),cant),pagUsd=n2(pag*tar),pend=Math.max(cant-pag,0),saldoUsd=n2(pend*tar),total=n2(cant*tar);
+  var body=rows.map(function(r,i){var pagado=i<pag;
+    if(modo==='pagado'&&!pagado)return '';if(modo==='pendiente'&&pagado)return '';
+    var est=pagado?'<span style="color:#245e94;font-weight:700">● Pagado</span>':'<span style="color:#9d2f2c;font-weight:700">○ Pendiente</span>';
+    return '<tr><td class="c num">'+(i+1)+'</td><td class="num">'+fechaCrem(r.fecha)+'</td><td class="num">'+esc(r.exp||'—')+'</td><td>'+esc(r.nombre)+'</td><td class="num">'+esc(r.cod||'—')+'</td><td class="c">'+est+'</td><td class="r num">'+fmtUsd(tar)+'</td></tr>';}).join('');
+  if(!body)body='<tr><td colspan="7" class="c" style="padding:16px;color:var(--slate)">Sin cremaciones en este filtro.</td></tr>';
   var tid='pago'+idx+'_tbl',lg=getLogo(c);
   var tarifaNota='Tarifa por cremación: '+fmtUsd(tb.neto)+' + IVA '+fmtNum(cfg.ivaPct,0)+'% = '+fmtUsd(tb.base)+(tb.charallave?(' + traslado '+fmtUsd(tb.tras)+' + IVA = '+fmtUsd(tar)+' (Charallave)'):'')+'.';
   var lh='<div class="crem-letterhead">'+(lg?'<img src="'+lg+'" alt="logo">':'')+'<div class="lh"><div class="eyebrow">Relación de pago · Tesorería</div><h3>'+esc(c)+'</h3><div class="meta">Ente: '+esc(cfg.entidad)+' · Operador: '+esc(cfg.operador)+(cfg.convenio?(' · Convenio: '+esc(cfg.convenio)):'')+' · Emitida: '+fmtDate(today())+'</div><div class="meta">'+tarifaNota+'</div></div></div>';
-  var table='<div class="tablewrap" style="border:none;box-shadow:none" id="'+tid+'"><table class="data"><thead><tr><th class="c">#</th><th>Fecha</th><th>Expediente</th><th>Difunto</th><th>Cód. Cremación</th><th class="r">Monto USD</th></tr></thead><tbody>'+body+'</tbody><tfoot><tr><td colspan="5" class="r">'+cant+' cremaciones — Total facturado</td><td class="r num">'+fmtUsd(total)+'</td></tr><tr><td colspan="5" class="r">Pagado ('+pag+' cremaciones)</td><td class="r num">'+fmtUsd(pagUsd)+'</td></tr><tr><td colspan="5" class="r">Pendiente ('+pend+' cremaciones)</td><td class="r num">'+fmtUsd(saldoUsd)+'</td></tr></tfoot></table></div>';
+  var table='<div class="tablewrap" style="border:none;box-shadow:none" id="'+tid+'"><table class="data"><thead><tr><th class="c">#</th><th>Fecha</th><th>Expediente</th><th>Difunto</th><th>Cód. Cremación</th><th class="c">Estado</th><th class="r">Monto USD</th></tr></thead><tbody>'+body+'</tbody><tfoot><tr><td colspan="6" class="r">'+cant+' cremaciones — Total facturado (con IVA)</td><td class="r num">'+fmtUsd(total)+'</td></tr><tr><td colspan="6" class="r">Pagado ('+pag+' cremaciones)</td><td class="r num">'+fmtUsd(pagUsd)+'</td></tr><tr><td colspan="6" class="r">Pendiente ('+pend+' cremaciones)</td><td class="r num">'+fmtUsd(saldoUsd)+'</td></tr></tfoot></table></div>';
   var sBs=modo==='total'?total:saldoUsd,sLbl=modo==='total'?'Total facturado':'Saldo por pagar';
   var saldo='<div class="saldo"><span class="lbl">'+sLbl+' a '+esc(c)+'</span><span class="amt num">'+fmtUsd(sBs)+'<small>'+(modo==='total'?cant:pend)+' cremaciones</small></span></div>';
   var firmas='<div class="firmas"><div class="firma"><b>'+esc(cfg.responsable||'Elaborado por')+'</b>Elaborado por (Operador)</div><div class="firma"><b>&nbsp;</b>Revisado por (Contabilidad)</div><div class="firma"><b>&nbsp;</b>Autorizado por (Presidencia)</div><div class="firma"><b>&nbsp;</b>Recibido — Tesorería / Gobernación</div></div>';
