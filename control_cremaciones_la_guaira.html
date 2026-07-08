@@ -228,6 +228,26 @@ table.flujo tr.saldo td{border-top:2px solid var(--tp);font-weight:800}
 .fundcell .fbig{font-size:20px;font-weight:800;margin-top:7px;font-variant-numeric:tabular-nums;line-height:1.1}
 .fundcell .fusd{font-size:12.5px;color:#8a879c;margin-top:3px;font-variant-numeric:tabular-nums}
 .fundcell.saldo{background:linear-gradient(135deg,#faf9fe,#f3f0fb);border-radius:10px;border-right:none}
+.ectab{width:100%;border-collapse:collapse;font-size:14px}
+.ectab .hh{font-size:10px;font-weight:800;color:var(--slate);text-transform:uppercase;letter-spacing:.04em;padding:12px 18px}
+.ectab .ueh{background:#faf9fe;color:var(--tp)}
+.ectab td{padding:13px 18px;border-top:1px solid var(--line-2)}
+.ectab .op{width:34px;color:var(--slate);font-weight:800;text-align:center}
+.ectab .r{text-align:right;font-variant-numeric:tabular-nums;font-weight:700}
+.ectab .ue{background:#faf9fe;color:#4B2D8F}
+.ectab .u{font-size:11px;color:var(--slate);font-weight:400;margin-top:2px}
+.ectab .u2{font-size:10.5px;color:#9a97ad;font-weight:400;margin-top:2px}
+.ectab .sec td{font-size:10px;font-weight:800;color:var(--tp);text-transform:uppercase;letter-spacing:.05em;padding:12px 18px 3px;border:none}
+.ectab .tot td{background:#f3eef0;border-top:2px solid var(--line);font-weight:800}
+.ectab .tot .ue{background:#efe9f7}
+.ecband{display:flex;justify-content:space-between;align-items:center;padding:15px 20px;margin:8px 6px 0;border-radius:12px;gap:14px;flex-wrap:wrap}
+.ecband.pos{background:linear-gradient(135deg,#e8f5ee,#dcefe4)}
+.ecband.neg{background:linear-gradient(135deg,#fbe9e8,#f7dad8)}
+.ecband .ecb-t{font-size:15px;font-weight:800;color:var(--tp2)}
+.ecband .ecb-s{font-size:11.5px;color:var(--slate)}
+.ecband .ecb-amt{font-size:21px;font-weight:800;font-variant-numeric:tabular-nums}
+.ectab .u3,.ecband .u3{font-size:10.5px;color:var(--slate);font-weight:600}
+.ecnote{background:#eef4fb;border:1px solid #c4dcf2;border-radius:11px;padding:12px 16px;font-size:12.5px;color:#245e94;margin-top:14px;line-height:1.5}
 </style>
 <style>
   .attlink{color:var(--steel);cursor:pointer;text-decoration:underline;font-size:12.5px;background:none;border:none;padding:0;font-family:inherit}
@@ -271,6 +291,7 @@ table.flujo tr.saldo td{border-top:2px solid var(--tp);font-weight:800}
   <button data-view="dashboard" class="active">Panel Ejecutivo</button>
   <button data-view="cremaciones">Cremaciones</button>
   <button data-view="finanzas">Finanzas</button>
+  <button data-view="estructura">Estructura de Costos</button>
   <button data-view="reportes">Reportes</button>
   <button data-view="conciliacion">Conciliación</button>
   <button data-view="config">Configuración</button>
@@ -416,6 +437,17 @@ table.flujo tr.saldo td{border-top:2px solid var(--tp);font-weight:800}
     </div>
   </section>
 
+  <!-- ESTRUCTURA DE COSTOS -->
+  <section class="view" id="v-estructura">
+    <div class="viewhead"><div><h2>Estructura de Costos</h2><div class="lead">Todos los egresos generados expresados en divisas frente al monto a cobrar a la Gobernación, con el saldo restante, el porcentaje de rentabilidad y el ejemplo por cremación.</div></div>
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+        <div class="bcvchip"><span class="lbl">Tarifa Gobernación</span><span class="val num" id="ecGov">$ 0</span><span class="cur">/ cremación</span></div>
+        <div class="bcvchip"><span class="lbl">Tasa BCV hoy</span><span class="val num" id="ecBcv">—</span><span class="cur">Bs/USD</span></div>
+      </div>
+    </div>
+    <div id="estructuraHost"></div>
+  </section>
+
   <!-- REPORTES -->
   <section class="view" id="v-reportes">
     <div class="viewhead"><div><h2>Reportes</h2><div class="lead">Relaciones de pago por crematorio para Tesorería y relaciones ejecutivas. Exporta a Excel o imprime a PDF.</div></div></div>
@@ -544,7 +576,7 @@ table.flujo tr.saldo td{border-top:2px solid var(--tp);font-weight:800}
   </section>
 </main>
 
-<div class="foot">Sistema de control interno · Gobernación del Estado La Guaira — Operador Seguros La Fe, C.A. · Datos almacenados localmente en este equipo. · <b>v5.5 · rentabilidad neta, conteos pagados, simulación en Bs y panel solo gráficos</b></div>
+<div class="foot">Sistema de control interno · Gobernación del Estado La Guaira — Operador Seguros La Fe, C.A. · Datos almacenados localmente en este equipo. · <b>v5.6 · estructura de costos, fondo recibido real y cuadre total</b></div>
 
 <!-- Modal Cremación -->
 <div class="modal-bg" id="modalCrem"><div class="modal">
@@ -809,6 +841,7 @@ function go(view){
   if(view==='reportes'){buildReports();buildPagoTesoreria();}
   if(view==='conciliacion')renderConciliacion();
   if(view==='rentabilidad')renderRentabilidad();
+  if(view==='estructura')renderEstructura();
   window.scrollTo(0,0);
 }
 var _finSub='abonos';
@@ -1551,6 +1584,47 @@ function rentTotals(){
   return {facturado:facturado,costo:costo,costoBs:costoBs,costoDev:costoDev,cremIva:cremIva,cremIvaBs:cremIvaBs,trasIva:trasIva,trasIvaBs:trasIvaBs,gastos:gs,gastosBs:gBs,profit:profit,gananciaProm:gananciaProm,margen:facturado>0?n2(profit/facturado*100):0,fondoBs:fondoBs,fondoUsd:fondoUsd,pagBs:pagBs,pagUsd:pagUsd,bcvHoy:bcvHoy,saldoUsd:saldoUsd,saldoBs:n2(saldoOper*bcvHoy),saldoOper:saldoOper,saldoOperBs:n2(saldoOper*bcvHoy),pendienteGob:pendienteGob,pendienteGobBs:n2(pendienteGob*bcvHoy),facturadoBs:n2(facturado*bcvHoy),pendPagoUsd:pendPagoUsd,pendPagoBs:pendPagoBs,cremPendUsd:cremPendUsd,cremPendBs:cremPendBs,cremPagN:cremPagN,trasPagN:trasPagN,opAllUsd:opAllUsd,opAllBs:opAllBs,padron:pc,superavit:saldoUsd>=0,rentCobra:rentCobra,n:cremaciones.length,
     simuOn:simuOn,fSup:fSup,gSup:gSup,facturadoS:facturadoS,gastosS:gastosS,fondoS:fondoS,profitS:profitS,margenS:margenS,saldoOperS:saldoOperS,saldoOperSBs:n2(saldoOperS*bcvHoy)};
 }
+function renderEstructura(){
+  var gv=document.getElementById('ecGov'); if(gv)gv.textContent=fmtUsd(govRateHoy());
+  var rb=document.getElementById('ecBcv'); if(rb)rb.textContent=fmtNum(bcvHoyRate(),4);
+  var host=document.getElementById('estructuraHost'); if(!host)return;
+  var bh=bcvHoyRate();
+  // Egresos devengados (todas las cremaciones ejecutadas) + gastos + operacionales (todos)
+  var cremBaseU=0,trasU=0;cremaciones.forEach(function(c){var b=tarifaBreak(c.crematorio);cremBaseU+=b.base;trasU+=n2(b.tras+b.ivaTras);});
+  cremBaseU=n2(cremBaseU);trasU=n2(trasU);
+  var gt=gastosTotals(),op=opTotals();
+  var gastosU=n2(gt.pagUsd+gt.pendUsd), operU=n2(op.pagUsd+op.pendUsd);
+  var totalEgrU=n2(cremBaseU+trasU+gastosU+operU);
+  var ingresoU=serviciosGobUsd();                 // $410 × padrón (monto a cobrar a la Gobernación)
+  var saldoU=n2(ingresoU-totalEgrU);               // = rentabilidad (cuadra con la app)
+  var rentPct=ingresoU>0?n2(saldoU/ingresoU*100):0;
+  var tar=govRateHoy();                            // tarifa por cremación
+  var nEjec=cremaciones.length||0;                 // divisor del ejemplo unitario (Opción A)
+  var ud=function(u){return '<div class="u">'+fmtBs(n2(u*bh))+'</div>';};
+  var uUnit=function(u){return nEjec?fmtUsd(n2(u/nEjec)):'—';};
+  var uUnitBs=function(u){return nEjec?'<div class="u2">'+fmtBs(n2((u/nEjec)*bh))+'</div>':'';};
+  var row=function(op_,lbl,tot,color){return '<tr><td class="op">'+op_+'</td><td>'+lbl+'</td>'+
+    '<td class="r" style="color:'+color+'">'+fmtUsd(tot)+ud(tot)+'</td>'+
+    '<td class="r ue">'+uUnit(tot)+uUnitBs(tot)+'</td></tr>';};
+  var head='<thead><tr><td></td><td class="hh">Concepto</td><td class="r hh">Total ('+fmtNum(padronCount(),0)+' exp.)</td><td class="r hh ueh">Por cremación<br><span style="font-weight:400;text-transform:none">ejemplo · '+fmtNum(nEjec,0)+' ejec.</span></td></tr></thead>';
+  var tbl='<table class="ectab">'+head+'<tbody>'+
+    '<tr class="sec"><td></td><td colspan="3">Egresos generados (en divisas)</td></tr>'+
+    row('1','Cremaciones (base + IVA)',cremBaseU,'#9d2f2c')+
+    row('2','Traslados (traslado + IVA)',trasU,'#9d2f2c')+
+    row('3','Gastos administrativos y logísticos',gastosU,'#9d2f2c')+
+    row('4','Pagos operacionales (funerarias / carroceros)',operU,'#9d2f2c')+
+    '<tr class="tot"><td class="op">=</td><td>TOTAL EGRESOS</td><td class="r" style="color:#9d2f2c">'+fmtUsd(totalEgrU)+ud(totalEgrU)+'</td><td class="r ue">'+uUnit(totalEgrU)+uUnitBs(totalEgrU)+'</td></tr>'+
+    '<tr class="sec"><td></td><td colspan="3">Ingreso</td></tr>'+
+    '<tr><td class="op">＋</td><td>Monto a cobrar a la Gobernación <span class="u">('+fmtUsd(tar)+' × '+fmtNum(padronCount(),0)+' expedientes)</span></td><td class="r" style="color:#0D7A4E">'+fmtUsd(ingresoU)+ud(ingresoU)+'</td><td class="r ue" style="color:#0D7A4E">'+fmtUsd(tar)+'<div class="u2">'+fmtBs(n2(tar*bh))+'</div></td></tr>'+
+  '</tbody></table>';
+  var gananciaUnit=n2(tar-(nEjec?totalEgrU/nEjec:0));
+  var margenUnit=tar>0?n2(gananciaUnit/tar*100):0;
+  var pos=saldoU>=0;
+  var band1='<div class="ecband '+(pos?'pos':'neg')+'"><div><div class="ecb-t">Saldo Restante (Rentabilidad)</div><div class="ecb-s">monto a cobrar − total egresos</div></div><div style="display:flex;gap:26px;align-items:center;flex-wrap:wrap"><div style="text-align:right"><div class="u3">Total</div><div class="ecb-amt" style="color:'+(pos?'#0D7A4E':'#c0433f')+'">'+fmtUsd(saldoU)+'</div><div class="u3">'+fmtBs(n2(saldoU*bh))+'</div></div><div style="text-align:right;border-left:2px solid '+(pos?'#bfe0cd':'#e6b9b6')+';padding-left:22px"><div class="u3">Ganancia por cremación (ejemplo)</div><div class="ecb-amt" style="color:'+(gananciaUnit>=0?'#0D7A4E':'#c0433f')+'">'+fmtUsd(gananciaUnit)+'</div><div class="u3">'+fmtBs(n2(gananciaUnit*bh))+'</div></div></div></div>';
+  var band2='<div class="ecband" style="background:linear-gradient(135deg,#f3f0fb,#e9e3f8)"><div><div class="ecb-t">Porcentaje de Rentabilidad</div><div class="ecb-s">saldo restante ÷ monto a cobrar · margen por cremación '+fmtNum(margenUnit,1)+'%</div></div><div class="ecb-amt" style="color:#4B2D8F">'+fmtNum(rentPct,1)+' %</div></div>';
+  var nota='<div class="ecnote">El <b>Total</b> compara todos los egresos contra el monto a cobrar por el padrón ('+fmtNum(padronCount(),0)+' expedientes), y su saldo y porcentaje cuadran con la Rentabilidad del Fondo. La columna <b>Por cremación</b> es un ejemplo unitario sobre las '+fmtNum(nEjec,0)+' cremaciones ejecutadas (ingreso $'+fmtNum(tar,2)+' por servicio menos el costo promedio por cremación).</div>';
+  host.innerHTML='<div class="panel"><div class="ph"><h3>Estructura de Costos del Operativo</h3><span>egresos en divisas · saldo · rentabilidad · ejemplo unitario</span></div><div style="padding:4px 4px 14px">'+tbl+band1+band2+'</div></div>'+nota;
+}
 function toggleSimu(){simuOn=!simuOn;save(K.simuOn,simuOn);renderRentabilidad();}
 function addSupuesto(){var t=document.getElementById('fSupTipo').value,c=document.getElementById('fSupConcepto').value.trim(),bs=Number(document.getElementById('fSupMonto').value)||0;if(!c||bs<=0){toast('Indique tipo, concepto y monto en Bs (>0)');return;}simuSup.push({id:uid(),t:t,c:c,bs:n2(bs)});save(K.simuSup,simuSup);if(!simuOn){simuOn=true;save(K.simuOn,simuOn);}renderRentabilidad();}
 function delSupuesto(id){simuSup=simuSup.filter(function(x){return x.id!==id;});save(K.simuSup,simuSup);renderRentabilidad();}
@@ -1611,7 +1685,7 @@ function renderRentabilidad(){
   var supG=(sim&&t.gSup>0)?' <span style="color:#8a5e00;font-size:11px">(+ '+fmtUsd(t.gSup)+' sup.)</span>':'';
   var usdu=function(u){return '<div style="font-size:10.5px;color:var(--slate);font-weight:400">'+fmtUsd(u)+'</div>';};
   var bh2=t.bcvHoy;
-  var eFondoBs=sim?n2(eFondo*bh2):t.fondoBs;
+  var eFondoBs=n2(t.fondoBs+(sim?t.fSup*bh2:0));
   var opE=opTotals(), gtE=gastosTotals();
   var pagCremU=pagosCremUsd(), pagCremB=pagosCremBs();
   var pagTrasU=opE.trPagUsd, pagTrasB=opE.trPagBs;
