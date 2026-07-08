@@ -286,16 +286,7 @@ table.flujo tr.saldo td{border-top:2px solid var(--tp);font-weight:800}
         <button class="btn ghost" onclick="go('reportes')">Ir a Reportes ▸</button>
       </div>
     </div>
-    <div class="kpigrid">
-      <div class="kpi"><div class="lbl">Monto Servicios Prestados a la Gobernación</div><div class="big num" id="kAdeuUsd">$ 0.00</div><div class="alt num" id="kAdeuN">0 expedientes</div></div>
-      <div class="kpi"><div class="lbl">Recibido de la Gobernación</div><div class="big num" id="kPagUsd">$ 0.00</div><div class="alt num" id="kPagN">0 abonos</div></div>
-      <div class="kpi accent"><div class="lbl">Pendiente de la Gobernación</div><div class="big num" id="kSaldo">$ 0.00</div><div class="alt num" id="kSaldoN">servicios − recibido</div></div>
-      <div class="kpi"><div class="lbl">Pagado en Cremaciones</div><div class="big num" id="kPagCremBs">Bs. 0,00</div><div class="alt num" id="kPagCremUsd">$ 0.00</div></div>
-      <div class="kpi"><div class="lbl">Pagado en Traslados</div><div class="big num" id="kPagTrasBs">Bs. 0,00</div><div class="alt num" id="kPagTrasUsd">$ 0.00</div></div>
-      <div class="kpi"><div class="lbl">Pagado en Gastos administrativos y logísticos</div><div class="big num" id="kPagGastoBs">Bs. 0,00</div><div class="alt num" id="kPagGastoUsd">$ 0.00</div></div>
-      <div class="kpi"><div class="lbl">Gastos administrativos y logísticos (total)</div><div class="big num" id="kGastoTotBs">Bs. 0,00</div><div class="alt num" id="kGastoTotUsd">$ 0.00</div></div>
-    </div>
-    <div class="panel" style="margin-bottom:20px"><div class="ph"><h3>Resumen del Fondo — Gobernación</h3><span style="color:var(--slate);font-size:11.5px">servicios prestados · recibido · pagado · saldo del monto recibido</span></div>
+    <div class="panel" style="margin-bottom:20px"><div class="ph"><h3>Resumen del Fondo — Gobernación</h3><span style="color:var(--slate);font-size:11.5px">servicios prestados · recibido · pagado · pendiente · saldo del monto recibido</span></div>
       <div class="pb"><div class="fundrow" id="fundSummary"></div></div></div>
     <div class="panelrow">
       <div class="panel"><div class="ph"><h3>Cremaciones Realizadas por Crematorios</h3><span class="num" id="dcTotal" style="color:var(--slate);font-size:12px"></span></div>
@@ -376,7 +367,7 @@ table.flujo tr.saldo td{border-top:2px solid var(--tp);font-weight:800}
         <button class="btn ghost sm" onclick="exportPagosExcel()">⬇ Exportar</button>
       </div>
       <div class="tablewrap"><table class="data">
-        <thead><tr><th class="c">#</th><th>Fecha de pago</th><th>Crematorio</th><th class="c">Cremaciones pagadas</th><th class="r">Monto USD</th><th class="r">Subtotal (Bs)</th><th class="r">IVA (Bs)</th><th class="r">Exonerado (Bs)</th><th class="r">Ret. IVA (Bs)</th><th class="r">Ret. ISLR (Bs)</th><th class="r">Neto factura (Bs)</th><th class="r">Transferido (Bs)</th><th class="r">Dif. (Bs)</th><th>Banco</th><th>Ref.</th><th class="c">Factura</th><th class="c">Transf.</th><th class="c">Acción</th></tr></thead>
+        <thead><tr><th class="c">#</th><th>Fecha de pago</th><th>Crematorio</th><th class="c">Cremaciones pagadas</th><th class="r">Monto USD</th><th class="r">Subtotal (Bs)</th><th class="r">IVA 16% (Bs)</th><th class="r">Total (Bs)</th><th class="r">Retención de IVA (Bs)</th><th class="r">Retención ISLR (Bs)</th><th class="r">Monto a Pagar (Bs)</th><th class="r">Monto Pagado (Bs)</th><th class="r">Diferencia (Bs)</th><th>Banco</th><th>Ref.</th><th class="c">Factura</th><th class="c">Transf.</th><th class="c">Acción</th></tr></thead>
         <tbody id="tbPagos"></tbody><tfoot id="tfPagos"></tfoot></table></div>
     </div>
 
@@ -551,7 +542,7 @@ table.flujo tr.saldo td{border-top:2px solid var(--tp);font-weight:800}
   </section>
 </main>
 
-<div class="foot">Sistema de control interno · Gobernación del Estado La Guaira — Operador Seguros La Fe, C.A. · Datos almacenados localmente en este equipo. · <b>v5.1 · estado de cuenta del fondo, monto con IVA, pendiente y resúmenes</b></div>
+<div class="foot">Sistema de control interno · Gobernación del Estado La Guaira — Operador Seguros La Fe, C.A. · Datos almacenados localmente en este equipo. · <b>v5.2 · pagos con IVA cuadrados, panel solo Gobernación, estado de cuenta consistente</b></div>
 
 <!-- Modal Cremación -->
 <div class="modal-bg" id="modalCrem"><div class="modal">
@@ -759,10 +750,24 @@ function gastosTotals(){
 function pagosCremUsd(){var s=0;pagos.forEach(function(p){s+=(Number(p.cantidad)||0)*tarifaUsd(p.crematorio);});return n2(s);}
 function pagosCremBs(){var s=0;pagos.forEach(function(p){s+=(p.total!=null?Number(p.total):Number(p.transferBs))||0;});return n2(s);}
 function pagosCremPagBs(){var s=0;pagos.forEach(function(p){s+=Number(p.transferBs)||0;});return n2(s);}
+function pagosSplit(){
+  var cremU=0,cremB=0,trasU=0,trasB=0;
+  pagos.forEach(function(p){var c=p.crematorio,cant=Number(p.cantidad)||0,b=tarifaBreak(c),baseU=b.base,trU=n2(b.tras+b.ivaTras),tarTot=tarifaUsd(c)||1,tot=(p.total!=null?Number(p.total):Number(p.transferBs))||0;
+    cremU+=cant*baseU;trasU+=cant*trU;cremB+=(baseU/tarTot)*tot;trasB+=(trU/tarTot)*tot;});
+  return {cremUsd:n2(cremU),cremBs:n2(cremB),trasUsd:n2(trasU),trasBs:n2(trasB)};
+}
+function costoDevengadoUsd(){var s=0;cremaciones.forEach(function(c){s+=tarifaBreak(c.crematorio).total;});return n2(s);}
 function trasladosPagados(){
   var op=opTotals(),cUsd=0,cBs=0;
   pagos.forEach(function(p){var c=p.crematorio,tr=trasladoOf(c);if(tr>0){var b=tarifaBreak(c),trIva=n2(b.tras+b.ivaTras),tarTot=tarifaUsd(c)||1,cant=Number(p.cantidad)||0;cUsd+=cant*trIva;cBs+=(trIva/tarTot)*(Number(p.transferBs)||0);}});
   return {usd:n2(op.trPagUsd+cUsd),bs:n2(op.trPagBs+cBs),opUsd:op.trPagUsd,cremUsd:n2(cUsd),cuerpos:op.trPagCu};
+}
+function pagosCremDesglose(){
+  var basUsd=0,basBs=0,trUsd=0,trBs=0;
+  pagos.forEach(function(p){var c=p.crematorio,cant=Number(p.cantidad)||0,b=tarifaBreak(c),trIva=n2(b.tras+b.ivaTras),basIva=n2(b.base),tarTot=tarifaUsd(c)||1,totBs=(p.total!=null?Number(p.total):Number(p.transferBs))||0;
+    basUsd+=cant*basIva;trUsd+=cant*trIva;
+    basBs+=(basIva/tarTot)*totBs;trBs+=(trIva/tarTot)*totBs;});
+  return {cremUsd:n2(basUsd),cremBs:n2(basBs),trasUsd:n2(trUsd),trasBs:n2(trBs)};
 }
 var cats=load(K.cats,DEFAULT_CATS.slice());
 var logos=load(K.logos,{});
@@ -1254,16 +1259,16 @@ function filteredPagos(){var fc=document.getElementById('pFilterCrem').value;ret
 function renderPagos(){
   var rows=filteredPagos(),tb=document.getElementById('tbPagos'),tf=document.getElementById('tfPagos');
   if(!rows.length){tb.innerHTML='<tr><td colspan="18"><div class="empty"><div class="em-t">Sin pagos registrados</div>Use “＋ Registrar pago”.</div></td></tr>';tf.innerHTML='';return;}
-  var sCant=0,sUsd=0,sSub=0,sIva=0,sExo=0,sRiva=0,sRislr=0,sNeto=0,sTrans=0;
+  var sCant=0,sUsd=0,sSub=0,sIva=0,sTot=0,sRiva=0,sRislr=0,sNeto=0,sTrans=0;
   tb.innerHTML=rows.map(function(p,i){var m=(Number(p.cantidad)||0)*tarifaUsd(p.crematorio);sCant+=Number(p.cantidad)||0;sUsd+=m;
-    var sub=Number(p.subtotal)||0,iva=Number(p.iva)||0,exo=Number(p.exonerado)||0,riva=Number(p.retIva)||0,rislr=Number(p.retIslr)||0,neto=Number(p.neto)||0,tbs=Number(p.transferBs)||0,dif=Number(p.diff)||(tbs-neto);
-    sSub+=sub;sIva+=iva;sExo+=exo;sRiva+=riva;sRislr+=rislr;sNeto+=neto;sTrans+=tbs;
+    var sub=Number(p.subtotal)||0,iva=Number(p.iva)||0,exo=Number(p.exonerado)||0,tot=Number(p.total)||(sub+iva+exo),riva=Number(p.retIva)||0,rislr=Number(p.retIslr)||0,neto=Number(p.neto)||0,tbs=Number(p.transferBs)||0,dif=Number(p.diff)||(tbs-neto);
+    sSub+=sub;sIva+=iva;sTot+=tot;sRiva+=riva;sRislr+=rislr;sNeto+=neto;sTrans+=tbs;
     var fa=p.factura?'<button class="attlink" onclick="openPagoAtt(\''+p.id+'\',\'factura\')">Ver</button>':'—';
     var tr=p.transfer?'<button class="attlink" onclick="openPagoAtt(\''+p.id+'\',\'transfer\')">Ver</button>':'—';
     var difc=(Math.abs(dif)>=0.01&&(neto||tbs))?' style="color:var(--danger)"':'';
-    return '<tr><td class="c num">'+(i+1)+'</td><td class="num">'+fmtDate(p.fecha)+'</td><td>'+esc(p.crematorio)+'</td><td class="c num">'+fmtNum(p.cantidad,0)+'</td><td class="r num">'+fmtUsd(m)+'</td><td class="r num">'+(sub?fmtBs(sub):'—')+'</td><td class="r num">'+(iva?fmtBs(iva):'—')+'</td><td class="r num">'+(exo?fmtBs(exo):'—')+'</td><td class="r num">'+(riva?fmtBs(riva):'—')+'</td><td class="r num">'+(rislr?fmtBs(rislr):'—')+'</td><td class="r num">'+(neto?fmtBs(neto):'—')+'</td><td class="r num">'+(tbs?fmtBs(tbs):'—')+'</td><td class="r num"'+difc+'>'+((neto||tbs)?fmtBs(dif):'—')+'</td><td>'+esc(p.banco||'—')+'</td><td class="num">'+esc(p.ref||'—')+'</td><td class="c">'+fa+'</td><td class="c">'+tr+'</td><td class="c" style="white-space:nowrap"><button class="btn ghost icon sm" onclick="openPago(\''+p.id+'\')">✎</button> <button class="btn ghost icon sm" style="color:var(--danger);border-color:var(--danger)" onclick="delPago(\''+p.id+'\')">🗑</button></td></tr>';
+    return '<tr><td class="c num">'+(i+1)+'</td><td class="num">'+fmtDate(p.fecha)+'</td><td>'+esc(p.crematorio)+'</td><td class="c num">'+fmtNum(p.cantidad,0)+'</td><td class="r num">'+fmtUsd(m)+'</td><td class="r num">'+(sub?fmtBs(sub):'—')+'</td><td class="r num">'+(iva?fmtBs(iva):'—')+'</td><td class="r num">'+(tot?fmtBs(tot):'—')+'</td><td class="r num">'+(riva?fmtBs(riva):'—')+'</td><td class="r num">'+(rislr?fmtBs(rislr):'—')+'</td><td class="r num">'+(neto?fmtBs(neto):'—')+'</td><td class="r num">'+(tbs?fmtBs(tbs):'—')+'</td><td class="r num"'+difc+'>'+((neto||tbs)?fmtBs(dif):'—')+'</td><td>'+esc(p.banco||'—')+'</td><td class="num">'+esc(p.ref||'—')+'</td><td class="c">'+fa+'</td><td class="c">'+tr+'</td><td class="c" style="white-space:nowrap"><button class="btn ghost icon sm" onclick="openPago(\''+p.id+'\')">✎</button> <button class="btn ghost icon sm" style="color:var(--danger);border-color:var(--danger)" onclick="delPago(\''+p.id+'\')">🗑</button></td></tr>';
   }).join('');
-  tf.innerHTML='<tr><td colspan="3" class="r">TOTAL ('+rows.length+' pagos)</td><td class="c num">'+fmtNum(sCant,0)+'</td><td class="r num">'+fmtUsd(sUsd)+'</td><td class="r num">'+fmtBs(sSub)+'</td><td class="r num">'+fmtBs(sIva)+'</td><td class="r num">'+fmtBs(sExo)+'</td><td class="r num">'+fmtBs(sRiva)+'</td><td class="r num">'+fmtBs(sRislr)+'</td><td class="r num">'+fmtBs(sNeto)+'</td><td class="r num">'+fmtBs(sTrans)+'</td><td class="r num">'+fmtBs(sTrans-sNeto)+'</td><td colspan="5"></td></tr>';
+  tf.innerHTML='<tr><td colspan="3" class="r">TOTAL ('+rows.length+' pagos)</td><td class="c num">'+fmtNum(sCant,0)+'</td><td class="r num">'+fmtUsd(sUsd)+'</td><td class="r num">'+fmtBs(sSub)+'</td><td class="r num">'+fmtBs(sIva)+'</td><td class="r num">'+fmtBs(sTot)+'</td><td class="r num">'+fmtBs(sRiva)+'</td><td class="r num">'+fmtBs(sRislr)+'</td><td class="r num">'+fmtBs(sNeto)+'</td><td class="r num">'+fmtBs(sTrans)+'</td><td class="r num">'+fmtBs(sTrans-sNeto)+'</td><td colspan="5"></td></tr>';
 }
 function exportPagosExcel(){
   var rows=filteredPagos();if(!rows.length){toast('Sin pagos para exportar');return;}
@@ -1521,9 +1526,9 @@ function exportConc(tid,name){var el=document.getElementById(tid);if(!el){toast(
 
 /* ===== RENTABILIDAD Y FONDO ===== */
 function rentTotals(){
-  var costo=0,cremIva=0,trasIva=0;
-  cremaciones.forEach(function(c){var b=tarifaBreak(c.crematorio);costo+=b.total;cremIva+=b.base;trasIva+=n2(b.tras+b.ivaTras);});
-  costo=n2(costo);cremIva=n2(cremIva);trasIva=n2(trasIva);
+  var sp=pagosSplit();
+  var cremIva=sp.cremUsd,trasIva=sp.trasUsd,cremIvaBs=sp.cremBs,trasIvaBs=sp.trasBs;
+  var costo=n2(cremIva+trasIva),costoBs=n2(cremIvaBs+trasIvaBs),costoDev=costoDevengadoUsd();
   var facturado=serviciosGobUsd();
   var gs=0;gastos.forEach(function(g){gs+=usdOf(g.bs,g.tasa);});gs=n2(gs);
   var gBs=0;gastos.forEach(function(g){gBs+=Number(g.bs)||0;});gBs=n2(gBs);
@@ -1531,6 +1536,9 @@ function rentTotals(){
   var fondoBs=0,fondoUsd=0;ingresos.forEach(function(x){fondoBs+=Number(x.bs)||0;fondoUsd+=Number(x.usd)||0;});fondoBs=n2(fondoBs);fondoUsd=n2(fondoUsd);
   var pagBs=0,pagUsd=0;pagos.forEach(function(p){var tb=Number(p.transferBs)||0;pagBs+=tb;var r=bcvRate(p.fecha);if(tb&&r>0)pagUsd+=tb/r;});pagBs=n2(pagBs);pagUsd=n2(pagUsd);
   var bcvHoy=bcvRate(today())||Number(cfg.tasa)||0;
+  var opX=opTotals(),gtX=gastosTotals();
+  var cremPendUsd=n2(Math.max(costoDev-costo,0)),cremPendBs=n2(cremPendUsd*bcvHoy);
+  var pendPagoUsd=n2(cremPendUsd+opX.pendUsd+gtX.pendUsd),pendPagoBs=n2(cremPendBs+opX.pendBs+gtX.pendBs);
   var saldoUsd=n2(fondoUsd-costo);
   var saldoOper=n2(fondoUsd-costo-gs-(rentCobra?profit:0));
   var pendienteGob=n2(facturado-fondoUsd);
@@ -1542,7 +1550,7 @@ function rentTotals(){
   var profitS=n2(facturadoS-costo-gastosS);
   var margenS=facturadoS>0?n2(profitS/facturadoS*100):0;
   var saldoOperS=n2(fondoS-costo-gastosS-(rentCobra?profitS:0));
-  return {facturado:facturado,costo:costo,cremIva:cremIva,trasIva:trasIva,gastos:gs,gastosBs:gBs,profit:profit,gananciaProm:gananciaProm,margen:facturado>0?n2(profit/facturado*100):0,fondoBs:fondoBs,fondoUsd:fondoUsd,pagBs:pagBs,pagUsd:pagUsd,bcvHoy:bcvHoy,saldoUsd:saldoUsd,saldoBs:n2(saldoOper*bcvHoy),saldoOper:saldoOper,saldoOperBs:n2(saldoOper*bcvHoy),pendienteGob:pendienteGob,pendienteGobBs:n2(pendienteGob*bcvHoy),facturadoBs:n2(facturado*bcvHoy),padron:pc,superavit:saldoUsd>=0,rentCobra:rentCobra,n:cremaciones.length,
+  return {facturado:facturado,costo:costo,costoBs:costoBs,costoDev:costoDev,cremIva:cremIva,cremIvaBs:cremIvaBs,trasIva:trasIva,trasIvaBs:trasIvaBs,gastos:gs,gastosBs:gBs,profit:profit,gananciaProm:gananciaProm,margen:facturado>0?n2(profit/facturado*100):0,fondoBs:fondoBs,fondoUsd:fondoUsd,pagBs:pagBs,pagUsd:pagUsd,bcvHoy:bcvHoy,saldoUsd:saldoUsd,saldoBs:n2(saldoOper*bcvHoy),saldoOper:saldoOper,saldoOperBs:n2(saldoOper*bcvHoy),pendienteGob:pendienteGob,pendienteGobBs:n2(pendienteGob*bcvHoy),facturadoBs:n2(facturado*bcvHoy),pendPagoUsd:pendPagoUsd,pendPagoBs:pendPagoBs,cremPendUsd:cremPendUsd,cremPendBs:cremPendBs,padron:pc,superavit:saldoUsd>=0,rentCobra:rentCobra,n:cremaciones.length,
     simuOn:simuOn,fSup:fSup,gSup:gSup,facturadoS:facturadoS,gastosS:gastosS,fondoS:fondoS,profitS:profitS,margenS:margenS,saldoOperS:saldoOperS,saldoOperSBs:n2(saldoOperS*bcvHoy)};
 }
 function toggleSimu(){simuOn=!simuOn;save(K.simuOn,simuOn);renderRentabilidad();}
@@ -1590,11 +1598,15 @@ function renderRentabilidad(){
   var t=rentTotals(),by=rentByCrem();
   var sec1='<div class="rsec">Rentabilidad Real del Fondo</div>';
   var bh=t.bcvHoy;
+  var pd=pagosCremDesglose();
+  var _cxpU=0;aggByCrematorio().forEach(function(a){_cxpU+=a.saldoUsd;});var _opP=opTotals(),_gtP=gastosTotals();
+  var pendTotU=n2(_cxpU+_opP.pendUsd+_gtP.pendUsd),pendTotB=n2(_cxpU*bh+_opP.pendBs+_gtP.pendBs);
   var kB1='<div class="kpigrid" style="margin-bottom:20px">'+
     '<div class="kpi"><div class="lbl">Monto Servicios Prestados Gobernación</div><div class="big num" style="color:#0D7A4E">'+fmtBs(t.facturadoBs)+'</div><div class="alt num">'+fmtUsd(t.facturado)+' · '+fmtUsd(govRateHoy())+' × '+fmtNum(t.padron,0)+' expedientes del padrón</div></div>'+
-    '<div class="kpi"><div class="lbl">Cremaciones Totales con IVA</div><div class="big num" style="color:#9d2f2c">'+fmtBs(n2(t.cremIva*bh))+'</div><div class="alt num">'+fmtUsd(t.cremIva)+' · base + IVA (todas)</div></div>'+
-    '<div class="kpi"><div class="lbl">Traslados con IVA</div><div class="big num" style="color:#9d2f2c">'+fmtBs(n2(t.trasIva*bh))+'</div><div class="alt num">'+fmtUsd(t.trasIva)+' · traslado + IVA</div></div>'+
-    '<div class="kpi" style="border-top:3px solid #7a5cc0;background:#faf9fe"><div class="lbl">Cremaciones + Traslados con IVA</div><div class="big num" style="color:#4B2D8F">'+fmtBs(n2((t.cremIva+t.trasIva)*bh))+'</div><div class="alt num">'+fmtUsd(n2(t.cremIva+t.trasIva))+' · = Total Cremaciones Ejecutadas (Panel)</div></div>'+
+    '<div class="kpi"><div class="lbl">Cremaciones Totales Pagadas con IVA</div><div class="big num" style="color:#9d2f2c">'+fmtBs(pd.cremBs)+'</div><div class="alt num">'+fmtUsd(pd.cremUsd)+' · base + IVA (pagado en Pagos)</div></div>'+
+    '<div class="kpi"><div class="lbl">Traslados Totales Pagados con IVA</div><div class="big num" style="color:#9d2f2c">'+fmtBs(pd.trasBs)+'</div><div class="alt num">'+fmtUsd(pd.trasUsd)+' · traslado + IVA (pagado en Pagos)</div></div>'+
+    '<div class="kpi" style="border-top:3px solid #7a5cc0;background:#faf9fe"><div class="lbl">Cremaciones + Traslados Pagados con IVA</div><div class="big num" style="color:#4B2D8F">'+fmtBs(n2(pd.cremBs+pd.trasBs))+'</div><div class="alt num">'+fmtUsd(n2(pd.cremUsd+pd.trasUsd))+' · = Total Pagado (Panel de Pagos)</div></div>'+
+    '<div class="kpi" style="border-top:3px solid #B07A00"><div class="lbl">Monto Pendiente de Pago</div><div class="big num" style="color:#B07A00">'+fmtBs(pendTotB)+'</div><div class="alt num">'+fmtUsd(pendTotU)+' · cremaciones + operacionales + gastos</div></div>'+
     '<div class="kpi"><div class="lbl">Gastos Operativos</div><div class="big num" style="color:#8a5e00">'+fmtBs(t.gastosBs)+'</div><div class="alt num">'+fmtUsd(t.gastos)+' equivalente</div></div>'+
     '<div class="kpi accent"><div class="lbl">Ganancia</div><div class="big num" '+(t.profit<0?'style="color:#c0433f"':'')+'>'+fmtBs(n2(t.profit*bh))+'</div><div class="alt num">'+fmtUsd(t.profit)+' · margen '+fmtNum(t.margen,1)+'% · '+fmtUsd(t.gananciaProm)+'/servicio</div></div>'+
   '</div>';
@@ -1606,9 +1618,9 @@ function renderRentabilidad(){
   var usdu=function(u){return '<div style="font-size:10.5px;color:var(--slate);font-weight:400">'+fmtUsd(u)+'</div>';};
   var bh2=t.bcvHoy;
   var eFondoBs=sim?n2(eFondo*bh2):t.fondoBs;
-  var opE=opTotals(), gtE=gastosTotals();
-  var pagCremU=pagosCremUsd(), pagCremB=pagosCremBs();
-  var pagTrasU=opE.trPagUsd, pagTrasB=opE.trPagBs;
+  var opE=opTotals(), gtE=gastosTotals(), pdE=pagosCremDesglose();
+  var pagCremU=pdE.cremUsd, pagCremB=pdE.cremBs;
+  var pagTrasU=n2(opE.trPagUsd+pdE.trasUsd), pagTrasB=n2(opE.trPagBs+pdE.trasBs);
   var pagOperU=n2(opE.pagUsd-opE.trPagUsd), pagOperB=n2(opE.pagBs-opE.trPagBs);
   var pagGastU=gtE.pagUsd, pagGastB=gtE.pagBs;
   var saldoPagU=n2(pagCremU+pagTrasU+pagGastU+pagOperU), saldoPagB=n2(pagCremB+pagTrasB+pagGastB+pagOperB);
@@ -1623,8 +1635,8 @@ function renderRentabilidad(){
   var flujo='<table class="flujo"><tbody>'+
     ecRow('＋','Fondos Recibidos'+supF,eFondoBs,eFondo,'#0D7A4E')+
     ecSec('Pagos efectuados')+
-    ecRow('−','Pagos en Cremaciones '+sub+'(monto total con IVA · panel)</span>',pagCremB,pagCremU)+
-    ecRow('−','Pago por traslados '+sub+'(operacional)</span>',pagTrasB,pagTrasU)+
+    ecRow('−','Pagos en Cremaciones '+sub+'(base + IVA, sin traslado · pagado)</span>',pagCremB,pagCremU)+
+    ecRow('−','Pago por traslados '+sub+'(crematorio + operacional)</span>',pagTrasB,pagTrasU)+
     ecRow('−','Pago por gastos administrativos'+supG,pagGastB,pagGastU)+
     ecRow('−','Pago operacionales '+sub+'(manipulación / carga)</span>',pagOperB,pagOperU)+
     '<tr style="border-top:2px solid var(--line-2);background:#faf9fe"><td class="op">=</td><td><b>Saldo Pagado</b> '+sub+'(suma de todos los pagos)</span></td><td class="r num" style="color:#4B2D8F;font-weight:800">'+fmtBs(saldoPagB)+usdu(saldoPagU)+'</td></tr>'+
@@ -1760,21 +1772,18 @@ function renderDashboard(){
   var rHoy=bcvRate(today()),lrd=lastRateDate();
   var bh=document.getElementById('bcvHoy');if(bh){bh.textContent=rHoy>0?fmtNum(rHoy,4):'—';document.getElementById('bcvHoyFecha').textContent=lrd?('al '+fmtDate(tasas[today()]!=null?today():lrd)):'';}
   var rt=rentTotals();
-  document.getElementById('kAdeuUsd').textContent=fmtBs(rt.facturadoBs);
-  document.getElementById('kAdeuN').textContent=fmtUsd(rt.facturado)+' · '+fmtNum(rt.padron,0)+' expedientes';
-  document.getElementById('kPagUsd').textContent=fmtBs(rt.fondoBs);
-  document.getElementById('kPagN').textContent=fmtUsd(rt.fondoUsd)+' · '+fmtNum(ingresos.length,0)+' abono(s)';
-  document.getElementById('kSaldo').textContent=fmtBs(rt.pendienteGobBs);
-  document.getElementById('kSaldoN').textContent=fmtUsd(rt.pendienteGob)+' · '+(rt.pendienteGob>0.005?'la Gobernación debe':(rt.pendienteGob<-0.005?'a favor de la Gobernación':'al día'));
+  var setK=function(id,v){var e=document.getElementById(id);if(e)e.textContent=v;};
+  setK('kAdeuUsd',fmtBs(rt.facturadoBs));
+  setK('kAdeuN',fmtUsd(rt.facturado)+' · '+fmtNum(rt.padron,0)+' expedientes');
+  setK('kPagUsd',fmtBs(rt.fondoBs));
+  setK('kPagN',fmtUsd(rt.fondoUsd)+' · '+fmtNum(ingresos.length,0)+' abono(s)');
+  setK('kSaldo',fmtBs(rt.pendienteGobBs));
+  setK('kSaldoN',fmtUsd(rt.pendienteGob)+' · '+(rt.pendienteGob>0.005?'la Gobernación debe':(rt.pendienteGob<-0.005?'a favor de la Gobernación':'al día')));
   var opD=opTotals(),gtD=gastosTotals(),trD=trasladosPagados();
-  document.getElementById('kPagCremBs').textContent=fmtBs(pagosCremBs());
-  document.getElementById('kPagCremUsd').textContent=fmtUsd(pagosCremUsd())+' · a crematorios';
-  document.getElementById('kPagTrasBs').textContent=fmtBs(trD.bs);
-  document.getElementById('kPagTrasUsd').textContent=fmtUsd(trD.usd)+' · operacional + Vallés del Tuy';
-  document.getElementById('kPagGastoBs').textContent=fmtBs(gtD.pagBs);
-  document.getElementById('kPagGastoUsd').textContent=fmtUsd(gtD.pagUsd)+' · '+fmtNum(gtD.pagN,0)+' gasto(s)';
-  document.getElementById('kGastoTotBs').textContent=fmtBs(rt.gastosBs);
-  document.getElementById('kGastoTotUsd').textContent=fmtUsd(rt.gastos)+' · '+fmtNum(gastos.length,0)+' gasto(s)';
+  setK('kPagCremBs',fmtBs(pagosCremBs()));setK('kPagCremUsd',fmtUsd(pagosCremUsd())+' · a crematorios');
+  setK('kPagTrasBs',fmtBs(trD.bs));setK('kPagTrasUsd',fmtUsd(trD.usd)+' · operacional + Vallés del Tuy');
+  setK('kPagGastoBs',fmtBs(gtD.pagBs));setK('kPagGastoUsd',fmtUsd(gtD.pagUsd)+' · '+fmtNum(gtD.pagN,0)+' gasto(s)');
+  setK('kGastoTotBs',fmtBs(rt.gastosBs));setK('kGastoTotUsd',fmtUsd(rt.gastos)+' · '+fmtNum(gastos.length,0)+' gasto(s)');
   var fsHost=document.getElementById('fundSummary');
   if(fsHost){var serv=serviciosGobUsd(),servBs=n2(serv*rt.bcvHoy),recib=rt.fondoUsd,recibBs=rt.fondoBs;
     var totPag=n2(pagosCremUsd()+opD.pagUsd+gtD.pagUsd),totPagBs=n2(pagosCremBs()+opD.pagBs+gtD.pagBs);
