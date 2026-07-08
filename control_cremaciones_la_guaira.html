@@ -542,7 +542,7 @@ table.flujo tr.saldo td{border-top:2px solid var(--tp);font-weight:800}
   </section>
 </main>
 
-<div class="foot">Sistema de control interno · Gobernación del Estado La Guaira — Operador Seguros La Fe, C.A. · Datos almacenados localmente en este equipo. · <b>v5.2 · pagos con IVA cuadrados, panel solo Gobernación, estado de cuenta consistente</b></div>
+<div class="foot">Sistema de control interno · Gobernación del Estado La Guaira — Operador Seguros La Fe, C.A. · Datos almacenados localmente en este equipo. · <b>v5.3 · fondos recibidos en Bs reales y sin duplicar gastos operativos</b></div>
 
 <!-- Modal Cremación -->
 <div class="modal-bg" id="modalCrem"><div class="modal">
@@ -1607,7 +1607,6 @@ function renderRentabilidad(){
     '<div class="kpi"><div class="lbl">Traslados Totales Pagados con IVA</div><div class="big num" style="color:#9d2f2c">'+fmtBs(pd.trasBs)+'</div><div class="alt num">'+fmtUsd(pd.trasUsd)+' · traslado + IVA (pagado en Pagos)</div></div>'+
     '<div class="kpi" style="border-top:3px solid #7a5cc0;background:#faf9fe"><div class="lbl">Cremaciones + Traslados Pagados con IVA</div><div class="big num" style="color:#4B2D8F">'+fmtBs(n2(pd.cremBs+pd.trasBs))+'</div><div class="alt num">'+fmtUsd(n2(pd.cremUsd+pd.trasUsd))+' · = Total Pagado (Panel de Pagos)</div></div>'+
     '<div class="kpi" style="border-top:3px solid #B07A00"><div class="lbl">Monto Pendiente de Pago</div><div class="big num" style="color:#B07A00">'+fmtBs(pendTotB)+'</div><div class="alt num">'+fmtUsd(pendTotU)+' · cremaciones + operacionales + gastos</div></div>'+
-    '<div class="kpi"><div class="lbl">Gastos Operativos</div><div class="big num" style="color:#8a5e00">'+fmtBs(t.gastosBs)+'</div><div class="alt num">'+fmtUsd(t.gastos)+' equivalente</div></div>'+
     '<div class="kpi accent"><div class="lbl">Ganancia</div><div class="big num" '+(t.profit<0?'style="color:#c0433f"':'')+'>'+fmtBs(n2(t.profit*bh))+'</div><div class="alt num">'+fmtUsd(t.profit)+' · margen '+fmtNum(t.margen,1)+'% · '+fmtUsd(t.gananciaProm)+'/servicio</div></div>'+
   '</div>';
   var sim=t.simuOn;
@@ -1617,7 +1616,7 @@ function renderRentabilidad(){
   var supG=(sim&&t.gSup>0)?' <span style="color:#8a5e00;font-size:11px">(+ '+fmtUsd(t.gSup)+' sup.)</span>':'';
   var usdu=function(u){return '<div style="font-size:10.5px;color:var(--slate);font-weight:400">'+fmtUsd(u)+'</div>';};
   var bh2=t.bcvHoy;
-  var eFondoBs=sim?n2(eFondo*bh2):t.fondoBs;
+  var eFondoBs=n2(t.fondoBs+(sim?t.fSup*bh2:0));
   var opE=opTotals(), gtE=gastosTotals(), pdE=pagosCremDesglose();
   var pagCremU=pdE.cremUsd, pagCremB=pdE.cremBs;
   var pagTrasU=n2(opE.trPagUsd+pdE.trasUsd), pagTrasB=n2(opE.trPagBs+pdE.trasBs);
