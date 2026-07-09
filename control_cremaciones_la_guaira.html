@@ -256,6 +256,14 @@ table.flujo tr.saldo td{border-top:2px solid var(--tp);font-weight:800}
 .fundcell{min-width:190px}
 .fundcell .fbig{white-space:nowrap;line-height:1.15}
 .fundcell .fusd{white-space:nowrap}
+.fundbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:#efe9fb;border-bottom:1px solid #d9cff0;padding:9px 20px}
+.fundbar .fblbl{font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:#6b4bb0}
+.fundbar .fbtabs{display:flex;gap:8px;flex-wrap:wrap}
+.fundtab{cursor:pointer;border:1px solid #d9cff0;background:#fff;border-radius:9px;padding:6px 13px;font-family:inherit;font-size:12.5px;font-weight:700;color:#1c1a2e;display:flex;flex-direction:column;gap:0;line-height:1.25;text-align:left}
+.fundtab small{font-weight:400;font-size:9.5px;color:#6b6880}
+.fundtab.active{background:#4B2D8F;color:#fff;border-color:#4B2D8F}
+.fundtab.active small{color:#d9cff0}
+.fgpanel{max-width:760px}
 .ectab .r{overflow-wrap:anywhere}
 .ingbreak{border:1px solid var(--line-2);border-radius:10px;padding:4px 14px;background:#faf9fe;margin-top:4px}
 .ibrow{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:7px 0;font-size:12.5px;border-top:1px dashed var(--line-2)}
@@ -298,6 +306,8 @@ table.flujo tr.saldo td{border-top:2px solid var(--tp);font-weight:800}
     </div>
   </div>
 </header>
+
+<div class="fundbar" id="fundBar"></div>
 
 <nav class="tabs"><div class="tabsinner">
   <button data-view="rentabilidad">Rentabilidad</button>
@@ -597,9 +607,13 @@ table.flujo tr.saldo td{border-top:2px solid var(--tp);font-weight:800}
       </div>
     </div></div>
   </section>
+
+  <section class="view" id="v-fondogen">
+    <div id="fondoGenHost"></div>
+  </section>
 </main>
 
-<div class="foot">Sistema de control interno · Gobernación del Estado La Guaira — Operador Seguros La Fe, C.A. · Datos almacenados localmente en este equipo. · <b>v6.7 · otras retenciones dentro del Neto recibido (coherente en resumen, donut y estructura) · estructura de costos con estatus pagado/pendiente por concepto (desplegable), totales que cuadran con el estado de cuenta, bloque único y dilución</b></div>
+<div class="foot">Sistema de control interno · Gobernación del Estado La Guaira — Operador Seguros La Fe, C.A. · Datos almacenados localmente en este equipo. · <b>v7.0 · multi-fondo Etapa 1: selector de fondo + aislamiento por fondo (Fondo 1 Cremaciones intacto con toda su data) + esqueleto de fondo genérico · incluye todo lo de v6.7</b></div>
 
 <!-- Modal Cremación -->
 <div class="modal-bg" id="modalCrem"><div class="modal">
@@ -755,7 +769,7 @@ break;case"<bookViews":;case"<bookViews>":;case"</bookViews>":break;case"<workbo
 
 <script>
 /* ===== Estado ===== */
-var K={crem:'crem_lg_cremaciones',pagos:'crem_lg_pagos',gasto:'crem_lg_gastos',cfg:'crem_lg_config',crematorios:'crem_lg_crematorios',cats:'crem_lg_categorias',logos:'crem_lg_logos',tasas:'crem_lg_tasas',padron:'crem_lg_padron',padronMeta:'crem_lg_padron_meta',ingresos:'crem_lg_ingresos',rentCobra:'crem_lg_rent_cobra',simuOn:'crem_lg_simu_on',simuSup:'crem_lg_simu_sup',opActores:'crem_lg_op_actores',opConceptos:'crem_lg_op_conceptos',opPagos:'crem_lg_op_pagos',fondos:'crem_lg_fondos'};
+var K={crem:'crem_lg_cremaciones',pagos:'crem_lg_pagos',gasto:'crem_lg_gastos',cfg:'crem_lg_config',crematorios:'crem_lg_crematorios',cats:'crem_lg_categorias',logos:'crem_lg_logos',tasas:'crem_lg_tasas',padron:'crem_lg_padron',padronMeta:'crem_lg_padron_meta',ingresos:'crem_lg_ingresos',rentCobra:'crem_lg_rent_cobra',simuOn:'crem_lg_simu_on',simuSup:'crem_lg_simu_sup',opActores:'crem_lg_op_actores',opConceptos:'crem_lg_op_conceptos',opPagos:'crem_lg_op_pagos',fondos:'crem_lg_fondos',fondoActivo:'crem_lg_fondo_activo'};
 var DEFAULT_CREMATORIOS=['Cinerario Vallés','Campo de Paz - Previsora Tende','Puertas del Cielo','Funcemar','Organización Parque Valles del Tuy'];
 var DEFAULT_CATS=['Combustible','Implementos / Insumos','Hidratación','Alimentación (desayunos)','Transporte / Logística','Otros'];
 var DEFAULT_CFG={entidad:'Gobernación del Estado La Guaira',operador:'Seguros La Fe, C.A.',convenio:'',responsable:'Edwin Bermúdez',fechaIni:'',tasa:515.7295,tarifaBase:150,ivaPct:16,traslado:80,retIvaPct:75,retIslrPct:2,patentePct:0,ivaSeniatPct:0,traslados:{'Organización Parque Valles del Tuy':80},govTarifas:[{desde:'',hasta:'',monto:410}],amort:{concepto:'Camión de traslado',valorUsd:0,meses:0},diluirItems:{crem:{modo:'ejec',manual:0},tras:{modo:'ejec',manual:0},gastos:{modo:'ejec',manual:0},operac:{modo:'ejec',manual:0},amort:{modo:'ejec',manual:0}}};
@@ -797,6 +811,8 @@ function deduccionesFondoBs(){return n2(patenteBs()+ivaSeniatBs()+retencionesTot
 var fondos=load(K.fondos,null);
 if(!Array.isArray(fondos)||!fondos.length){fondos=[{id:'f_prin',nombre:'Cremaciones La Guaira',principal:true}];save(K.fondos,fondos);}
 if(!fondos.some(function(f){return f.principal;})){fondos.unshift({id:'f_prin',nombre:'Cremaciones La Guaira',principal:true});save(K.fondos,fondos);}
+var activeFundId=load(K.fondoActivo,'f_prin');
+if(!fondos.some(function(f){return f.id===activeFundId;}))activeFundId=(fondos.find(function(f){return f.principal;})||fondos[0]).id;
 function fondoNetoOf(f){return f.principal?fondoNetoBs():n2(Number(f.netoBs)||0);}
 function fondoIvaOf(f){return f.principal?ivaFacturaBs():n2(Number(f.ivaBs)||0);}
 function fondoPatPctOf(f){return f.principal?(Number(cfg.patentePct)||0):(Number(f.patentePct)||0);}
@@ -895,6 +911,7 @@ function entClass(e){return e==='Entregado'?'ok':(e==='En proceso'?'part':'warn'
 
 /* ===== Navegación ===== */
 function go(view){
+  _lastOpView=view;
   document.querySelectorAll('nav.tabs button').forEach(function(b){b.classList.toggle('active',b.dataset.view===view);});
   document.querySelectorAll('section.view').forEach(function(s){s.classList.toggle('active',s.id==='v-'+view);});
   if(view==='dashboard')renderDashboard();
@@ -2269,12 +2286,33 @@ function setFondoPct(id,key,val){var f=fondos.find(function(x){return x.id===id;
   renderFondos();
 }
 function setFondoBase(id,key,val){var f=fondos.find(function(x){return x.id===id;});if(!f||f.principal)return;f[key]=n2(Number(val)||0);saveFondos();renderFondos();}
-function addFondo(){var nombre=(document.getElementById('nfNombre').value||'').trim();var neto=Number(document.getElementById('nfNeto').value)||0;var iva=Number(document.getElementById('nfIva').value)||0;if(!nombre){toast('Indique el nombre del fondo');return;}fondos.push({id:uid(),nombre:nombre,netoBs:n2(neto),ivaBs:n2(iva),patentePct:0,ivaSeniatPct:0,principal:false});saveFondos();document.getElementById('nfNombre').value='';document.getElementById('nfNeto').value='';document.getElementById('nfIva').value='';renderFondos();toast('Fondo agregado');}
-function delFondo(id){var f=fondos.find(function(x){return x.id===id;});if(!f||f.principal){toast('El fondo operativo no se elimina');return;}if(!confirm('¿Eliminar el fondo «'+f.nombre+'»?'))return;fondos=fondos.filter(function(x){return x.id!==id;});saveFondos();renderFondos();toast('Fondo eliminado');}
+function addFondo(){var nombre=(document.getElementById('nfNombre').value||'').trim();var neto=Number(document.getElementById('nfNeto').value)||0;var iva=Number(document.getElementById('nfIva').value)||0;if(!nombre){toast('Indique el nombre del fondo');return;}fondos.push({id:uid(),nombre:nombre,netoBs:n2(neto),ivaBs:n2(iva),patentePct:0,ivaSeniatPct:0,principal:false});saveFondos();document.getElementById('nfNombre').value='';document.getElementById('nfNeto').value='';document.getElementById('nfIva').value='';renderFondos();renderFundBar();toast('Fondo agregado');}
+function delFondo(id){var f=fondos.find(function(x){return x.id===id;});if(!f||f.principal){toast('El fondo operativo no se elimina');return;}if(!confirm('¿Eliminar el fondo «'+f.nombre+'»?'))return;fondos=fondos.filter(function(x){return x.id!==id;});if(activeFundId===id){activeFundId=(fondos.find(function(x){return x.principal;})||fondos[0]).id;save(K.fondoActivo,activeFundId);}saveFondos();renderFondos();renderFundBar();toast('Fondo eliminado');}
 function refreshTributos(){if(document.getElementById('rentabilidadHost'))renderRentabilidad();if(document.getElementById('estructuraHost'))renderEstructura();renderDashboard();}
 function addRetencion(){var nombre=(document.getElementById('nrNombre').value||'').trim();var pct=Number(document.getElementById('nrPct').value)||0;var base=document.getElementById('nrBase').value||'subtotal';if(!nombre){toast('Indique el nombre de la retención');return;}if(!Array.isArray(cfg.retenciones))cfg.retenciones=[];cfg.retenciones.push({id:uid(),nombre:nombre,pct:n2(pct),base:base});save(K.cfg,cfg);document.getElementById('nrNombre').value='';document.getElementById('nrPct').value='';renderFondos();refreshTributos();toast('Retención agregada');}
 function setRetencion(id,key,val){var r=(cfg.retenciones||[]).find(function(x){return x.id===id;});if(!r)return;if(key==='pct')r.pct=n2(Number(val)||0);else if(key==='nombre')r.nombre=String(val).trim();else if(key==='base')r.base=val;save(K.cfg,cfg);renderFondos();refreshTributos();}
 function delRetencion(id){var r=(cfg.retenciones||[]).find(function(x){return x.id===id;});if(!r)return;if(!confirm('¿Eliminar la retención «'+(r.nombre||'')+'»?'))return;cfg.retenciones=(cfg.retenciones||[]).filter(function(x){return x.id!==id;});save(K.cfg,cfg);renderFondos();refreshTributos();toast('Retención eliminada');}
+var _lastOpView='dashboard';
+function renderFundBar(){var bar=document.getElementById('fundBar');if(!bar)return;var tabs=fondos.map(function(f){return '<button class="fundtab'+(f.id===activeFundId?' active':'')+'" onclick="setActiveFund(\''+f.id+'\')">'+esc(f.nombre)+'<small>'+(f.principal?'operativo · Bs':'fondo 2°+ · USDT')+'</small></button>';}).join('');bar.innerHTML='<span class="fblbl">Fondo activo:</span><div class="fbtabs">'+tabs+'</div>';}
+function setActiveFund(id){activeFundId=id;save(K.fondoActivo,id);applyActiveFund();window.scrollTo(0,0);}
+function applyActiveFund(){var f=fondos.find(function(x){return x.id===activeFundId;})||fondos[0];activeFundId=f.id;var nav=document.querySelector('nav.tabs');var gv=document.getElementById('v-fondogen');
+  if(f.principal){if(nav)nav.style.display='';if(gv)gv.classList.remove('active');go(_lastOpView||'dashboard');}
+  else{if(nav)nav.style.display='none';document.querySelectorAll('main > section.view').forEach(function(s){s.classList.remove('active');});if(gv)gv.classList.add('active');renderFondoGenerico(f);window.scrollTo(0,0);}
+  renderFundBar();}
+function renderFondoGenerico(f){var host=document.getElementById('fondoGenHost');if(!host)return;var bh=bcvHoyRate()||1;var U=function(bs){return n2(bs/bh);};
+  var neto=n2(Number(f.netoBs)||0),ivaF=n2(Number(f.ivaBs)||0);
+  var pat=(Number(f.patentePct)||0)>0?n2(neto*(Number(f.patentePct)||0)/100):0;
+  var ivaS=(Number(f.ivaSeniatPct)||0)>0?n2(ivaF*(Number(f.ivaSeniatPct)||0)/100):0;
+  var disp=n2(neto-pat-ivaS);
+  var eh=function(op,lbl,sub,bs,col,bold){return '<tr><td class="op">'+op+'</td><td>'+lbl+(sub?' <span style="color:var(--slate);font-weight:400;font-size:11px">'+sub+'</span>':'')+'</td><td class="r num" style="color:'+(col||'#1c1a2e')+';font-weight:'+(bold?'800':'700')+'">'+fmtBs(bs)+'<div style="font-size:10px;color:var(--slate);font-weight:400">'+fmtUsd(U(bs))+'</div></td></tr>';};
+  host.innerHTML='<div class="viewhead"><div><h2>'+esc(f.nombre)+'</h2><div class="lead">Fondo Gobernación La Guaira · manejo con cobertura USDT (del 2° en adelante).</div></div></div>'+
+    '<div class="panel fgpanel"><div class="ph"><h3>Estado de cuenta del fondo</h3><span style="color:var(--slate);font-size:11.5px">esqueleto · Etapa 1</span></div><div class="pb" style="padding:0"><table class="flujo"><tbody>'+
+      eh('＋','Neto recibido','(fondo disponible)',neto,'#0D7A4E')+
+      ((pat>0)?eh('−','Patente','('+fmtNum(f.patentePct,2)+'% s/ fondo)',pat,'#B07A00'):'')+
+      ((ivaS>0)?eh('−','Pago IVA Seniat','('+fmtNum(f.ivaSeniatPct,2)+'% s/ IVA)',ivaS,'#B07A00'):'')+
+      '<tr style="border-top:2px solid var(--line-2);background:#eef4fb"><td class="op" style="color:#245e94">=</td><td><b style="color:#245e94">Saldo Disponible para pagos</b></td><td class="r num" style="color:#245e94;font-weight:800">'+fmtBs(disp)+'<div style="font-size:10px;color:var(--slate);font-weight:400">'+fmtUsd(U(disp))+'</div></td></tr>'+
+    '</tbody></table></div></div>'+
+    '<div class="ecnote" style="max-width:760px">🚧 <b>Etapa 1 (cimiento):</b> el selector de fondo y el aislamiento por fondo ya están activos; el <b>Fondo 1 (Cremaciones)</b> queda intacto con toda su data. En las próximas etapas se agregan a este fondo: <b>registro de abonos</b> con la cadena fiscal completa, el <b>saldo del fondo anterior arrastrado</b> (desglosado por lo que se deba), la <b>tesorería USDT propia</b> (compras/ventas/saldo, sin mezclar recursos entre fondos) y el <b>estado de cuenta multimoneda</b> (USDT/Bs/USD) con tasa USDT diaria. Los datos que ve provienen de la ficha del fondo en <b>Finanzas → Fondos · tributos</b>.</div>';}
 function renderTraslados(){var tb=document.getElementById('tbTraslados');if(!tb)return;tb.innerHTML=crematorios.map(function(c){var v=trasladoOf(c);return '<tr><td>'+esc(c)+'</td><td class="r"><input type="number" step="0.01" data-crem="'+esc(c)+'" value="'+v+'" style="max-width:120px;text-align:right"></td><td class="r num">'+fmtUsd(tarifaUsd(c))+'</td></tr>';}).join('');}
 function saveTraslados(){var inputs=document.querySelectorAll('#tbTraslados input[data-crem]');if(!cfg.traslados)cfg.traslados={};inputs.forEach(function(i){cfg.traslados[i.getAttribute('data-crem')]=n2(Number(i.value)||0);});save(K.cfg,cfg);renderTraslados();refreshHeader();renderCrem();renderPagos();renderDashboard();toast('Traslados guardados');}
 var _govEdit=-1;
@@ -2352,9 +2390,9 @@ function delCategoria(i){var c=cats[i];if(gastos.some(function(r){return r.cat==
 
 /* ===== Backup ===== */
 function exportJSON(){var data={version:6,exported:new Date().toISOString(),cfg:cfg,crematorios:crematorios,cats:cats,logos:logos,cremaciones:cremaciones,pagos:pagos,gastos:gastos,tasas:tasas,padron:padron,padronMeta:padronMeta,ingresos:ingresos,fondos:fondos};var blob=new Blob([JSON.stringify(data)],{type:'application/json'});downloadBlob(blob,'respaldo_cremaciones_'+today()+'.json');toast('Respaldo exportado');}
-function importJSON(ev){var f=ev.target.files[0];if(!f)return;var rd=new FileReader();rd.onload=function(){try{var d=JSON.parse(rd.result);if(!confirm('Esto reemplazará todos los datos actuales por los del respaldo. ¿Continuar?'))return;if(d.cfg)cfg=Object.assign({},DEFAULT_CFG,d.cfg);if(Array.isArray(d.crematorios))crematorios=d.crematorios;if(Array.isArray(d.cats))cats=d.cats;if(d.logos&&typeof d.logos==='object')logos=d.logos;if(Array.isArray(d.cremaciones))cremaciones=d.cremaciones;if(Array.isArray(d.pagos))pagos=d.pagos;if(Array.isArray(d.gastos))gastos=d.gastos;if(d.tasas&&typeof d.tasas==='object')tasas=d.tasas;if(Array.isArray(d.padron))padron=d.padron;if(d.padronMeta&&typeof d.padronMeta==='object')padronMeta=d.padronMeta;if(Array.isArray(d.ingresos))ingresos=d.ingresos;if(Array.isArray(d.fondos)&&d.fondos.length)fondos=d.fondos;save(K.fondos,fondos);save(K.ingresos,ingresos);save(K.padron,padron);save(K.padronMeta,padronMeta);save(K.tasas,tasas);save(K.cfg,cfg);save(K.crematorios,crematorios);save(K.cats,cats);save(K.logos,logos);save(K.crem,cremaciones);save(K.pagos,pagos);save(K.gasto,gastos);refreshSelects();fillConfigForm();refreshHeader();renderCrem();renderPagos();renderGasto();renderDashboard();toast('Respaldo importado');}catch(e){alert('Archivo inválido: '+e.message);}};rd.readAsText(f);ev.target.value='';}
+function importJSON(ev){var f=ev.target.files[0];if(!f)return;var rd=new FileReader();rd.onload=function(){try{var d=JSON.parse(rd.result);if(!confirm('Esto reemplazará todos los datos actuales por los del respaldo. ¿Continuar?'))return;if(d.cfg)cfg=Object.assign({},DEFAULT_CFG,d.cfg);if(Array.isArray(d.crematorios))crematorios=d.crematorios;if(Array.isArray(d.cats))cats=d.cats;if(d.logos&&typeof d.logos==='object')logos=d.logos;if(Array.isArray(d.cremaciones))cremaciones=d.cremaciones;if(Array.isArray(d.pagos))pagos=d.pagos;if(Array.isArray(d.gastos))gastos=d.gastos;if(d.tasas&&typeof d.tasas==='object')tasas=d.tasas;if(Array.isArray(d.padron))padron=d.padron;if(d.padronMeta&&typeof d.padronMeta==='object')padronMeta=d.padronMeta;if(Array.isArray(d.ingresos))ingresos=d.ingresos;if(Array.isArray(d.fondos)&&d.fondos.length)fondos=d.fondos;if(!fondos.some(function(f){return f.id===activeFundId;}))activeFundId=(fondos.find(function(f){return f.principal;})||fondos[0]).id;save(K.fondoActivo,activeFundId);save(K.fondos,fondos);save(K.ingresos,ingresos);save(K.padron,padron);save(K.padronMeta,padronMeta);save(K.tasas,tasas);save(K.cfg,cfg);save(K.crematorios,crematorios);save(K.cats,cats);save(K.logos,logos);save(K.crem,cremaciones);save(K.pagos,pagos);save(K.gasto,gastos);refreshSelects();fillConfigForm();refreshHeader();renderCrem();renderPagos();renderGasto();renderDashboard();toast('Respaldo importado');}catch(e){alert('Archivo inválido: '+e.message);}};rd.readAsText(f);ev.target.value='';}
 function wipeCremaciones(){if(!confirm('¿Borrar TODAS las cremaciones cargadas? Se conservan pagos, gastos, abonos y padrón. Exporte un respaldo antes.'))return;if(!confirm('Confirmación final: se eliminarán todas las cremaciones de este equipo.'))return;cremaciones=[];save(K.crem,cremaciones);renderCrem();renderDashboard();renderPagos();if(document.getElementById('rentabilidadHost'))renderRentabilidad();if(document.getElementById('conciliacionHost'))renderConciliacion();toast('Cremaciones borradas');}
-function wipe(){if(!confirm('¿Borrar TODOS los datos? Esta acción no se puede deshacer. Exporte un respaldo antes.'))return;if(!confirm('Confirmación final: se eliminará toda la información de este equipo.'))return;[K.crem,K.pagos,K.gasto,K.cfg,K.crematorios,K.cats,K.logos,K.tasas,K.padron,K.padronMeta,K.ingresos,K.rentCobra,K.simuOn,K.simuSup,K.opActores,K.opConceptos,K.opPagos,K.fondos].forEach(function(k){localStorage.removeItem(k);});cremaciones=[];pagos=[];gastos=[];padron=[];padronMeta={updated:'',fname:''};ingresos=[];rentCobra=true;simuOn=false;simuSup=[];opActores=[{id:'a_fun',tipo:'Funeraria',nombre:'Funeraria'},{id:'a_car',tipo:'Carrocero',nombre:'Carrocero'}];opConceptos=['Traslado','Manipulación','Carga de cadáveres'];opPagos=[];fondos=[{id:'f_prin',nombre:'Cremaciones La Guaira',principal:true}];save(K.fondos,fondos);cfg=Object.assign({},DEFAULT_CFG);crematorios=DEFAULT_CREMATORIOS.slice();cfg.traslados={};crematorios.forEach(function(c){cfg.traslados[c]=Number(DEFAULT_CFG.traslados[c])||0;});cfg.govTarifas=[{desde:'',hasta:'',monto:410}];crematorios=DEFAULT_CREMATORIOS.slice();cats=DEFAULT_CATS.slice();tasas=Object.assign({},DEFAULT_TASAS);save(K.tasas,tasas);logos={};logos['__valles_removed__']=1;logos['__inst__']=LAFE_LOGO;logos['__inst_ver__']=INST_LOGO_VER;save(K.logos,logos);refreshSelects();fillConfigForm();refreshHeader();renderCrem();renderPagos();renderGasto();renderDashboard();toast('Datos borrados');}
+function wipe(){if(!confirm('¿Borrar TODOS los datos? Esta acción no se puede deshacer. Exporte un respaldo antes.'))return;if(!confirm('Confirmación final: se eliminará toda la información de este equipo.'))return;[K.crem,K.pagos,K.gasto,K.cfg,K.crematorios,K.cats,K.logos,K.tasas,K.padron,K.padronMeta,K.ingresos,K.rentCobra,K.simuOn,K.simuSup,K.opActores,K.opConceptos,K.opPagos,K.fondos,K.fondoActivo].forEach(function(k){localStorage.removeItem(k);});cremaciones=[];pagos=[];gastos=[];padron=[];padronMeta={updated:'',fname:''};ingresos=[];rentCobra=true;simuOn=false;simuSup=[];opActores=[{id:'a_fun',tipo:'Funeraria',nombre:'Funeraria'},{id:'a_car',tipo:'Carrocero',nombre:'Carrocero'}];opConceptos=['Traslado','Manipulación','Carga de cadáveres'];opPagos=[];fondos=[{id:'f_prin',nombre:'Cremaciones La Guaira',principal:true}];save(K.fondos,fondos);activeFundId='f_prin';save(K.fondoActivo,activeFundId);cfg=Object.assign({},DEFAULT_CFG);crematorios=DEFAULT_CREMATORIOS.slice();cfg.traslados={};crematorios.forEach(function(c){cfg.traslados[c]=Number(DEFAULT_CFG.traslados[c])||0;});cfg.govTarifas=[{desde:'',hasta:'',monto:410}];crematorios=DEFAULT_CREMATORIOS.slice();cats=DEFAULT_CATS.slice();tasas=Object.assign({},DEFAULT_TASAS);save(K.tasas,tasas);logos={};logos['__valles_removed__']=1;logos['__inst__']=LAFE_LOGO;logos['__inst_ver__']=INST_LOGO_VER;save(K.logos,logos);refreshSelects();fillConfigForm();refreshHeader();renderCrem();renderPagos();renderGasto();renderDashboard();toast('Datos borrados');}
 
 /* ===== Modales ===== */
 function closeModal(id){document.getElementById(id).classList.remove('open');}
@@ -2362,7 +2400,7 @@ document.querySelectorAll('.modal-bg').forEach(function(m){m.addEventListener('c
 document.addEventListener('keydown',function(e){if(e.key==='Escape')document.querySelectorAll('.modal-bg.open').forEach(function(m){m.classList.remove('open');});});
 
 /* ===== Init ===== */
-refreshSelects();refreshHeader();fillConfigForm();renderCrem();renderPagos();renderGasto();renderDashboard();
+refreshSelects();refreshHeader();fillConfigForm();renderCrem();renderPagos();renderGasto();renderDashboard();renderFundBar();applyActiveFund();
 </script>
 </body>
 </html>
