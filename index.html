@@ -388,6 +388,7 @@ table.flujo tr.saldo td{border-top:2px solid var(--tp);font-weight:800}
       <button data-sub="pagos" onclick="finSub('pagos')">Pagos a crematorios</button>
       <button data-sub="oper" onclick="finSub('oper')">Pagos operacionales</button>
       <button data-sub="gastos" onclick="finSub('gastos')">Gastos de logística</button>
+      <button data-sub="fondos" onclick="finSub('fondos')">Fondos · tributos</button>
     </div>
     <div id="finSummary" style="margin-bottom:16px"></div>
 
@@ -447,6 +448,13 @@ table.flujo tr.saldo td{border-top:2px solid var(--tp);font-weight:800}
       <div class="tablewrap"><table class="data">
         <thead><tr><th class="c">#</th><th>Fecha</th><th>Categoría</th><th>Concepto</th><th>Empresa Pagadora</th><th>Forma pago</th><th>Comprob.</th><th class="r">Monto Bs.</th><th class="r">Tasa</th><th class="r">USD</th><th class="c">Estado</th><th class="c">Acción</th></tr></thead>
         <tbody id="tbGasto"></tbody><tfoot id="tfGasto"></tfoot></table></div>
+    </div>
+
+    <div class="subpane" id="fin-fondos">
+      <div class="panel"><div class="ph"><h3>Fondos · costos tributarios por fondo</h3><span style="color:var(--slate);font-size:11.5px">patente sobre fondo disponible · IVA Seniat sobre IVA de facturas</span></div><div class="pb">
+        <div class="lead" style="margin-bottom:12px">Cada fondo aplica su tributación de forma independiente. El <b>fondo operativo (Cremaciones La Guaira)</b> toma su fondo disponible e IVA automáticamente de los abonos recibidos, y sus porcentajes son los mismos de Configuración (0% = no aplica). Los demás fondos se cargan de forma manual con su propio fondo disponible, IVA y porcentajes.</div>
+        <div id="fondosHost"></div>
+      </div></div>
     </div>
   </section>
 
@@ -523,11 +531,6 @@ table.flujo tr.saldo td{border-top:2px solid var(--tp);font-weight:800}
       <div style="margin-top:14px"><button class="btn" onclick="saveTarifa()">Guardar tarifas y retenciones</button></div>
     </div></div>
 
-    <div class="cfgcard"><div class="ph"><h3>Fondos · costos tributarios por fondo</h3><span style="color:var(--slate);font-size:11.5px">patente sobre fondo disponible · IVA Seniat sobre IVA de facturas</span></div><div class="pb">
-      <div class="lead" style="margin-bottom:12px">Cada fondo aplica su tributación de forma independiente. El <b>fondo operativo (Cremaciones La Guaira)</b> toma su fondo disponible e IVA automáticamente de los datos reales, y sus porcentajes son los mismos de arriba (0% = no aplica). Los demás fondos se cargan de forma manual con su propio fondo disponible, IVA y porcentajes.</div>
-      <div id="fondosHost"></div>
-    </div></div>
-
     <div class="cfgcard"><div class="ph"><h3>Traslado por crematorio (paramétrico)</h3></div><div class="pb">
       <div class="lead" style="margin-bottom:12px">Defina el traslado en USD de cada crematorio (0 si no aplica). La tarifa = (base + traslado) × (1 + IVA).</div>
       <div class="tablewrap"><table class="data"><thead><tr><th>Crematorio</th><th class="r">Traslado (USD)</th><th class="r">Tarifa resultante</th></tr></thead><tbody id="tbTraslados"></tbody></table></div>
@@ -596,7 +599,7 @@ table.flujo tr.saldo td{border-top:2px solid var(--tp);font-weight:800}
   </section>
 </main>
 
-<div class="foot">Sistema de control interno · Gobernación del Estado La Guaira — Operador Seguros La Fe, C.A. · Datos almacenados localmente en este equipo. · <b>v6.3 · sección «Fondos»: costos tributarios por fondo (patente e IVA Seniat), con el fondo operativo alimentado de datos reales y fondos adicionales manuales</b></div>
+<div class="foot">Sistema de control interno · Gobernación del Estado La Guaira — Operador Seguros La Fe, C.A. · Datos almacenados localmente en este equipo. · <b>v6.4 · sección «Fondos · tributos» integrada en Finanzas (junto a los fondos recibidos) · amortización con validación y aviso claro</b></div>
 
 <!-- Modal Cremación -->
 <div class="modal-bg" id="modalCrem"><div class="modal">
@@ -892,7 +895,6 @@ function go(view){
   if(view==='conciliacion')renderConciliacion();
   if(view==='rentabilidad')renderRentabilidad();
   if(view==='estructura')renderEstructura();
-  if(view==='config')renderFondos();
   window.scrollTo(0,0);
 }
 var _finSub='abonos';
@@ -903,6 +905,7 @@ function finSub(which){_finSub=which;
   else if(which==='pagos')renderPagos();
   else if(which==='oper')renderOper();
   else if(which==='gastos')renderGasto();
+  else if(which==='fondos')renderFondos();
   finSummary(which);
 }
 function finSummaryCard(items){
@@ -1639,7 +1642,7 @@ function rentTotals(){
   return {facturado:facturado,costo:costo,costoBs:costoBs,costoDev:costoDev,cremIva:cremIva,cremIvaBs:cremIvaBs,trasIva:trasIva,trasIvaBs:trasIvaBs,gastos:gs,gastosBs:gBs,profit:profit,gananciaProm:gananciaProm,margen:facturado>0?n2(profit/facturado*100):0,fondoBs:fondoBs,fondoUsd:fondoUsd,pagBs:pagBs,pagUsd:pagUsd,bcvHoy:bcvHoy,saldoUsd:saldoUsd,saldoBs:n2(saldoOper*bcvHoy),saldoOper:saldoOper,saldoOperBs:n2(saldoOper*bcvHoy),pendienteGob:pendienteGob,pendienteGobBs:n2(pendienteGob*bcvHoy),facturadoBs:n2(facturado*bcvHoy),pendPagoUsd:pendPagoUsd,pendPagoBs:pendPagoBs,cremPendUsd:cremPendUsd,cremPendBs:cremPendBs,cremPagN:cremPagN,trasPagN:trasPagN,opAllUsd:opAllUsd,opAllBs:opAllBs,padron:pc,superavit:saldoUsd>=0,rentCobra:rentCobra,n:cremaciones.length,
     simuOn:simuOn,fSup:fSup,gSup:gSup,facturadoS:facturadoS,gastosS:gastosS,fondoS:fondoS,profitS:profitS,margenS:margenS,saldoOperS:saldoOperS,saldoOperSBs:n2(saldoOperS*bcvHoy)};
 }
-function saveAmort(){var c=document.getElementById('amConcepto').value.trim()||'Camión de traslado',v=Number(document.getElementById('amValor').value)||0,m=Number(document.getElementById('amMeses').value)||0;cfg.amort={concepto:c,valorUsd:n2(v),meses:m};save(K.cfg,cfg);renderEstructura();if(document.getElementById('rentabilidadHost'))renderRentabilidad();toast('Costo amortizable actualizado');}
+function saveAmort(){var ce=document.getElementById('amConcepto'),ve=document.getElementById('amValor'),me=document.getElementById('amMeses');if(!ce||!ve||!me)return;var c=ce.value.trim()||'Camión de traslado';var v=Number(String(ve.value).replace(',','.'))||0;var m=Math.round(Number(String(me.value).replace(',','.'))||0);cfg.amort={concepto:c,valorUsd:n2(v),meses:m};save(K.cfg,cfg);renderEstructura();if(document.getElementById('rentabilidadHost'))renderRentabilidad();renderDashboard();if(v>0&&m>0)toast('Amortización aplicada: '+fmtUsd(n2(v/m))+' / mes en la estructura');else toast('Guardado. Coloque Valor USD y Meses (ambos mayores a 0) para que la amortización aparezca en la estructura.');}
 function renderEstructura(){
   var gv=document.getElementById('ecGov'); if(gv)gv.textContent=fmtUsd(govRateHoy());
   var rb=document.getElementById('ecBcv'); if(rb)rb.textContent=fmtNum(bcvHoyRate(),4);
@@ -2178,7 +2181,7 @@ function fillConfigForm(){
   document.getElementById('cfgTarifa').value=cfg.tarifaBase;document.getElementById('cfgIva').value=cfg.ivaPct;document.getElementById('cfgTraslado').value=cfg.traslado;
   document.getElementById('cfgRetIva').value=cfg.retIvaPct;document.getElementById('cfgRetIslr').value=cfg.retIslrPct;
   document.getElementById('cfgPatentePct').value=cfg.patentePct||0;document.getElementById('cfgIvaSeniatPct').value=cfg.ivaSeniatPct||0;
-  renderChips();renderInstLogo();renderTasas();renderTraslados();renderGovTar();renderFondos();
+  renderChips();renderInstLogo();renderTasas();renderTraslados();renderGovTar();
 }
 function renderFondos(){
   var host=document.getElementById('fondosHost');if(!host)return;
