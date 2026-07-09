@@ -339,7 +339,7 @@ table.flujo tr.saldo td{border-top:2px solid var(--tp);font-weight:800}
         <div id="cremStats"></div>
         <div style="font-size:11.5px;color:var(--slate);margin-top:10px">▸ Haga clic en un crematorio para ver el detalle.</div></div></div>
       <div class="panel"><div class="ph"><h3>Egresos por concepto</h3><span style="color:var(--slate);font-size:11.5px">todos los costos del operativo</span></div><div class="pb"><div class="barlist" id="barsGasto"></div></div>
-        <div style="font-size:11.5px;color:var(--slate);margin-top:8px">▸ Haga clic en una categoría para ver el detalle.</div></div></div>
+        <div style="font-size:11.5px;color:var(--slate);margin-top:8px">▸ Haga clic en un concepto para ver el detalle (Cremaciones muestra el resumen por crematorio).</div></div></div>
     </div>
 
     <div class="panel" style="margin-bottom:20px"><div class="ph"><h3>Pagadas vs. pendientes de pago</h3><span style="color:var(--slate);font-size:11.5px">Montos con IVA · ▸ clic para ver el detalle</span></div>
@@ -613,7 +613,7 @@ table.flujo tr.saldo td{border-top:2px solid var(--tp);font-weight:800}
   </section>
 </main>
 
-<div class="foot">Sistema de control interno · Gobernación del Estado La Guaira — Operador Seguros La Fe, C.A. · Datos almacenados localmente en este equipo. · <b>v7.2 · cuadre TOTAL entre Panel Ejecutivo, Rentabilidad y Estructura: rentabilidad = estructura al céntimo (fuente única de egresos con tributos) · aggByCrematorio sin tope (pendiente coherente en todas las vistas) · gráfico de egresos por concepto (todos los costos) · incluye multi-fondo Etapa 1</b></div>
+<div class="foot">Sistema de control interno · Gobernación del Estado La Guaira — Operador Seguros La Fe, C.A. · Datos almacenados localmente en este equipo. · <b>v7.3 · BUG DE DUPLICACIÓN corregido: cremResumen() como fuente única canónica (agrupa por nombre canónico, cada cremación y pago se cuentan una sola vez) · pendiente idéntico en TODAS las vistas · gráfico de egresos clickeable con detalle por crematorio (pagado/pendiente/total) · incluye multi-fondo Etapa 1</b></div>
 
 <!-- Modal Cremación -->
 <div class="modal-bg" id="modalCrem"><div class="modal">
@@ -1670,7 +1670,7 @@ function rentTotals(){
   var fondoBs=0,fondoUsd=0;ingresos.forEach(function(x){fondoBs+=Number(x.bs)||0;fondoUsd+=Number(x.usd)||0;});fondoBs=n2(fondoBs);fondoUsd=n2(fondoUsd);
   var pagBs=0,pagUsd=0;pagos.forEach(function(p){var tb=Number(p.transferBs)||0;pagBs+=tb;var r=bcvRate(p.fecha);if(tb&&r>0)pagUsd+=tb/r;});pagBs=n2(pagBs);pagUsd=n2(pagUsd);
   var bcvHoy=bcvHoyRate();
-  var cremPendUsd=n2(Math.max(costoDev-costo,0)),cremPendBs=n2(cremPendUsd*bcvHoy);
+  var cremPendUsd=n2(costoDev-costo),cremPendBs=n2(cremPendUsd*bcvHoy);
   var pendPagoUsd=n2(cremPendUsd+opX.pendUsd+gtX.pendUsd),pendPagoBs=n2(cremPendBs+opX.pendBs+gtX.pendBs);
   var saldoUsd=n2(fondoUsd-costo);
   var saldoOper=n2(fondoUsd-costo-gs-(rentCobra?profit:0));
@@ -1869,7 +1869,7 @@ function renderRentabilidad(){
   var fondoDispB=n2(eFondoBs-patB-ivaSB-retB);
   var saldoPagB=n2(pagCremB+pagTrasB+pagGastB+pagOperB);
   var dispB=n2(fondoDispB-saldoPagB);
-  var cremPendU=0;aggByCrematorio().forEach(function(a){cremPendU+=a.saldoUsd;});cremPendU=n2(cremPendU);var cremPendB=n2(cremPendU*bh2);
+  var cremPendU=n2(costoDevengadoUsd()-pagosCremUsd());var cremPendB=n2(cremPendU*bh2);
   var saldoPendB=n2(cremPendB+opE.pendBs+gtE.pendBs);
   var sufB=n2(fondoDispB-saldoPagB-saldoPendB), sufOK=sufB>=0;
   var rentB=n2(eProfit*bh2);
@@ -2023,11 +2023,23 @@ function cremCanon(name){var s=String(name||'');s=s.split('—')[0];s=s.split(' 
 function cremMatch(a,b){return cremCanon(a)===cremCanon(b);}
 function pagadasByCrem(c){var n=0;pagos.forEach(function(p){if(cremMatch(p.crematorio,c))n+=Number(p.cantidad)||0;});return n;}
 function pagoInfoByCrem(c){var lote=pagos.filter(function(p){return cremMatch(p.crematorio,c);}).sort(function(a,b){return a.fecha<b.fecha?-1:1;});var out=[];lote.forEach(function(p){var q=Math.max(0,Math.round(Number(p.cantidad)||0));for(var k=0;k<q;k++)out.push({banco:p.banco||'',ref:p.ref||'',fecha:p.fecha||''});});return out;}
+function cremResumen(){
+  // FUENTE ÚNICA Y CANÓNICA de cremaciones/pagos por crematorio.
+  // Agrupa por nombre canónico: cada cremación y cada pago se cuentan UNA sola vez.
+  // Los totales devUsd/pagUsd son EXACTAMENTE costoDevengadoUsd() y pagosCremUsd() → todas las vistas cuadran.
+  var groups={};
+  var reg=function(name,dc,dp){var k=cremCanon(name||'')||'(sin)';if(!groups[k])groups[k]={crematorio:(name||'(sin crematorio)'),cant:0,pag:0};groups[k].cant+=dc;groups[k].pag+=dp;};
+  cremaciones.forEach(function(c){reg(c.crematorio,1,0);});
+  pagos.forEach(function(p){reg(p.crematorio,0,Number(p.cantidad)||0);});
+  var arr=Object.keys(groups).map(function(k){var g=groups[k],tar=tarifaUsd(g.crematorio)||0;
+    return {crematorio:g.crematorio,cant:g.cant,pag:g.pag,pend:g.cant-g.pag,tarifa:tar,devUsd:n2(g.cant*tar),pagUsd:n2(g.pag*tar),pendUsd:n2((g.cant-g.pag)*tar)};});
+  arr.sort(function(a,b){return b.cant-a.cant;});
+  var devUsd=costoDevengadoUsd(),pagUsd=pagosCremUsd();
+  var pagN=arr.reduce(function(s,r){return s+r.pag;},0);
+  return {rows:arr,devUsd:devUsd,pagUsd:pagUsd,pendUsd:n2(devUsd-pagUsd),devN:cremaciones.length,pagN:pagN,pendN:cremaciones.length-pagN};
+}
 function aggByCrematorio(){
-  var map={};crematorios.forEach(function(c){map[c]=0;});
-  cremaciones.forEach(function(r){if(map[r.crematorio]==null)map[r.crematorio]=0;map[r.crematorio]++;});
-  return Object.keys(map).map(function(c){var cant=map[c],tar=tarifaUsd(c),pag=pagadasByCrem(c),pend=cant-pag;
-    return {crematorio:c,cant:cant,tarifa:tar,montoUsd:n2(cant*tar),pagadas:pag,pagCap:pag,pendientes:pend,pagadoUsd:n2(pag*tar),saldoUsd:n2(pend*tar)};});
+  return cremResumen().rows.map(function(g){return {crematorio:g.crematorio,cant:g.cant,tarifa:g.tarifa,montoUsd:g.devUsd,pagadas:g.pag,pagCap:g.pag,pendientes:g.pend,pagadoUsd:g.pagUsd,saldoUsd:g.pendUsd};});
 }
 function aggByCategoria(){var map={};cats.forEach(function(c){map[c]={cat:c,cant:0,bs:0,usd:0};});gastos.forEach(function(r){if(!map[r.cat])map[r.cat]={cat:r.cat,cant:0,bs:0,usd:0};var m=map[r.cat];m.cant++;m.bs+=r.bs;m.usd+=usdOf(r.bs,r.tasa);});return Object.keys(map).map(function(k){return map[k];});}
 function aggByDia(){var map={};cremaciones.forEach(function(r){if(!map[r.fecha])map[r.fecha]={fecha:r.fecha,cant:0,usd:0};map[r.fecha].cant++;map[r.fecha].usd+=tarifaUsd(r.crematorio);});return Object.keys(map).sort().map(function(k){return map[k];});}
@@ -2098,13 +2110,13 @@ function renderDashboard(){
     document.getElementById('legendCrem').innerHTML=legHtml;}
 
   var _eeD=egresosEstructura(false),bhC=rt.bcvHoy||1;
-  var conc=[{nm:'Cremaciones',usd:_eeD.cremBaseU,c:'#9d2f2c'},{nm:'Traslados',usd:_eeD.trasU,c:'#a13c38'},{nm:'Gastos de logística',usd:_eeD.gastosU,c:'#B07A00'},{nm:'Pagos operacionales',usd:_eeD.operU,c:'#7a5cc0'}];
-  if(_eeD.amortU>0)conc.push({nm:'Amortización',usd:_eeD.amortU,c:'#5a4bb0'});
-  if(_eeD.patU>0)conc.push({nm:'Patente',usd:_eeD.patU,c:'#c98a1e'});
-  if(_eeD.ivsU>0)conc.push({nm:'Pago IVA Seniat',usd:_eeD.ivsU,c:'#b5762a'});
+  var conc=[{k:'crem',nm:'Cremaciones',usd:_eeD.cremBaseU,c:'#9d2f2c'},{k:'tras',nm:'Traslados',usd:_eeD.trasU,c:'#a13c38'},{k:'gastos',nm:'Gastos de logística',usd:_eeD.gastosU,c:'#B07A00'},{k:'operac',nm:'Pagos operacionales',usd:_eeD.operU,c:'#7a5cc0'}];
+  if(_eeD.amortU>0)conc.push({k:'amort',nm:'Amortización',usd:_eeD.amortU,c:'#5a4bb0'});
+  if(_eeD.patU>0)conc.push({k:'patente',nm:'Patente',usd:_eeD.patU,c:'#c98a1e'});
+  if(_eeD.ivsU>0)conc.push({k:'ivaSeniat',nm:'Pago IVA Seniat',usd:_eeD.ivsU,c:'#b5762a'});
   conc=conc.filter(function(x){return x.usd>0;}).sort(function(a,b){return b.usd-a.usd;});
   var maxG=conc.reduce(function(m,c){return Math.max(m,c.usd);},0)||1;
-  document.getElementById('barsGasto').innerHTML=conc.length?conc.map(function(c){return '<div class="bl"><div class="blhead"><span class="nm">'+c.nm+'</span><span class="vv num">'+fmtBs(n2(c.usd*bhC))+' · '+fmtUsd(c.usd)+'</span></div><div class="bartrack"><div class="barfill" style="width:'+(c.usd/maxG*100)+'%;background:'+c.c+'"></div></div></div>';}).join(''):'<div class="empty" style="padding:10px">Sin egresos registrados.</div>';
+  document.getElementById('barsGasto').innerHTML=conc.length?conc.map(function(c){return '<div class="bl clickable" onclick="openEgresoConcepto(\''+c.k+'\')"><div class="blhead"><span class="nm">'+c.nm+'</span><span class="vv num">'+fmtBs(n2(c.usd*bhC))+' · '+fmtUsd(c.usd)+'</span></div><div class="bartrack"><div class="barfill" style="width:'+(c.usd/maxG*100)+'%;background:'+c.c+'"></div></div></div>';}).join(''):'<div class="empty" style="padding:10px">Sin egresos registrados.</div>';
 
   var maxC=agg.reduce(function(m,a){return Math.max(m,a.cant);},0)||1;
   document.getElementById('barsCrem').innerHTML=agg.length?agg.map(function(a,i){
@@ -2132,7 +2144,7 @@ function renderDashboard(){
   // Cuentas por Pagar — pendiente SIN TOPE (total devengado − total pagado), coherente con la Estructura
   var bh=bcvRate(today())||Number(cfg.tasa)||0;
   var cremDevU=costoDevengadoUsd(),cremPaidU=pagosCremUsd();
-  var cremPendUsd=n2(Math.max(0,cremDevU-cremPaidU)),cremPendN=Math.max(0,cremaciones.length-cremacionesPagadasCount());
+  var cremPendUsd=n2(cremDevU-cremPaidU),cremPendN=cremaciones.length-cremacionesPagadasCount();
   var cell2=function(bs,usd){return '<div class="num">'+fmtBs(bs)+'</div><div class="num" style="font-size:10px;color:var(--slate)">'+fmtUsd(usd)+'</div>';};
   var cxp=[
     {c:'#c0433f',rub:'Cremaciones a crematorios',det:fmtNum(cremacionesPagadasCount(),0)+' pagadas · '+fmtNum(cremPendN,0)+' sin pagar',paidU:cremPaidU,paidBs:n2(cremPaidU*bh),pendU:cremPendUsd,pendBs:n2(cremPendUsd*bh)},
@@ -2162,10 +2174,47 @@ function gastoDetailTable(rows){
   return '<table class="data"><thead><tr><th class="c">#</th><th>Fecha</th><th>Categoría</th><th>Concepto</th><th>Empresa Pagadora</th><th>Comprob.</th><th class="r">Monto Bs.</th><th class="r">Tasa</th><th class="r">USD</th></tr></thead><tbody>'+(rows.length?body:'<tr><td colspan="9" class="c" style="padding:20px;color:var(--slate)">Sin registros.</td></tr>')+'</tbody><tfoot><tr><td colspan="6" class="r">TOTAL ('+rows.length+')</td><td class="r num">'+fmtBs(sBs)+'</td><td></td><td class="r num">'+fmtUsd(sUsd)+'</td></tr></tfoot></table>';
 }
 function showDetail(title,html,exportName){document.getElementById('mDetailTitle').textContent=title;document.getElementById('mDetailBody').innerHTML='<div class="tablewrap" style="border:none;box-shadow:none" id="detailTbl">'+html+'</div>';document.getElementById('mDetailExport').onclick=function(){exportReport('detailTbl',exportName);};document.getElementById('modalDetail').classList.add('open');}
-function openDetailCrem(name){var rows=cremaciones.filter(function(r){return r.crematorio===name;}).sort(function(a,b){return a.fecha<b.fecha?-1:1;});showDetail('Cremaciones — '+name,cremDetailTable(rows),'Detalle_'+safeName(name));}
+function openDetailCrem(name){var rows=cremaciones.filter(function(r){return cremMatch(r.crematorio,name);}).sort(function(a,b){return a.fecha<b.fecha?-1:1;});showDetail('Cremaciones — '+name,cremDetailTable(rows),'Detalle_'+safeName(name));}
 function openDetailCremIdx(i){if(_aggCrem[i])openDetailCrem(_aggCrem[i].crematorio);}
 function openDetailCat(name){var rows=gastos.filter(function(r){return r.cat===name;}).sort(function(a,b){return a.fecha<b.fecha?-1:1;});showDetail('Gastos — '+name,gastoDetailTable(rows),'Detalle_Gastos_'+safeName(name));}
 function openDetailCatIdx(i){if(_aggCat[i])openDetailCat(_aggCat[i].cat);}
+function openEgresoConcepto(key){
+  var bh=bcvHoyRate()||1;var h='';
+  if(key==='crem'){
+    var r=cremResumen();
+    h='<table><thead><tr><th>Crematorio</th><th class="c">Cremaciones</th><th class="c">Pagadas</th><th class="c">Pendientes</th><th class="r">Tarifa</th><th class="r">Pagado</th><th class="r">Pendiente</th><th class="r">Total</th></tr></thead><tbody>';
+    r.rows.forEach(function(g){h+='<tr><td>'+esc(g.crematorio)+'</td><td class="c num">'+fmtNum(g.cant,0)+'</td><td class="c num">'+fmtNum(g.pag,0)+'</td><td class="c num">'+fmtNum(g.pend,0)+'</td><td class="r num">'+fmtUsd(g.tarifa)+'</td><td class="r num" style="color:#0D7A4E">'+fmtUsd(g.pagUsd)+'</td><td class="r num" style="color:#B07A00">'+fmtUsd(g.pendUsd)+'</td><td class="r num">'+fmtUsd(g.devUsd)+'</td></tr>';});
+    h+='</tbody><tfoot><tr><td>TOTAL</td><td class="c num">'+fmtNum(r.devN,0)+'</td><td class="c num">'+fmtNum(r.pagN,0)+'</td><td class="c num">'+fmtNum(r.pendN,0)+'</td><td></td><td class="r num" style="color:#0D7A4E">'+fmtUsd(r.pagUsd)+'</td><td class="r num" style="color:#B07A00">'+fmtUsd(r.pendUsd)+'</td><td class="r num">'+fmtUsd(r.devUsd)+'</td></tr></tfoot></table>';
+    showDetail('Cremaciones por crematorio — pagado, pendiente y total',h,'Detalle_Cremaciones_por_Crematorio');
+  }else if(key==='tras'){
+    var r2=cremResumen(),tt=0;h='<table><thead><tr><th>Crematorio</th><th class="c">Cremaciones</th><th class="r">Traslado unit.</th><th class="r">Total</th></tr></thead><tbody>';
+    r2.rows.forEach(function(g){var tb=tarifaBreak(g.crematorio),trU=n2(tb.tras+tb.ivaTras);if(trU<=0)return;var tot=n2(g.cant*trU);tt+=tot;h+='<tr><td>'+esc(g.crematorio)+'</td><td class="c num">'+fmtNum(g.cant,0)+'</td><td class="r num">'+fmtUsd(trU)+'</td><td class="r num">'+fmtUsd(tot)+'</td></tr>';});
+    h+='</tbody><tfoot><tr><td>TOTAL</td><td></td><td></td><td class="r num">'+fmtUsd(n2(tt))+'</td></tr></tfoot></table>';
+    showDetail('Traslados por crematorio',h,'Detalle_Traslados');
+  }else if(key==='gastos'){
+    var cat=aggByCategoria().filter(function(c){return c.bs>0;}).sort(function(a,b){return b.usd-a.usd;}),tb2=0,tu2=0;
+    h='<table><thead><tr><th>Categoría</th><th class="c">Ítems</th><th class="r">Bs.</th><th class="r">USD</th></tr></thead><tbody>';
+    cat.forEach(function(c){tb2+=c.bs;tu2+=c.usd;h+='<tr><td>'+esc(c.cat)+'</td><td class="c num">'+fmtNum(c.cant,0)+'</td><td class="r num">'+fmtBs(c.bs)+'</td><td class="r num">'+fmtUsd(c.usd)+'</td></tr>';});
+    h+='</tbody><tfoot><tr><td>TOTAL</td><td></td><td class="r num">'+fmtBs(n2(tb2))+'</td><td class="r num">'+fmtUsd(n2(tu2))+'</td></tr></tfoot></table>';
+    showDetail('Gastos de logística por categoría',h,'Detalle_Gastos_Logistica');
+  }else if(key==='operac'){
+    var op=opTotals();
+    h='<table><thead><tr><th>Concepto</th><th class="r">USD</th></tr></thead><tbody><tr><td>Pagado ('+fmtNum(op.pagN,0)+')</td><td class="r num" style="color:#0D7A4E">'+fmtUsd(op.pagUsd)+'</td></tr><tr><td>Pendiente ('+fmtNum(op.pendN,0)+')</td><td class="r num" style="color:#B07A00">'+fmtUsd(op.pendUsd)+'</td></tr></tbody><tfoot><tr><td>TOTAL</td><td class="r num">'+fmtUsd(n2(op.pagUsd+op.pendUsd))+'</td></tr></tfoot></table>';
+    showDetail('Pagos operacionales',h,'Detalle_Operacionales');
+  }else if(key==='patente'){
+    var fb=fondoNetoBs(),pb=patenteBs();
+    h='<table><thead><tr><th>Concepto</th><th class="r">Valor</th></tr></thead><tbody><tr><td>Base (fondo neto facturado)</td><td class="r num">'+fmtBs(fb)+'</td></tr><tr><td>Alícuota de patente</td><td class="r num">'+fmtNum(cfg.patentePct,2)+'%</td></tr><tr><td>Patente (Bs.)</td><td class="r num" style="color:#B07A00">'+fmtBs(pb)+'</td></tr><tr><td>Patente (USD)</td><td class="r num" style="color:#B07A00">'+fmtUsd(n2(pb/bh))+'</td></tr></tbody></table>';
+    showDetail('Patente — cálculo',h,'Detalle_Patente');
+  }else if(key==='ivaSeniat'){
+    var ib=ivaFacturaBs(),vb=ivaSeniatBs();
+    h='<table><thead><tr><th>Concepto</th><th class="r">Valor</th></tr></thead><tbody><tr><td>IVA de facturas</td><td class="r num">'+fmtBs(ib)+'</td></tr><tr><td>Alícuota IVA Seniat</td><td class="r num">'+fmtNum(cfg.ivaSeniatPct,2)+'%</td></tr><tr><td>Pago IVA Seniat (Bs.)</td><td class="r num" style="color:#B07A00">'+fmtBs(vb)+'</td></tr><tr><td>Pago IVA Seniat (USD)</td><td class="r num" style="color:#B07A00">'+fmtUsd(n2(vb/bh))+'</td></tr></tbody></table>';
+    showDetail('Pago IVA Seniat — cálculo',h,'Detalle_IVA_Seniat');
+  }else if(key==='amort'){
+    var am=cfg.amort||{};
+    h='<table><thead><tr><th>Concepto</th><th class="r">Valor</th></tr></thead><tbody><tr><td>'+esc(am.concepto||'Amortización')+'</td><td class="r num">'+fmtUsd(am.valorUsd||0)+'</td></tr><tr><td>Meses</td><td class="r num">'+fmtNum(am.meses||0,0)+'</td></tr><tr><td>Cuota mensual</td><td class="r num">'+fmtUsd(n2((Number(am.valorUsd)||0)/(Number(am.meses)||1)))+'</td></tr></tbody></table>';
+    showDetail('Amortización',h,'Detalle_Amortizacion');
+  }
+}
 function openDetailDia(fecha){var rows=cremaciones.filter(function(r){return r.fecha===fecha;}).sort(function(a,b){return a.crematorio<b.crematorio?-1:1;});showDetail('Cremaciones del '+fmtDate(fecha),cremDetailTable(rows),'Cremaciones_'+fecha);}
 function exportDiasExcel(){
   var dias=aggByDia();if(!dias.length){toast('Sin datos');return;}
@@ -2184,7 +2233,7 @@ function buildPagoTesoreria(){
   host.innerHTML=list.map(function(c,idx){return pagoRelacion(c,idx,modo);}).join('');
 }
 function pagoRelacion(c,idx,modo){
-  var rows=cremaciones.filter(function(r){return r.crematorio===c;}).sort(function(a,b){return a.fecha<b.fecha?-1:1;});
+  var rows=cremaciones.filter(function(r){return cremMatch(r.crematorio,c);}).sort(function(a,b){return a.fecha<b.fecha?-1:1;});
   var tar=tarifaUsd(c),tb=tarifaBreak(c);
   var cant=rows.length,pag=Math.min(pagadasByCrem(c),cant),pagUsd=n2(pag*tar),pend=Math.max(cant-pag,0),saldoUsd=n2(pend*tar),total=n2(cant*tar);
   var pinfo=pagoInfoByCrem(c);
