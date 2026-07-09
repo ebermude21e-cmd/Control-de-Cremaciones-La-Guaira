@@ -599,7 +599,7 @@ table.flujo tr.saldo td{border-top:2px solid var(--tp);font-weight:800}
   </section>
 </main>
 
-<div class="foot">Sistema de control interno · Gobernación del Estado La Guaira — Operador Seguros La Fe, C.A. · Datos almacenados localmente en este equipo. · <b>v6.5 · retenciones tributarias parametrizables (%, base: subtotal / IVA / fondo) que alimentan estado de cuenta, donut, resumen y rentabilidad neta de la estructura · desglose cremaciones y traslado en el pago a crematorios</b></div>
+<div class="foot">Sistema de control interno · Gobernación del Estado La Guaira — Operador Seguros La Fe, C.A. · Datos almacenados localmente en este equipo. · <b>v6.6 · estado de cuenta con cadena fiscal (Base Imponible → IVA → Total Factura → Retención IVA/ISLR → Neto → tributos → Saldo Disponible para pagos) · retenciones con base Subtotal/IVA/Total de factura · desglose cremaciones y traslado</b></div>
 
 <!-- Modal Cremación -->
 <div class="modal-bg" id="modalCrem"><div class="modal">
@@ -785,8 +785,8 @@ if(!cfg.diluirItems||typeof cfg.diluirItems!=='object'){var _dg={modo:(cfg.dilui
 function fondoNetoBs(){var b=0;ingresos.forEach(function(x){b+=Number(x.bs)||0;});return n2(b);}
 function ivaFacturaBs(){var b=0;ingresos.forEach(function(x){b+=ingBreak(x).iva;});return n2(b);}
 function subtotalFacturaBs(){var b=0;ingresos.forEach(function(x){b+=ingBreak(x).sub;});return n2(b);}
-function retencionBaseBs(base){if(base==='iva')return ivaFacturaBs();if(base==='fondo')return fondoNetoBs();return subtotalFacturaBs();}
-function retencionBaseLabel(base){return base==='iva'?'IVA de facturas':base==='fondo'?'fondo disponible':'subtotal de facturas';}
+function retencionBaseBs(base){if(base==='iva')return ivaFacturaBs();if(base==='total')return n2(subtotalFacturaBs()+ivaFacturaBs());if(base==='fondo')return fondoNetoBs();return subtotalFacturaBs();}
+function retencionBaseLabel(base){return base==='iva'?'IVA de facturas':base==='total'?'total de factura':base==='fondo'?'fondo disponible':'subtotal de facturas';}
 function retencionBs(r){var p=Number(r&&r.pct)||0;if(p<=0)return 0;return n2(retencionBaseBs(r&&r.base)*p/100);}
 function retencionesTotalBs(){var b=0;(cfg.retenciones||[]).forEach(function(r){b+=retencionBs(r);});return n2(b);}
 function tributosTotalBs(){return n2(patenteBs()+ivaSeniatBs()+retencionesTotalBs());}
@@ -1842,12 +1842,24 @@ function renderRentabilidad(){
   var sub='<span style="color:var(--slate);font-weight:400;font-size:11px">';
   var patLbl=(Number(cfg.patentePct)>0)?'('+fmtNum(cfg.patentePct,2)+'% s/ fondo disponible)':'(no aplica · 0%)';
   var ivaSLbl=(Number(cfg.ivaSeniatPct)>0)?'('+fmtNum(cfg.ivaSeniatPct,2)+'% s/ IVA de facturas)':'(no aplica · 0%)';
+  var fBaseImp=subtotalFacturaBs(),fIva=ivaFacturaBs(),fTotal=n2(fBaseImp+fIva);
+  var fRetIva=0,fRetIslr=0;ingresos.forEach(function(x){var b=ingBreak(x);fRetIva+=b.retIva;fRetIslr+=b.retIslr;});fRetIva=n2(fRetIva);fRetIslr=n2(fRetIslr);
+  var fNeto=fondoNetoBs();var simAdd=n2(eFondoBs-fNeto);
+  var ivaSeniatOn=Number(cfg.ivaSeniatPct)>0, retList=cfg.retenciones||[];
   var flujo='<table class="flujo"><tbody>'+
-    ecRow('＋','Fondo disponible del operativo '+sub+'(abono neto, después de retenciones IVA/ISLR)</span>'+supF,eFondoBs,'#0D7A4E')+
+    ecSec('Factura del fondo (cara a la Gobernación)')+
+    ecRow('','Base Imponible '+sub+'(subtotal facturado)</span>',fBaseImp,'#245e94')+
+    ecRow('＋','IVA '+sub+'('+fmtNum(cfg.ivaPct,0)+'%)</span>',fIva,'#245e94')+
+    '<tr style="border-top:1px solid var(--line-2)"><td class="op">=</td><td><b>Total Factura</b></td><td class="r num" style="font-weight:800">'+fmtBs(fTotal)+usdu(U(fTotal))+'</td></tr>'+
+    ecRow('−','Retención IVA '+sub+'('+fmtNum(cfg.retIvaPct,0)+'% del IVA)</span>',fRetIva,'#B07A00')+
+    ecRow('−','Retención ISLR '+sub+'('+fmtNum(cfg.retIslrPct,0)+'% del subtotal)</span>',fRetIslr,'#B07A00')+
+    '<tr style="border-top:2px solid var(--line-2);background:#eef7f0"><td class="op" style="color:#0D7A4E">=</td><td><b style="color:#0D7A4E">Neto recibido</b> '+sub+'(fondo disponible)</span>'+supF+'</td><td class="r num" style="color:#0D7A4E;font-weight:800">'+fmtBs(fNeto)+usdu(U(fNeto))+'</td></tr>'+
+    ((sim&&simAdd!==0)?ecRow('＋','Aportes de simulación '+sub+'(conceptos supuestos)</span>',simAdd,'#0D7A4E'):'')+
+    ecSec('Tributos y retenciones del fondo')+
     ecRow('−','Patente '+sub+esc(patLbl)+'</span>',patB,'#B07A00')+
-    ecRow('−','Pago IVA Seniat '+sub+esc(ivaSLbl)+'</span>',ivaSB,'#B07A00')+
-    (cfg.retenciones||[]).map(function(r){return ecRow('−',esc(r.nombre||'Retención')+' '+sub+'('+fmtNum(Number(r.pct)||0,2)+'% s/ '+retencionBaseLabel(r.base)+')</span>',retencionBs(r),'#B07A00');}).join('')+
-    '<tr style="border-top:2px solid var(--line-2);background:#eef4fb"><td class="op" style="color:#245e94">=</td><td><b style="color:#245e94">Disponible del operativo</b> '+sub+'(fondo disponible − patente − IVA Seniat'+((cfg.retenciones||[]).length?' − retenciones':'')+')</span></td><td class="r num" style="color:#245e94;font-weight:800">'+fmtBs(fondoDispB)+usdu(U(fondoDispB))+'</td></tr>'+
+    (ivaSeniatOn?ecRow('−','Pago IVA Seniat '+sub+esc(ivaSLbl)+'</span>',ivaSB,'#B07A00'):'')+
+    retList.map(function(r){return ecRow('−','Otras retenciones · '+esc(r.nombre||'Retención')+' '+sub+'('+fmtNum(Number(r.pct)||0,2)+'% s/ '+retencionBaseLabel(r.base)+')</span>',retencionBs(r),'#B07A00');}).join('')+
+    '<tr style="border-top:2px solid var(--line-2);background:#eef4fb"><td class="op" style="color:#245e94">=</td><td><b style="color:#245e94">Saldo Disponible para pagos</b> '+sub+'(neto − patente'+(ivaSeniatOn?' − IVA Seniat':'')+(retList.length?' − otras retenciones':'')+')</span></td><td class="r num" style="color:#245e94;font-weight:800">'+fmtBs(fondoDispB)+usdu(U(fondoDispB))+'</td></tr>'+
     ecSec('Pagos efectuados')+
     ecRow('−','Pago en Cremaciones '+sub+'(base + IVA · panel)</span>',pagCremBaseB)+
     ecRow('−','Pago por traslados '+sub+'(incluido en el pago a crematorios)</span>',pagCremTrasB)+
@@ -1855,7 +1867,7 @@ function renderRentabilidad(){
     ecRow('−','Pago por gastos de logística'+supG,pagGastB)+
     ecRow('−','Pago operacionales '+sub+'(manipulación / carga)</span>',pagOperB)+
     '<tr style="border-top:2px solid var(--line-2);background:#faf9fe"><td class="op">=</td><td><b>Saldo Pagado</b> '+sub+'(suma de todos los pagos)</span></td><td class="r num" style="color:#4B2D8F;font-weight:800">'+fmtBs(saldoPagB)+usdu(U(saldoPagB))+'</td></tr>'+
-    '<tr style="background:#eef4fb"><td class="op" style="color:#245e94">=</td><td><b style="color:#245e94">Disponibilidad del Fondo</b> '+sub+'(disponible del operativo − saldo pagado)</span></td><td class="r num" style="color:'+(dispB>=0?'#245e94':'#c0433f')+';font-weight:800">'+fmtBs(dispB)+usdu(U(dispB))+'</td></tr>'+
+    '<tr style="background:#eef4fb"><td class="op" style="color:#245e94">=</td><td><b style="color:#245e94">Disponibilidad del Fondo</b> '+sub+'(saldo disponible para pagos − saldo pagado)</span></td><td class="r num" style="color:'+(dispB>=0?'#245e94':'#c0433f')+';font-weight:800">'+fmtBs(dispB)+usdu(U(dispB))+'</td></tr>'+
     ecSec('Pendiente de pago')+
     ecRow('·','Cremaciones sin pagar',cremPendB,'#B07A00')+
     ecRow('·','Pagos operacionales pendientes',opE.pendBs,'#B07A00')+
@@ -1890,8 +1902,8 @@ function renderRentabilidad(){
   var leg=donutSegs.map(function(s){return '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:12.5px;padding:5px 0"><span style="display:inline-flex;align-items:center;gap:8px"><span style="width:11px;height:11px;border-radius:3px;background:'+s.c+';display:inline-block;flex:0 0 auto"></span>'+s.l+'</span><b class="num" style="color:'+s.c+';white-space:nowrap">'+fmtBs(s.v)+'</b></div>';}).join('');
   var mx=Math.max(eFondoBs,consumoB,1);
   var cmp='<div style="margin-top:10px;border-top:1px solid var(--line-2);padding-top:12px">'+
-    '<div style="font-size:11.5px;color:var(--slate);margin-bottom:8px">Fondo disponible del operativo vs. total consumido'+(sim?' (simulación)':'')+'</div>'+
-    '<div style="font-size:11.5px;margin-bottom:4px;display:flex;justify-content:space-between;gap:10px"><span>Fondo disponible del operativo</span><b class="num" style="color:#0D7A4E;white-space:nowrap">'+fmtBs(eFondoBs)+'</b></div>'+
+    '<div style="font-size:11.5px;color:var(--slate);margin-bottom:8px">Neto recibido del fondo vs. total consumido'+(sim?' (simulación)':'')+'</div>'+
+    '<div style="font-size:11.5px;margin-bottom:4px;display:flex;justify-content:space-between;gap:10px"><span>Neto recibido del fondo</span><b class="num" style="color:#0D7A4E;white-space:nowrap">'+fmtBs(eFondoBs)+'</b></div>'+
     '<div style="height:14px;background:var(--line-2);border-radius:5px;overflow:hidden;margin-bottom:9px"><div style="height:100%;width:'+(eFondoBs/mx*100)+'%;background:#0D7A4E"></div></div>'+
     '<div style="font-size:11.5px;margin-bottom:4px;display:flex;justify-content:space-between;gap:10px"><span>Total consumido'+((patB>0||ivaSB>0||retDonB>0)?' (incluye tributos)':'')+'</span><b class="num" style="color:#c0433f;white-space:nowrap">'+fmtBs(consumoB)+'</b></div>'+
     '<div style="height:14px;background:var(--line-2);border-radius:5px;overflow:hidden"><div style="height:100%;width:'+(consumoB/mx*100)+'%;background:#c0433f"></div></div>'+
@@ -2016,7 +2028,7 @@ function renderDashboard(){
     var retFsB=retencionesTotalBs();
     var saldoRecBs=n2(recibBs-patB-ivaSB-retFsB-totPagBs-pendPagBs);
     function fcell(l,bs,col,cls){return '<div class="fundcell '+(cls||'')+'"><div class="fl">'+l+'</div><div class="fbig num" style="color:'+col+'">'+fmtBs(bs)+'</div><div class="fusd num">'+fmtUsd(Uf(bs))+'</div></div>';}
-    var cells=fcell('Monto Servicios Prestados',servBs,'#0D7A4E')+fcell('Fondo disponible del operativo',recibBs,'#245e94');
+    var cells=fcell('Monto Servicios Prestados',servBs,'#0D7A4E')+fcell('Neto recibido del fondo',recibBs,'#245e94');
     if(patB>0)cells+=fcell('Patente',patB,'#B07A00');
     if(ivaSB>0)cells+=fcell('Pago IVA Seniat',ivaSB,'#B07A00');
     if(retFsB>0)cells+=fcell('Retenciones',retFsB,'#B07A00');
@@ -2235,10 +2247,10 @@ function renderFondos(){
       '<td class="c">'+(f.principal?'<span style="font-size:10px;color:var(--slate)">—</span>':'<button class="btn ghost icon sm" style="color:var(--danger);border-color:var(--danger)" onclick="delFondo(\''+f.id+'\')">🗑</button>')+'</td>'+
     '</tr>';
   }).join('');
-  var tabla='<div class="tablewrap"><table class="data"><thead><tr><th>Fondo</th><th class="r">Fondo disponible</th><th class="r">IVA facturas</th><th class="c">Patente&nbsp;%</th><th class="r">Patente</th><th class="c">IVA&nbsp;Seniat&nbsp;%</th><th class="r">IVA Seniat</th><th class="r">Disponible del operativo</th><th class="c"></th></tr></thead><tbody>'+body+'</tbody></table></div>';
+  var tabla='<div class="tablewrap"><table class="data"><thead><tr><th>Fondo</th><th class="r">Fondo disponible</th><th class="r">IVA facturas</th><th class="c">Patente&nbsp;%</th><th class="r">Patente</th><th class="c">IVA&nbsp;Seniat&nbsp;%</th><th class="r">IVA Seniat</th><th class="r">Saldo disponible para pagos</th><th class="c"></th></tr></thead><tbody>'+body+'</tbody></table></div>';
   var form='<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:12px"><input id="nfNombre" placeholder="Nombre del nuevo fondo" style="flex:1;min-width:200px;padding:8px 11px;border:1px solid var(--line);border-radius:8px;font-family:inherit;font-size:13px"><input id="nfNeto" type="number" step="0.01" placeholder="Fondo disponible Bs" style="width:170px;padding:8px 11px;border:1px solid var(--line);border-radius:8px;font-family:inherit;font-size:13px"><input id="nfIva" type="number" step="0.01" placeholder="IVA facturas Bs" style="width:150px;padding:8px 11px;border:1px solid var(--line);border-radius:8px;font-family:inherit;font-size:13px"><button class="btn" onclick="addFondo()">＋ Agregar fondo</button></div>';
   var bhF=bcvHoyRate()||1;
-  var baseOpt=function(sel){var o=function(v,t){return '<option value="'+v+'"'+(sel===v?' selected':'')+'>'+t+'</option>';};return o('subtotal','Subtotal de facturas')+o('iva','IVA de facturas')+o('fondo','Fondo disponible');};
+  var baseOpt=function(sel){var o=function(v,t){return '<option value="'+v+'"'+(sel===v?' selected':'')+'>'+t+'</option>';};return o('subtotal','Subtotal de factura')+o('iva','IVA')+o('total','Total de factura')+o('fondo','Fondo disponible');};
   var retRows=(cfg.retenciones||[]).map(function(r){var rb=retencionBs(r);return '<tr>'+
     '<td><input value="'+esc(r.nombre||'')+'" onchange="setRetencion(\''+r.id+'\',\'nombre\',this.value)" style="width:100%;min-width:140px;padding:6px 8px;border:1px solid var(--line);border-radius:7px;font-family:inherit;font-size:12.5px"></td>'+
     '<td class="c"><input type="number" step="0.0001" min="0" value="'+(r.pct||r.pct===0?r.pct:'')+'" onchange="setRetencion(\''+r.id+'\',\'pct\',this.value)" style="width:74px;padding:6px 8px;border:1px solid var(--line);border-radius:7px;font-family:inherit;font-size:12.5px;text-align:right"></td>'+
