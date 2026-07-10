@@ -551,6 +551,7 @@ table.flujo tr.saldo td{border-top:2px solid var(--tp);font-weight:800}
       <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
         <div class="bcvchip" id="padronChip" style="display:none"><span class="lbl">Padrón</span><span class="val num" id="padronCount" style="font-size:16px">0</span><span class="cur">expedientes</span><span class="dt" id="padronUpd"></span></div>
         <button class="btn gold" onclick="document.getElementById('padronFile').click()">⬆ Cargar / actualizar padrón</button>
+        <button class="btn" id="btnClearPadron" onclick="clearPadron()" style="display:none;border-color:#e6b8b6;color:#9d2f2c">🗑 Eliminar padrón</button>
         <input type="file" id="padronFile" accept=".xlsx,.xls" style="display:none" onchange="importPadronExcel(event)">
       </div>
     </div>
@@ -647,7 +648,7 @@ table.flujo tr.saldo td{border-top:2px solid var(--tp);font-weight:800}
   </section>
 </main>
 
-<div class="foot">Sistema de control interno · Gobernación del Estado La Guaira — Operador Seguros La Fe, C.A. · Datos almacenados localmente en este equipo. · <b>v7.7 · Consistencia total de cifras a tasa de hoy: traslado pagado = Bs realmente pagados ÷ tasa BCV de hoy (no el teórico) + pendiente estimado por regla de tres; gastos y operacionales de la Estructura de Costos y Cuentas por Pagar a tasa de hoy (no histórica), de modo que coinciden con el estado de cuenta · Resumen del Fondo — Gobernación incluye el traslado incurrido pendiente y cuadra con el estado de cuenta (mismo total pagado y mismo pendiente) · estado de cuenta suma «Total Retenciones» (IVA + ISLR + otras) y «Total Tributos» (patente + IVA Seniat) · Cremaciones a costo BASE puro ($174) sobre el padrón · patente 2% sobre monto a cobrar · sin IVA Seniat en la estructura</b></div>
+<div class="foot">Sistema de control interno · Gobernación del Estado La Guaira — Operador Seguros La Fe, C.A. · Datos almacenados localmente en este equipo. · <b>v7.8 · Conciliación de expedientes: el archivo del Core se lee por REEMPLAZO total (lista acumulada completa), no por acumulación — el padrón queda igual al archivo y ya no se sobrecuenta; deduplicación por código dentro del archivo (última fila gana) y botón «Eliminar padrón» que limpia solo el padrón sin tocar cremaciones ni pagos · Consistencia total de cifras a tasa de hoy: traslado pagado = Bs realmente pagados ÷ tasa BCV de hoy (no el teórico) + pendiente estimado por regla de tres; gastos y operacionales de la Estructura de Costos y Cuentas por Pagar a tasa de hoy (no histórica), de modo que coinciden con el estado de cuenta · Resumen del Fondo — Gobernación incluye el traslado incurrido pendiente y cuadra con el estado de cuenta (mismo total pagado y mismo pendiente) · estado de cuenta suma «Total Retenciones» (IVA + ISLR + otras) y «Total Tributos» (patente + IVA Seniat) · Cremaciones a costo BASE puro ($174) sobre el padrón · patente 2% sobre monto a cobrar · sin IVA Seniat en la estructura</b></div>
 
 <!-- Modal Cremación -->
 <div class="modal-bg" id="modalCrem"><div class="modal">
@@ -1632,9 +1633,9 @@ function importPadronExcel(ev){
       if(hIdx<0){alert('No se encontró la fila de encabezados (Código, Nombre/Apellido…). Verifique que la hoja sea el padrón de expedientes.');return;}
       var map=colIndexPadron(aoa[hIdx]);
       if(map.code==null){alert('No se encontró la columna «Código» de expediente en el archivo.');return;}
-      var nuevos=[],updates={},errores=[],seen={};
       var pkey=function(code,nombre,ced){return String(code||'').trim()?('C:'+padronKey(code)):('N:'+normStr(nombre||'')+'|D:'+padronKey(ced||''));};
-      var exByCode={};padron.forEach(function(p,idx){exByCode[pkey(p.code,p.nombre,p.ced)]=idx;});
+      var exKeys={};padron.forEach(function(p){exKeys[pkey(p.code,p.nombre,p.ced)]=true;}); // solo informativo (vs padrón previo)
+      var full=[],errores=[],seen={},nuevosN=0,repetidosN=0,dupArchivo=0;
       for(var r=hIdx+1;r<aoa.length;r++){
         var row=aoa[r];if(!row||!row.some(function(c){return String(c).trim()!=='';}))continue;
         var code=String(row[map.code]||'').trim();
@@ -1644,37 +1645,46 @@ function importPadronExcel(ev){
         if(!code&&!nombre&&!ced){errores.push({fila:r+1,motivo:'Fila sin código, nombre ni cédula'});continue;}
         var rec={code:code,nombre:nombre,ced:ced,acta:g('acta'),sexo:g('sexo'),edad:g('edad'),frec:normDate(map.frec!=null?row[map.frec]:'')||g('frec'),proc:g('proc'),sede:g('sede'),estado:g('estado'),ctipo:g('ctipo'),cnom:g('cnom'),lote:g('lote'),destino:g('destino'),freg:g('freg')};
         var key=pkey(code,nombre,ced);
-        if(seen[key]){ /* duplicado dentro del archivo: última gana */ }
-        seen[key]=true;
-        if(exByCode[key]!=null){var mid=exByCode[key];rec._idx=mid;updates[mid]=rec;}
-        else nuevos.push(rec);
+        if(seen[key]!=null){full[seen[key]]=rec;dupArchivo++;continue;} // duplicado dentro del archivo: última fila gana (no se suma)
+        seen[key]=full.length;full.push(rec);
+        if(exKeys[key])repetidosN++;else nuevosN++;
       }
-      _padronPreview={fname:fname,nuevos:nuevos,updates:updates,errores:errores};
+      // El archivo del Core es ACUMULATIVO (contiene la lista completa): el padrón se REEMPLAZA por su contenido.
+      _padronPreview={fname:fname,full:full,errores:errores,nuevosN:nuevosN,repetidosN:repetidosN,dupArchivo:dupArchivo,prevN:padron.length};
       renderPadronImportReport();
     }catch(e){alert('No se pudo leer el archivo: '+e.message);}
   };
   rd.readAsArrayBuffer(f);ev.target.value='';
 }
 function renderPadronImportReport(){
-  var P=_padronPreview;if(!P)return;var totalUpd=Object.keys(P.updates).length;
+  var P=_padronPreview;if(!P)return;
+  var totalArch=P.full.length;
   var h='<div style="padding:16px 18px">';
   h+='<div style="font-size:13px;color:var(--slate);margin-bottom:10px">Archivo: <b style="color:var(--ink)">'+esc(P.fname)+'</b></div>';
-  h+='<div class="summbar" style="margin:0 0 14px"><span style="color:#0D7A4E">Nuevos: <b>'+fmtNum(P.nuevos.length,0)+'</b></span><div class="sep"></div><span>Actualizados: <b>'+fmtNum(totalUpd,0)+'</b></span><div class="sep"></div><span>Padrón actual: <b>'+fmtNum(padron.length,0)+'</b></span><div class="sep"></div><span class="err">Con error: <b>'+P.errores.length+'</b></span></div>';
+  h+='<div class="summbar" style="margin:0 0 14px"><span style="color:#245e94">Expedientes en el archivo: <b>'+fmtNum(totalArch,0)+'</b></span><div class="sep"></div><span style="color:#0D7A4E">Nuevos: <b>'+fmtNum(P.nuevosN,0)+'</b></span><div class="sep"></div><span>Ya existían: <b>'+fmtNum(P.repetidosN,0)+'</b></span>'+(P.dupArchivo?'<div class="sep"></div><span>Repetidos en el archivo (omitidos): <b>'+fmtNum(P.dupArchivo,0)+'</b></span>':'')+'<div class="sep"></div><span class="err">Con error: <b>'+P.errores.length+'</b></span></div>';
+  h+='<div style="font-size:12.5px;color:#B07A00;background:#fdf7ec;border:1px solid #f0e2c0;border-radius:8px;padding:9px 12px;margin-bottom:12px"><b>Reemplazo total.</b> El archivo del Core es acumulativo (lista completa), por lo que el padrón pasará de <b>'+fmtNum(P.prevN,0)+'</b> a <b>'+fmtNum(totalArch,0)+'</b> expedientes: se sustituye por el contenido del archivo (no se suma sobre lo anterior).</div>';
   if(P.errores.length){h+='<h4 style="margin:0 0 6px" class="err">Filas con error ('+P.errores.length+')</h4><table style="margin-bottom:8px"><thead><tr><th class="c">Fila</th><th>Motivo</th></tr></thead><tbody>';P.errores.slice(0,200).forEach(function(e){h+='<tr><td class="c num">'+e.fila+'</td><td class="err">'+esc(e.motivo)+'</td></tr>';});h+='</tbody></table>';}
-  else h+='<div style="font-size:12.5px;color:#0D7A4E;margin-bottom:6px">✓ Todas las filas tienen código de expediente.</div>';
-  h+='<div style="font-size:12px;color:var(--slate);margin-top:8px">El padrón se actualiza por código de expediente sin duplicar. La conciliación empareja de forma flexible (ignora mayúsculas, espacios, ceros a la izquierda y sufijo de año) y, si el código no cuadra, intenta por nombre.</div></div>';
+  else h+='<div style="font-size:12.5px;color:#0D7A4E;margin-bottom:6px">✓ Todas las filas tienen código o nombre de expediente.</div>';
+  h+='<div style="font-size:12px;color:var(--slate);margin-top:8px">Se deduplica por código de expediente dentro del archivo (última fila gana). La conciliación empareja de forma flexible (ignora mayúsculas, espacios, ceros a la izquierda y sufijo de año) y, si el código no cuadra, intenta por nombre.</div></div>';
   document.getElementById('mPadronImpBody').innerHTML=h;
-  var ok=document.getElementById('mPadronImpOk');ok.style.display=(P.nuevos.length||totalUpd)?'':'none';
+  var ok=document.getElementById('mPadronImpOk');ok.style.display=totalArch?'':'none';
   document.getElementById('modalImportPadron').classList.add('open');
 }
 function commitPadronImport(){
   var P=_padronPreview;if(!P){closeModal('modalImportPadron');return;}
-  Object.keys(P.updates).forEach(function(idx){var rec=P.updates[idx];delete rec._idx;padron[Number(idx)]=rec;});
-  P.nuevos.forEach(function(r){delete r._idx;});padron=padron.concat(P.nuevos);
+  // REEMPLAZO TOTAL: el archivo del Core trae la lista completa acumulada; el padrón queda igual al archivo.
+  padron=P.full.slice();
   if(!save(K.padron,padron)){toast('No se pudo guardar el padrón');return;}
   padronMeta={updated:new Date().toISOString(),fname:P.fname};save(K.padronMeta,padronMeta);
   _padronPreview=null;closeModal('modalImportPadron');renderConciliacion();
-  toast(P.nuevos.length+' nuevos · '+Object.keys(P.updates).length+' actualizados en el padrón');
+  toast('Padrón actualizado: '+padron.length+' expedientes');
+}
+function clearPadron(){
+  if(!padron.length){toast('No hay padrón cargado');return;}
+  if(!confirm('¿Eliminar el padrón cargado ('+padron.length+' expedientes)? Esto NO afecta las cremaciones ni los pagos registrados. Podrá volver a cargar el archivo del Core cuando quiera.'))return;
+  padron=[];save(K.padron,padron);
+  padronMeta={updated:'',fname:''};save(K.padronMeta,padronMeta);
+  renderConciliacion();toast('Padrón eliminado');
 }
 function conciliar(){
   var pad=padron.map(function(p){return {rec:p,ek:normExp(p.code),nk:nameKey(p.nombre),matched:false,how:'',crem:null};});
@@ -1696,9 +1706,9 @@ function conciliar(){
 }
 function renderConciliacion(){
   var host=document.getElementById('conciliacionHost');if(!host)return;
-  var chip=document.getElementById('padronChip');
-  if(!padron.length){chip.style.display='none';host.innerHTML='<div class="panel"><div class="pb"><div class="empty" style="padding:40px"><div class="em-t">Aún no hay padrón cargado</div>Use «Cargar / actualizar padrón» y seleccione el archivo de expedientes (columna Código + nombres). Luego se concilia automáticamente contra las cremaciones.</div></div></div>';return;}
-  chip.style.display='';document.getElementById('padronCount').textContent=fmtNum(padron.length,0);
+  var chip=document.getElementById('padronChip');var btnClr=document.getElementById('btnClearPadron');
+  if(!padron.length){chip.style.display='none';if(btnClr)btnClr.style.display='none';host.innerHTML='<div class="panel"><div class="pb"><div class="empty" style="padding:40px"><div class="em-t">Aún no hay padrón cargado</div>Use «Cargar / actualizar padrón» y seleccione el archivo de expedientes (columna Código + nombres). Luego se concilia automáticamente contra las cremaciones.</div></div></div>';return;}
+  chip.style.display='';if(btnClr)btnClr.style.display='';document.getElementById('padronCount').textContent=fmtNum(padron.length,0);
   document.getElementById('padronUpd').textContent=padronMeta.updated?('act. '+fmtDate(padronMeta.updated.slice(0,10))):'';
   var R=conciliar();
   var k='<div class="kpigrid" style="margin-bottom:8px">'+
