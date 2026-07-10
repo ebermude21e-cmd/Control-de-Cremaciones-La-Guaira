@@ -52,6 +52,7 @@
   .kpi .lbl{font-size:11px;letter-spacing:1.4px;text-transform:uppercase;color:var(--slate);font-weight:600}
   .kpi .big{font-size:26px;font-weight:700;color:var(--ink);margin-top:8px;letter-spacing:-.4px}
   .kpi .alt{font-size:13px;color:var(--steel);margin-top:3px;font-weight:600}
+  .kpi .kpileg{font-size:11px;color:var(--slate);margin-top:9px;padding-top:8px;border-top:1px dashed var(--line-2);line-height:1.38;font-weight:400;overflow-wrap:anywhere}
   .kpi.accent{border-top-color:var(--ink)}
   .panelrow{display:grid;grid-template-columns:1.15fr .85fr;gap:16px;margin-bottom:20px}
   @media(max-width:900px){.panelrow{grid-template-columns:1fr}.kpigrid{grid-template-columns:repeat(2,1fr)}}
@@ -648,7 +649,7 @@ table.flujo tr.saldo td{border-top:2px solid var(--tp);font-weight:800}
   </section>
 </main>
 
-<div class="foot">Sistema de control interno · Gobernación del Estado La Guaira — Operador Seguros La Fe, C.A. · Datos almacenados localmente en este equipo. · <b>v7.8 · Conciliación de expedientes: el archivo del Core se lee por REEMPLAZO total (lista acumulada completa), no por acumulación — el padrón queda igual al archivo y ya no se sobrecuenta; deduplicación por código dentro del archivo (última fila gana) y botón «Eliminar padrón» que limpia solo el padrón sin tocar cremaciones ni pagos · Consistencia total de cifras a tasa de hoy: traslado pagado = Bs realmente pagados ÷ tasa BCV de hoy (no el teórico) + pendiente estimado por regla de tres; gastos y operacionales de la Estructura de Costos y Cuentas por Pagar a tasa de hoy (no histórica), de modo que coinciden con el estado de cuenta · Resumen del Fondo — Gobernación incluye el traslado incurrido pendiente y cuadra con el estado de cuenta (mismo total pagado y mismo pendiente) · estado de cuenta suma «Total Retenciones» (IVA + ISLR + otras) y «Total Tributos» (patente + IVA Seniat) · Cremaciones a costo BASE puro ($174) sobre el padrón · patente 2% sobre monto a cobrar · sin IVA Seniat en la estructura</b></div>
+<div class="foot">Sistema de control interno · Gobernación del Estado La Guaira — Operador Seguros La Fe, C.A. · Datos almacenados localmente en este equipo. · <b>v8.0 · [Módulo Fondos por Periodo — Incremento 1, capa aditiva certificada] Liquidación tributaria PARAMÉTRICA POR ABONO: cada abono lleva su entidad/régimen (Funeraria Vallés / Seguros La Fe) y su alícuota de patente propia (Vallés 2% con IVA · Seguros La Fe 1,75% sin IVA); IVA y retenciones ya eran por abono. Infraestructura de tesorería USDT instalada (tasa USDT por día y operaciones de compra/venta bajo llaves nuevas). NADA de esto modifica el estado de cuenta, la rentabilidad ni el cuadre certificados — es solo lectura + datos nuevos. · Cada casilla de la Conciliación lleva una leyenda que explica qué significa (padrón, cremaciones registradas, conciliados, faltan por registrar, no respaldados) · Conciliación de expedientes: el archivo del Core se lee por REEMPLAZO total (lista acumulada completa), no por acumulación — el padrón queda igual al archivo y ya no se sobrecuenta; deduplicación por código dentro del archivo (última fila gana) y botón «Eliminar padrón» que limpia solo el padrón sin tocar cremaciones ni pagos · Consistencia total de cifras a tasa de hoy: traslado pagado = Bs realmente pagados ÷ tasa BCV de hoy (no el teórico) + pendiente estimado por regla de tres; gastos y operacionales de la Estructura de Costos y Cuentas por Pagar a tasa de hoy (no histórica), de modo que coinciden con el estado de cuenta · Resumen del Fondo — Gobernación incluye el traslado incurrido pendiente y cuadra con el estado de cuenta (mismo total pagado y mismo pendiente) · estado de cuenta suma «Total Retenciones» (IVA + ISLR + otras) y «Total Tributos» (patente + IVA Seniat) · Cremaciones a costo BASE puro ($174) sobre el padrón · patente 2% sobre monto a cobrar · sin IVA Seniat en la estructura</b></div>
 
 <!-- Modal Cremación -->
 <div class="modal-bg" id="modalCrem"><div class="modal">
@@ -733,6 +734,11 @@ table.flujo tr.saldo td{border-top:2px solid var(--tp);font-weight:800}
       <label class="fld">Subtotal (Bs.) <span class="req">*</span><input type="number" step="0.01" id="fIngSub" oninput="calcIng()" placeholder="Base imponible"></label>
       <label class="fld">Tasa BCV del día (Bs/USD)<input type="number" step="0.0001" id="fIngTasa" oninput="calcIng()"></label>
     </div>
+    <div class="grid3" style="margin-top:10px">
+      <label class="fld">Entidad / régimen <span class="req">*</span><select id="fIngEnt" onchange="ingEntChange()"><option value="Seguros La Fe">Seguros La Fe</option><option value="Funeraria Vallés">Funeraria Vallés</option></select></label>
+      <label class="fld">Patente municipal (%)<input type="number" step="0.01" id="fIngPatente" oninput="calcIng()" placeholder="Ej. 1.75"></label>
+      <label class="fld" style="display:flex;align-items:flex-end"><span style="font-size:10.5px;color:var(--slate);line-height:1.4">Patente, IVA y retenciones se liquidan por abono según la entidad. Seguros La Fe: 1,75% y sin IVA · Vallés: 2% con IVA.</span></label>
+    </div>
     <label class="chk" style="margin:12px 2px 4px;display:inline-flex;align-items:center;gap:9px;font-size:13px"><input type="checkbox" id="fIngIva" onchange="calcIng()"> Objeto de cálculo de IVA (16%)</label>
     <div id="fIngBreak" class="ingbreak"></div>
     <div class="grid3" style="margin-top:12px">
@@ -804,7 +810,7 @@ break;case"<bookViews":;case"<bookViews>":;case"</bookViews>":break;case"<workbo
 
 <script>
 /* ===== Estado ===== */
-var K={crem:'crem_lg_cremaciones',pagos:'crem_lg_pagos',gasto:'crem_lg_gastos',cfg:'crem_lg_config',crematorios:'crem_lg_crematorios',cats:'crem_lg_categorias',logos:'crem_lg_logos',tasas:'crem_lg_tasas',padron:'crem_lg_padron',padronMeta:'crem_lg_padron_meta',ingresos:'crem_lg_ingresos',rentCobra:'crem_lg_rent_cobra',simuOn:'crem_lg_simu_on',simuSup:'crem_lg_simu_sup',opActores:'crem_lg_op_actores',opConceptos:'crem_lg_op_conceptos',opPagos:'crem_lg_op_pagos',fondos:'crem_lg_fondos',fondoActivo:'crem_lg_fondo_activo'};
+var K={crem:'crem_lg_cremaciones',pagos:'crem_lg_pagos',gasto:'crem_lg_gastos',cfg:'crem_lg_config',crematorios:'crem_lg_crematorios',cats:'crem_lg_categorias',logos:'crem_lg_logos',tasas:'crem_lg_tasas',padron:'crem_lg_padron',padronMeta:'crem_lg_padron_meta',ingresos:'crem_lg_ingresos',rentCobra:'crem_lg_rent_cobra',simuOn:'crem_lg_simu_on',simuSup:'crem_lg_simu_sup',opActores:'crem_lg_op_actores',opConceptos:'crem_lg_op_conceptos',opPagos:'crem_lg_op_pagos',fondos:'crem_lg_fondos',fondoActivo:'crem_lg_fondo_activo',usdtOps:'crem_lg_usdt_ops',tasasUsdt:'crem_lg_tasas_usdt'};
 var DEFAULT_CREMATORIOS=['Cinerario Vallés','Campo de Paz - Previsora Tende','Puertas del Cielo','Funcemar','Organización Parque Valles del Tuy'];
 var DEFAULT_CATS=['Combustible','Implementos / Insumos','Hidratación','Alimentación (desayunos)','Transporte / Logística','Otros'];
 var DEFAULT_CFG={entidad:'Gobernación del Estado La Guaira',operador:'Seguros La Fe, C.A.',convenio:'',responsable:'Edwin Bermúdez',fechaIni:'',tasa:515.7295,tarifaBase:150,ivaPct:16,traslado:80,retIvaPct:75,retIslrPct:2,patentePct:0,ivaSeniatPct:0,traslados:{'Organización Parque Valles del Tuy':80},govTarifas:[{desde:'',hasta:'',monto:410}],amort:{concepto:'Camión de traslado',valorUsd:0,meses:0},diluirItems:{crem:{modo:'ejec',manual:0},tras:{modo:'ejec',manual:0},gastos:{modo:'ejec',manual:0},operac:{modo:'ejec',manual:0},amort:{modo:'ejec',manual:0}}};
@@ -859,6 +865,10 @@ function fondoIvaSBs(f){var p=fondoIvaSPctOf(f);return p>0?n2(fondoIvaOf(f)*p/10
 function fondoDispBs(f){return n2(fondoNetoOf(f)-fondoPatBs(f)-fondoIvaSBs(f));}
 function saveFondos(){save(K.fondos,fondos);}
 var ingresos=load(K.ingresos,[]);
+var usdtOps=load(K.usdtOps,[]);
+var tasasUsdt=load(K.tasasUsdt,{});
+function usdtRateOn(fecha){if(fecha&&tasasUsdt[fecha]!=null)return Number(tasasUsdt[fecha]);var ks=Object.keys(tasasUsdt).sort();var best=null;for(var i=0;i<ks.length;i++){if(!fecha||ks[i]<=fecha)best=ks[i];else break;}return best?Number(tasasUsdt[best]):0;}
+function usdtRateHoy(){return usdtRateOn(today());}
 var opActores=load(K.opActores,[{id:'a_fun',tipo:'Funeraria',nombre:'Funeraria'},{id:'a_car',tipo:'Carrocero',nombre:'Carrocero'}]);
 var opConceptos=load(K.opConceptos,['Traslado','Manipulación','Carga de cadáveres']);
 var opPagos=load(K.opPagos,[]);
@@ -1712,11 +1722,11 @@ function renderConciliacion(){
   document.getElementById('padronUpd').textContent=padronMeta.updated?('act. '+fmtDate(padronMeta.updated.slice(0,10))):'';
   var R=conciliar();
   var k='<div class="kpigrid" style="margin-bottom:8px">'+
-    '<div class="kpi"><div class="lbl">Expedientes en padrón</div><div class="big num">'+fmtNum(R.totalPad,0)+'</div><div class="alt num">registro maestro</div></div>'+
-    '<div class="kpi"><div class="lbl">Cremaciones registradas</div><div class="big num">'+fmtNum(R.totalCrem,0)+'</div><div class="alt num">en el sistema</div></div>'+
-    '<div class="kpi clickable" onclick="concShow(\'nombre\')"><div class="lbl">Conciliados ▸</div><div class="big num" style="color:#0D7A4E">'+fmtNum(R.coincid,0)+'</div><div class="alt num">'+R.porCodigo+' por código · '+R.porNombre.length+' por nombre</div></div>'+
-    '<div class="kpi accent clickable" onclick="concShow(\'faltan\')"><div class="lbl">Faltan por registrar ▸</div><div class="big num">'+fmtNum(R.faltan.length,0)+'</div><div class="alt num">del padrón, sin cremación</div></div>'+
-    '<div class="kpi clickable" onclick="concShow(\'noresp\')"><div class="lbl">No respaldados ▸</div><div class="big num" style="color:#B07A00">'+fmtNum(R.noResp.length,0)+'</div><div class="alt num">cremación sin padrón</div></div>'+
+    '<div class="kpi"><div class="lbl">Expedientes en padrón</div><div class="big num">'+fmtNum(R.totalPad,0)+'</div><div class="alt num">registro maestro</div><div class="kpileg">Lista completa de expedientes oficiales cargada desde el archivo del Core. Es la base contra la que se compara todo.</div></div>'+
+    '<div class="kpi"><div class="lbl">Cremaciones registradas</div><div class="big num">'+fmtNum(R.totalCrem,0)+'</div><div class="alt num">en el sistema</div><div class="kpileg">Cremaciones que usted ha cargado en la aplicación, con su código de expediente.</div></div>'+
+    '<div class="kpi clickable" onclick="concShow(\'nombre\')"><div class="lbl">Conciliados ▸</div><div class="big num" style="color:#0D7A4E">'+fmtNum(R.coincid,0)+'</div><div class="alt num">'+R.porCodigo+' por código · '+R.porNombre.length+' por nombre</div><div class="kpileg">Expedientes del padrón que <b>sí</b> tienen su cremación registrada: cuadran ambos lados. ✓ (empareja por código y, si no coincide, por nombre)</div></div>'+
+    '<div class="kpi accent clickable" onclick="concShow(\'faltan\')"><div class="lbl">Faltan por registrar ▸</div><div class="big num">'+fmtNum(R.faltan.length,0)+'</div><div class="alt num">del padrón, sin cremación</div><div class="kpileg">Expedientes que <b>están</b> en el padrón pero <b>aún no</b> tienen su cremación registrada en el sistema. Falta cargarlas.</div></div>'+
+    '<div class="kpi clickable" onclick="concShow(\'noresp\')"><div class="lbl">No respaldados ▸</div><div class="big num" style="color:#B07A00">'+fmtNum(R.noResp.length,0)+'</div><div class="alt num">cremación sin padrón</div><div class="kpileg">Cremaciones registradas que <b>no</b> aparecen en el padrón: no hay expediente oficial que las respalde. Revise el código o actualice el padrón.</div></div>'+
   '</div><div style="font-size:11.5px;color:var(--slate);margin-bottom:16px">▸ Haga clic en una tarjeta para ver su detalle.</div>';
   var t1='<table class="data" id="conc_faltan_tbl"><thead><tr><th class="c">#</th><th>Código expediente</th><th>Difunto</th><th>Crematorio</th><th>Lote</th><th>Estado</th></tr></thead><tbody>';
   if(R.faltan.length)R.faltan.forEach(function(p,i){t1+='<tr><td class="c num">'+(i+1)+'</td><td class="num">'+esc(p.code)+'</td><td>'+esc(p.nombre||'—')+'</td><td>'+esc(p.cnom||'—')+'</td><td class="num">'+esc(p.lote||'—')+'</td><td>'+esc(p.estado||'—')+'</td></tr>';});
@@ -1890,17 +1900,21 @@ function calcIng(){
   document.getElementById('fIngUsdOut').textContent=fmtUsd(tasa>0?n2(v.neto/tasa):0);
 }
 function ingFechaChange(){var f=document.getElementById('fIngFecha').value;var r=bcvRate(f);if(r>0)document.getElementById('fIngTasa').value=r;calcIng();}
+function ingEntChange(){var e=document.getElementById('fIngEnt').value;var iva=document.getElementById('fIngIva'),pat=document.getElementById('fIngPatente');
+  if(e==='Funeraria Vallés'){iva.checked=true;if(!pat.value)pat.value='2';}
+  else{iva.checked=false;if(!pat.value)pat.value='1.75';}
+  calcIng();}
 function openIngreso(id){
   if(id){var x=ingresos.find(function(y){return y.id===id;});if(!x)return;document.getElementById('mIngTitle').textContent='Editar abono';var b=ingBreak(x);
-    document.getElementById('fIngId').value=x.id;document.getElementById('fIngFecha').value=x.fecha;document.getElementById('fIngSub').value=b.sub;document.getElementById('fIngIva').checked=b.ivaOn;document.getElementById('fIngTasa').value=x.tasa;document.getElementById('fIngBanco').value=x.banco||'';document.getElementById('fIngRef').value=x.ref||'';document.getElementById('fIngObs').value=x.obs||'';
-  }else{document.getElementById('mIngTitle').textContent='Registrar abono de la Gobernación';['fIngId','fIngSub','fIngBanco','fIngRef','fIngObs'].forEach(function(i){document.getElementById(i).value='';});document.getElementById('fIngIva').checked=false;var hoy=today();document.getElementById('fIngFecha').value=hoy;document.getElementById('fIngTasa').value=bcvRate(hoy)||cfg.tasa;}
+    document.getElementById('fIngId').value=x.id;document.getElementById('fIngFecha').value=x.fecha;document.getElementById('fIngSub').value=b.sub;document.getElementById('fIngIva').checked=b.ivaOn;document.getElementById('fIngTasa').value=x.tasa;document.getElementById('fIngEnt').value=x.entidad||(b.ivaOn?'Funeraria Vallés':'Seguros La Fe');document.getElementById('fIngPatente').value=(x.patentePct!=null?x.patentePct:(cfg.patentePct||''));document.getElementById('fIngBanco').value=x.banco||'';document.getElementById('fIngRef').value=x.ref||'';document.getElementById('fIngObs').value=x.obs||'';
+  }else{document.getElementById('mIngTitle').textContent='Registrar abono de la Gobernación';['fIngId','fIngSub','fIngBanco','fIngRef','fIngObs'].forEach(function(i){document.getElementById(i).value='';});document.getElementById('fIngIva').checked=false;document.getElementById('fIngEnt').value='Seguros La Fe';document.getElementById('fIngPatente').value='1.75';var hoy=today();document.getElementById('fIngFecha').value=hoy;document.getElementById('fIngTasa').value=bcvRate(hoy)||cfg.tasa;}
   calcIng();document.getElementById('modalIngreso').classList.add('open');
 }
 function saveIngreso(){
   var fecha=document.getElementById('fIngFecha').value,tasa=Number(document.getElementById('fIngTasa').value)||0;
   var v=calcIngVals();
   if(!fecha||v.sub<=0||tasa<=0){toast('Complete fecha, subtotal (>0) y tasa (>0)');return;}
-  var rec={id:document.getElementById('fIngId').value||uid(),fecha:fecha,subtotal:v.sub,ivaAplica:v.ivaOn,iva:v.iva,total:v.total,retIva:v.retIva,retIslr:v.retIslr,neto:v.neto,bs:v.neto,tasa:Number(tasa),usd:n2(v.neto/tasa),banco:document.getElementById('fIngBanco').value.trim(),ref:document.getElementById('fIngRef').value.trim(),obs:document.getElementById('fIngObs').value.trim()};
+  var rec={id:document.getElementById('fIngId').value||uid(),fecha:fecha,subtotal:v.sub,ivaAplica:v.ivaOn,iva:v.iva,total:v.total,retIva:v.retIva,retIslr:v.retIslr,neto:v.neto,bs:v.neto,tasa:Number(tasa),usd:n2(v.neto/tasa),entidad:document.getElementById('fIngEnt').value,patentePct:Number(document.getElementById('fIngPatente').value)||0,banco:document.getElementById('fIngBanco').value.trim(),ref:document.getElementById('fIngRef').value.trim(),obs:document.getElementById('fIngObs').value.trim()};
   var snap=ingresos.slice();var i=ingresos.findIndex(function(x){return x.id===rec.id;});if(i>=0)ingresos[i]=rec;else ingresos.push(rec);
   if(!save(K.ingresos,ingresos)){ingresos=snap;return;}
   closeModal('modalIngreso');finRefresh();renderDashboard();toast('Abono registrado');
