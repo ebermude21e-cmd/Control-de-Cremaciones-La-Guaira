@@ -364,7 +364,6 @@ table.flujo tr.saldo td{border-top:2px solid var(--tp);font-weight:800}
         <button class="btn ghost" onclick="go('reportes')">Ir a Reportes ▸</button>
       </div>
     </div>
-    <div id="rentHeroDash"></div>
     <!-- KPIs de Gobernación movidos a Rentabilidad; el Panel queda con Resumen del Fondo + gráficos -->
     <div class="panel" style="margin-bottom:20px"><div class="ph"><h3>Resumen del Fondo — Gobernación</h3><span style="color:var(--slate);font-size:11.5px">servicios prestados · recibido · pagado · saldo del monto recibido</span></div>
       <div class="pb"><div class="fundrow" id="fundSummary"></div></div></div>
@@ -650,7 +649,7 @@ table.flujo tr.saldo td{border-top:2px solid var(--tp);font-weight:800}
   </section>
 </main>
 
-<div class="foot">Sistema de control interno · Gobernación del Estado La Guaira — Operador Seguros La Fe, C.A. · Datos almacenados localmente en este equipo. · <b>v8.2 · Hero de Rentabilidad y Margen (encabezado ejecutivo) en Panel y pantalla Rentabilidad · la app abre en Rentabilidad · check de Retención ISLR por abono (análogo al de IVA; Vallés aplica / Seguros La Fe no) · [Módulo Fondos por Periodo — Incremento 1, capa aditiva certificada] Liquidación tributaria PARAMÉTRICA POR ABONO: cada abono lleva su entidad/régimen (Funeraria Vallés / Seguros La Fe) y su alícuota de patente propia (Vallés 2% con IVA · Seguros La Fe 1,75% sin IVA); IVA y retenciones ya eran por abono. Infraestructura de tesorería USDT instalada (tasa USDT por día y operaciones de compra/venta bajo llaves nuevas). NADA de esto modifica el estado de cuenta, la rentabilidad ni el cuadre certificados — es solo lectura + datos nuevos. · Cada casilla de la Conciliación lleva una leyenda que explica qué significa (padrón, cremaciones registradas, conciliados, faltan por registrar, no respaldados) · Conciliación de expedientes: el archivo del Core se lee por REEMPLAZO total (lista acumulada completa), no por acumulación — el padrón queda igual al archivo y ya no se sobrecuenta; deduplicación por código dentro del archivo (última fila gana) y botón «Eliminar padrón» que limpia solo el padrón sin tocar cremaciones ni pagos · Consistencia total de cifras a tasa de hoy: traslado pagado = Bs realmente pagados ÷ tasa BCV de hoy (no el teórico) + pendiente estimado por regla de tres; gastos y operacionales de la Estructura de Costos y Cuentas por Pagar a tasa de hoy (no histórica), de modo que coinciden con el estado de cuenta · Resumen del Fondo — Gobernación incluye el traslado incurrido pendiente y cuadra con el estado de cuenta (mismo total pagado y mismo pendiente) · estado de cuenta suma «Total Retenciones» (IVA + ISLR + otras) y «Total Tributos» (patente + IVA Seniat) · Cremaciones a costo BASE puro ($174) sobre el padrón · patente 2% sobre monto a cobrar · sin IVA Seniat en la estructura</b></div>
+<div class="foot">Sistema de control interno · Gobernación del Estado La Guaira — Operador Seguros La Fe, C.A. · Datos almacenados localmente en este equipo. · <b>v8.3 · Hero de Rentabilidad/Margen solo en la pantalla Rentabilidad (retirado del Panel Ejecutivo por estética); sin etiqueta «Cobrada»; Resumen del Fondo con etiquetas en orden · [Módulo Fondos por Periodo — Incremento 1, capa aditiva certificada] Liquidación tributaria PARAMÉTRICA POR ABONO: cada abono lleva su entidad/régimen (Funeraria Vallés / Seguros La Fe) y su alícuota de patente propia (Vallés 2% con IVA · Seguros La Fe 1,75% sin IVA); IVA y retenciones ya eran por abono. Infraestructura de tesorería USDT instalada (tasa USDT por día y operaciones de compra/venta bajo llaves nuevas). NADA de esto modifica el estado de cuenta, la rentabilidad ni el cuadre certificados — es solo lectura + datos nuevos. · Cada casilla de la Conciliación lleva una leyenda que explica qué significa (padrón, cremaciones registradas, conciliados, faltan por registrar, no respaldados) · Conciliación de expedientes: el archivo del Core se lee por REEMPLAZO total (lista acumulada completa), no por acumulación — el padrón queda igual al archivo y ya no se sobrecuenta; deduplicación por código dentro del archivo (última fila gana) y botón «Eliminar padrón» que limpia solo el padrón sin tocar cremaciones ni pagos · Consistencia total de cifras a tasa de hoy: traslado pagado = Bs realmente pagados ÷ tasa BCV de hoy (no el teórico) + pendiente estimado por regla de tres; gastos y operacionales de la Estructura de Costos y Cuentas por Pagar a tasa de hoy (no histórica), de modo que coinciden con el estado de cuenta · Resumen del Fondo — Gobernación incluye el traslado incurrido pendiente y cuadra con el estado de cuenta (mismo total pagado y mismo pendiente) · estado de cuenta suma «Total Retenciones» (IVA + ISLR + otras) y «Total Tributos» (patente + IVA Seniat) · Cremaciones a costo BASE puro ($174) sobre el padrón · patente 2% sobre monto a cobrar · sin IVA Seniat en la estructura</b></div>
 
 <!-- Modal Cremación -->
 <div class="modal-bg" id="modalCrem"><div class="modal">
@@ -1946,7 +1945,7 @@ function rentHero(t){
       '<div style="font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#E5C229">Rentabilidad del operativo</div>'+
       '<div class="num" style="font-size:34px;font-weight:800;line-height:1.05;margin-top:6px">'+fmtBs(rentB)+'</div>'+
       '<div class="num" style="font-size:15px;color:#cfc6e6;margin-top:2px">'+fmtUsd(n2(rentB/bh))+'</div>'+
-      '<div style="margin-top:11px;display:inline-flex;align-items:center;gap:7px;font-size:11.5px;font-weight:600;background:rgba(255,255,255,.14);padding:5px 13px;border-radius:20px"><span style="width:8px;height:8px;border-radius:50%;background:'+(on?'#5ee0a0':'#e0a35e')+'"></span>'+(on?'Cobrada por Seguros La Fe':'Excluida (simulación)')+'</div>'+
+      (on?'':'<div style="margin-top:11px;display:inline-flex;align-items:center;gap:7px;font-size:11.5px;font-weight:600;background:rgba(255,255,255,.14);padding:5px 13px;border-radius:20px"><span style="width:8px;height:8px;border-radius:50%;background:#e0a35e"></span>Excluida (simulación)</div>')+
     '</div>'+
     '<div style="text-align:right;min-width:150px">'+
       '<div style="font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#cfc6e6">Margen sobre lo facturado</div>'+
@@ -2197,7 +2196,6 @@ function renderDashboard(){
   var rHoy=bcvHoyRate(),lrd=lastRateDate();
   var bh=document.getElementById('bcvHoy');if(bh){bh.textContent=rHoy>0?fmtNum(rHoy,4):'—';document.getElementById('bcvHoyFecha').textContent=lrd?('al '+fmtDate(tasas[today()]!=null?today():lrd)):'';}
   var rt=rentTotals();
-  var _rh=document.getElementById('rentHeroDash');if(_rh)_rh.innerHTML=rentHero(rt);
   var opD=opTotals(),gtD=gastosTotals(),trD=trasladosPagados();
   var setK=function(id,v){var e=document.getElementById(id);if(e)e.textContent=v;};
   setK('kAdeuUsd',fmtBs(rt.facturadoBs));setK('kAdeuN',fmtUsd(rt.facturado)+' · '+fmtNum(rt.padron,0)+' expedientes');
@@ -2222,9 +2220,6 @@ function renderDashboard(){
     if(patB>0)cells+=fcell('Patente',patB,'#B07A00');
     if(ivaSB>0)cells+=fcell('Pago IVA Seniat',ivaSB,'#B07A00');
     cells+=fcell('Monto Total Pagado',totPagBs,'#9d2f2c')+fcell('Monto Pendiente de Pago',pendPagBs,'#B07A00')+fcell('Saldo del fondo disponible',saldoRecBs,(saldoRecBs>=0?'#4B2D8F':'#c0433f'),'saldo');
-    var rentBpe=n2((rt.profit||0)*bhF);
-    var saldoFinPe=n2(saldoRecBs-(rt.rentCobra?rentBpe:0));
-    cells+=fcell('Saldo del Fondo'+(rt.rentCobra?'':' (rent. excluida)'),saldoFinPe,(saldoFinPe>=0?'#4B2D8F':'#c0433f'),'saldo');
     fsHost.innerHTML=cells;
   }
 
