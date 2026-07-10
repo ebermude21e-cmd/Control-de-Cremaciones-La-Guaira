@@ -647,7 +647,7 @@ table.flujo tr.saldo td{border-top:2px solid var(--tp);font-weight:800}
   </section>
 </main>
 
-<div class="foot">Sistema de control interno · Gobernación del Estado La Guaira — Operador Seguros La Fe, C.A. · Datos almacenados localmente en este equipo. · <b>v7.6 · Estado de cuenta: una sola línea «Pago por traslados (crematorio)» + «Traslados incurridos pendientes» estimados, y fila «Total Pagos + Pendiente» al cierre · el gráfico «Uso del fondo» cuadra con ese total (cremaciones base + traslados + gastos + operacionales) · tabla «Composición por crematorio» eliminada por redundante · panel ejecutivo «Pagadas vs pendientes»: pagado con base $174 con IVA desde finanzas (Vallés del Tuy sin traslado) y pendiente por crematorio estimado del padrón por regla de tres (Σ = padrón − pagadas) · Cremaciones a costo BASE puro ($174) · patente 2% sobre monto a cobrar · sin IVA Seniat en la estructura</b></div>
+<div class="foot">Sistema de control interno · Gobernación del Estado La Guaira — Operador Seguros La Fe, C.A. · Datos almacenados localmente en este equipo. · <b>v7.7 · Consistencia total de cifras a tasa de hoy: traslado pagado = Bs realmente pagados ÷ tasa BCV de hoy (no el teórico) + pendiente estimado por regla de tres; gastos y operacionales de la Estructura de Costos y Cuentas por Pagar a tasa de hoy (no histórica), de modo que coinciden con el estado de cuenta · Resumen del Fondo — Gobernación incluye el traslado incurrido pendiente y cuadra con el estado de cuenta (mismo total pagado y mismo pendiente) · estado de cuenta suma «Total Retenciones» (IVA + ISLR + otras) y «Total Tributos» (patente + IVA Seniat) · Cremaciones a costo BASE puro ($174) sobre el padrón · patente 2% sobre monto a cobrar · sin IVA Seniat en la estructura</b></div>
 
 <!-- Modal Cremación -->
 <div class="modal-bg" id="modalCrem"><div class="modal">
@@ -887,15 +887,20 @@ function toggleEstructura(key){if(!cfg.estructuraOn)cfg.estructuraOn={};cfg.estr
 function usdOfPagoOp(p){var b=Number(p.bs)||0,t=Number(p.tasa)||0;return t>0?n2(b/t):0;}
 function isTraslado(c){return normStr(c||'').indexOf('traslad')>=0;}
 function opTotals(){
-  var pagUsd=0,pagBs=0,pendUsd=0,pendBs=0,pagN=0,pendN=0,cuerpos=0,trPagUsd=0,trPagBs=0,trPendUsd=0,trPendBs=0,trPagCu=0,trPendCu=0;
-  opPagos.forEach(function(p){var u=usdOfPagoOp(p),b=Number(p.bs)||0,cu=Number(p.cuerpos)||0,tr=isTraslado(p.concepto),pagd=(p.estado!=='pendiente');cuerpos+=cu;
-    if(pagd){pagUsd+=u;pagBs+=b;pagN++;if(tr){trPagUsd+=u;trPagBs+=b;trPagCu+=cu;}}else{pendUsd+=u;pendBs+=b;pendN++;if(tr){trPendUsd+=u;trPendBs+=b;trPendCu+=cu;}}});
-  return {pagUsd:n2(pagUsd),pagBs:n2(pagBs),pendUsd:n2(pendUsd),pendBs:n2(pendBs),pagN:pagN,pendN:pendN,cuerpos:cuerpos,trPagUsd:n2(trPagUsd),trPagBs:n2(trPagBs),trPendUsd:n2(trPendUsd),trPendBs:n2(trPendBs),trPagCu:trPagCu,trPendCu:trPendCu};
+  // USD agregado a la TASA DE HOY sobre los Bs reales (consistente con el estado de cuenta / fondo).
+  var bh=bcvHoyRate()||Number(cfg.tasa)||1;
+  var pagBs=0,pendBs=0,pagN=0,pendN=0,cuerpos=0,trPagBs=0,trPendBs=0,trPagCu=0,trPendCu=0;
+  opPagos.forEach(function(p){var b=Number(p.bs)||0,cu=Number(p.cuerpos)||0,tr=isTraslado(p.concepto),pagd=(p.estado!=='pendiente');cuerpos+=cu;
+    if(pagd){pagBs+=b;pagN++;if(tr){trPagBs+=b;trPagCu+=cu;}}else{pendBs+=b;pendN++;if(tr){trPendBs+=b;trPendCu+=cu;}}});
+  return {pagUsd:n2(pagBs/bh),pagBs:n2(pagBs),pendUsd:n2(pendBs/bh),pendBs:n2(pendBs),pagN:pagN,pendN:pendN,cuerpos:cuerpos,trPagUsd:n2(trPagBs/bh),trPagBs:n2(trPagBs),trPendUsd:n2(trPendBs/bh),trPendBs:n2(trPendBs),trPagCu:trPagCu,trPendCu:trPendCu};
 }
 function gastosTotals(){
-  var pagUsd=0,pagBs=0,pendUsd=0,pendBs=0,pagN=0,pendN=0;
-  gastos.forEach(function(g){var u=usdOf(g.bs,g.tasa),b=Number(g.bs)||0,pagd=(g.estado!=='pendiente');if(pagd){pagUsd+=u;pagBs+=b;pagN++;}else{pendUsd+=u;pendBs+=b;pendN++;}});
-  return {pagUsd:n2(pagUsd),pagBs:n2(pagBs),pendUsd:n2(pendUsd),pendBs:n2(pendBs),pagN:pagN,pendN:pendN};
+  // USD agregado a la TASA DE HOY sobre los Bs reales (consistente con el estado de cuenta / fondo).
+  // El detalle por gasto conserva su tasa histórica (usdOf) en el libro de gastos.
+  var bh=bcvHoyRate()||Number(cfg.tasa)||1;
+  var pagBs=0,pendBs=0,pagN=0,pendN=0;
+  gastos.forEach(function(g){var b=Number(g.bs)||0,pagd=(g.estado!=='pendiente');if(pagd){pagBs+=b;pagN++;}else{pendBs+=b;pendN++;}});
+  return {pagUsd:n2(pagBs/bh),pagBs:n2(pagBs),pendUsd:n2(pendBs/bh),pendBs:n2(pendBs),pagN:pagN,pendN:pendN};
 }
 function pagosCremUsd(){var s=0;pagos.forEach(function(p){s+=(Number(p.cantidad)||0)*tarifaUsd(p.crematorio);});return n2(s);}
 function pagosCremBs(){var s=0;pagos.forEach(function(p){s+=(p.total!=null?Number(p.total):Number(p.transferBs))||0;});return n2(s);}
@@ -929,7 +934,12 @@ function trasladosIncurridos(){
     rows.push({crematorio:name,unit:unit,vPaid:vPaid,pct:n2(pct*100),vPendEst:vPendEst,pagUsd:pg,pendUsd:pd,totalUsd:n2(pg+pd)});
   });
   pagUsd=n2(pagUsd);pendUsd=n2(pendUsd);
-  return {rows:rows,pagUsd:pagUsd,pendUsd:pendUsd,totalUsd:n2(pagUsd+pendUsd)};
+  // PAGADO REAL: los Bs efectivamente pagados por traslados (porción de las facturas) a la tasa de hoy,
+  // consistente con el estado de cuenta. (pagUsd teórico = Σ cant×unit queda como referencia interna.)
+  var _bhTI=bcvHoyRate()||Number(cfg.tasa)||1;var pagUsdReal=n2(pagosSplit().trasBs/_bhTI);
+  var _scTI=pagUsd>0?(pagUsdReal/pagUsd):0;
+  rows.forEach(function(r){r.pagUsd=n2(r.pagUsd*_scTI);r.totalUsd=n2(r.pagUsd+r.pendUsd);});
+  return {rows:rows,pagUsd:pagUsdReal,pagUsdTeorico:pagUsd,pendUsd:pendUsd,totalUsd:n2(pagUsdReal+pendUsd)};
 }
 function trasDevengadoUsd(){return trasladosIncurridos().totalUsd;}
 // Pagadas (reales, base $174) vs Pendientes por crematorio ESTIMADOS del padrón por regla de tres
@@ -951,7 +961,8 @@ function egresosEstructura(withSim){
   var bh=bcvHoyRate()||Number(cfg.tasa)||1;
   var cremBaseU=cremBaseDevengadoUsd(),trasU=trasDevengadoUsd();
   var gt=gastosTotals(),op=opTotals();
-  var gastosU=n2(gt.pagUsd+gt.pendUsd),operU=n2(op.pagUsd+op.pendUsd);
+  // Gastos y operacionales expresados a la TASA DE HOY sobre los Bs reales, para cuadrar con el estado de cuenta.
+  var gastosU=n2((gt.pagBs+gt.pendBs)/bh),operU=n2((op.pagBs+op.pendBs)/bh);
   var _am=cfg.amort||{},amortU=(Number(_am.valorUsd)>0&&Number(_am.meses)>0)?n2(Number(_am.valorUsd)/Number(_am.meses)):0;
   var patU=n2(patenteBs()/bh);
   var simGastoU=0;if(withSim&&simuOn){simuSup.forEach(function(x){if(x.t==='g')simGastoU+=(Number(x.bs)||0)/bh;});}simGastoU=n2(simGastoU);
@@ -1733,9 +1744,9 @@ function rentTotals(){
   var cremIva=sp.cremUsd,trasIva=sp.trasUsd,cremIvaBs=sp.cremBs,trasIvaBs=sp.trasBs;
   var costo=n2(cremIva+trasIva),costoBs=n2(cremIvaBs+trasIvaBs),costoDev=costoDevengadoUsd();
   var facturado=serviciosGobUsd();
-  var gs=0;gastos.forEach(function(g){gs+=usdOf(g.bs,g.tasa);});gs=n2(gs);
-  var gBs=0;gastos.forEach(function(g){gBs+=Number(g.bs)||0;});gBs=n2(gBs);
   var opX=opTotals(),gtX=gastosTotals();
+  var gs=n2(gtX.pagUsd+gtX.pendUsd);
+  var gBs=n2(gtX.pagBs+gtX.pendBs);
   var opAllUsd=n2(opX.pagUsd+opX.pendUsd),opAllBs=n2(opX.pagBs+opX.pendBs);
   var _am=cfg.amort||{},amortUsd=(Number(_am.valorUsd)>0&&Number(_am.meses)>0)?n2(Number(_am.valorUsd)/Number(_am.meses)):0;
   var profit=n2(facturado-egresosEstructuraUsd(false));
@@ -1767,8 +1778,9 @@ function renderEstructura(){
   var bh=bcvHoyRate();
   var sim=simuOn;
   var cremBaseU=cremBaseDevengadoUsd(),trasU=trasDevengadoUsd();
+  var ti=trasladosIncurridos();
   var gt=gastosTotals(),op=opTotals();
-  var gastosU=n2(gt.pagUsd+gt.pendUsd), operU=n2(op.pagUsd+op.pendUsd);
+  var gastosU=n2((gt.pagBs+gt.pendBs)/(bh||1)), operU=n2((op.pagBs+op.pendBs)/(bh||1));
   var simGastoU=0;if(sim){simuSup.forEach(function(x){if(x.t==='g')simGastoU+=(Number(x.bs)||0)/(bh||1);});}simGastoU=n2(simGastoU);
   var amort=cfg.amort||{},amortU=(Number(amort.valorUsd)>0&&Number(amort.meses)>0)?n2(Number(amort.valorUsd)/Number(amort.meses)):0;
   var patenteU=n2(patenteBs()/(bh||1)), ivaSeniatU=n2(ivaSeniatBs()/(bh||1));
@@ -1800,9 +1812,9 @@ function renderEstructura(){
   var rows=''+
     '<tr class="sec"><td></td><td colspan="3">Egresos generados (en divisas)</td></tr>'+
     rowK('1','Cremaciones (padrón '+fmtNum(padronCount(),0)+' × PVP con IVA)',cremBaseU,'#9d2f2c','crem',spE.cremUsd,n2(cremBaseU-spE.cremUsd))+
-    rowK('2','Traslados incurridos con IVA <span class="u2" style="display:inline">(pagados + pendientes estimados por regla de tres)</span>',trasU,'#9d2f2c','tras',spE.trasUsd,n2(trasU-spE.trasUsd))+
-    rowK('3','Gastos de logística',gastosU,'#9d2f2c','gastos',gtE2.pagUsd,gtE2.pendUsd)+
-    rowK('4','Pagos operacionales (funerarias / carroceros)',operU,'#9d2f2c','operac',opE2.pagUsd,opE2.pendUsd);
+    rowK('2','Traslados incurridos con IVA <span class="u2" style="display:inline">(pagados reales + pendientes estimados por regla de tres)</span>',trasU,'#9d2f2c','tras',ti.pagUsd,ti.pendUsd)+
+    rowK('3','Gastos de logística',gastosU,'#9d2f2c','gastos',n2(gtE2.pagBs/(bh||1)),n2(gtE2.pendBs/(bh||1)))+
+    rowK('4','Pagos operacionales (funerarias / carroceros)',operU,'#9d2f2c','operac',n2(opE2.pagBs/(bh||1)),n2(opE2.pendBs/(bh||1)));
   var nAmort=4;
   if(amortU>0){nAmort++;rows+=rowK(String(nAmort),'Amortización · '+esc(amort.concepto)+' <span class="u2" style="display:inline">('+fmtUsd(amort.valorUsd)+' ÷ '+fmtNum(amort.meses,0)+' meses)</span>',amortU,'#7a5cc0','amort');}
   if(sim&&simGastoU>0){nAmort++;var simU=simBase>0?fmtUsd(n2(simGastoU/simBase)):'—';var simUbs=simBase>0?'<div class="u2">'+fmtBs(n2((simGastoU/simBase)*bh))+'</div>':'';rows+='<tr><td class="op">'+nAmort+'</td><td>Gastos de proyección (simulación) <span style="background:#B07A00;color:#fff;font-size:10px;padding:1px 7px;border-radius:10px">SIM</span><div style="margin-top:5px;font-size:10px;color:var(--slate)">diluido entre cremaciones / servicios ('+fmtNum(simBase,0)+')</div></td><td class="r" style="color:#B07A00">'+fmtUsd(simGastoU)+ud(simGastoU)+'</td><td class="r ue">'+simU+simUbs+'</td></tr>';}
@@ -1957,6 +1969,9 @@ function renderRentabilidad(){
   var fRetIva=0,fRetIslr=0;ingresos.forEach(function(x){var b=ingBreak(x);fRetIva+=b.retIva;fRetIslr+=b.retIslr;});fRetIva=n2(fRetIva);fRetIslr=n2(fRetIslr);
   var fNeto=fondoNetoBs();var netoRec=n2(fNeto-retB);var simAdd=n2(eFondoBs-fNeto);
   var ivaSeniatOn=Number(cfg.ivaSeniatPct)>0, retList=cfg.retenciones||[];
+  var fRetOtras=n2(retList.reduce(function(s,r){return s+retencionBs(r);},0));
+  var totRetB=n2(fRetIva+fRetIslr+fRetOtras);
+  var totTribB=n2(patB+ivaSB);
   var flujo='<table class="flujo"><tbody>'+
     ecSec('Factura del fondo (cara a la Gobernación)')+
     ecRow('','Base Imponible '+sub+'(subtotal facturado)</span>',fBaseImp,'#245e94')+
@@ -1965,11 +1980,13 @@ function renderRentabilidad(){
     ecRow('−','Retención IVA '+sub+'('+fmtNum(cfg.retIvaPct,0)+'% del IVA)</span>',fRetIva,'#B07A00')+
     ecRow('−','Retención ISLR '+sub+'('+fmtNum(cfg.retIslrPct,0)+'% del subtotal)</span>',fRetIslr,'#B07A00')+
     retList.map(function(r){return ecRow('−','Otras retenciones · '+esc(r.nombre||'Retención')+' '+sub+'('+fmtNum(Number(r.pct)||0,2)+'% s/ '+retencionBaseLabel(r.base)+')</span>',retencionBs(r),'#B07A00');}).join('')+
+    '<tr style="border-top:1px solid var(--line-2);background:#fdf7ec"><td class="op" style="color:#B07A00">=</td><td><b style="color:#B07A00">Total Retenciones</b> '+sub+'(IVA + ISLR'+(retList.length?' + otras':'')+')</span></td><td class="r num" style="color:#B07A00;font-weight:800">'+fmtBs(totRetB)+usdu(U(totRetB))+'</td></tr>'+
     '<tr style="border-top:2px solid var(--line-2);background:#eef7f0"><td class="op" style="color:#0D7A4E">=</td><td><b style="color:#0D7A4E">Neto recibido</b> '+sub+'(fondo disponible, después de todas las retenciones)</span>'+supF+'</td><td class="r num" style="color:#0D7A4E;font-weight:800">'+fmtBs(netoRec)+usdu(U(netoRec))+'</td></tr>'+
     ((sim&&simAdd!==0)?ecRow('＋','Aportes de simulación '+sub+'(conceptos supuestos)</span>',simAdd,'#0D7A4E'):'')+
     ecSec('Tributos del fondo')+
     ecRow('−','Patente '+sub+esc(patLbl)+'</span>',patB,'#B07A00')+
     (ivaSeniatOn?ecRow('−','Pago IVA Seniat '+sub+esc(ivaSLbl)+'</span>',ivaSB,'#B07A00'):'')+
+    '<tr style="border-top:1px solid var(--line-2);background:#fdf7ec"><td class="op" style="color:#B07A00">=</td><td><b style="color:#B07A00">Total Tributos</b> '+sub+'(patente'+(ivaSeniatOn?' + IVA Seniat':'')+')</span></td><td class="r num" style="color:#B07A00;font-weight:800">'+fmtBs(totTribB)+usdu(U(totTribB))+'</td></tr>'+
     '<tr style="border-top:2px solid var(--line-2);background:#eef4fb"><td class="op" style="color:#245e94">=</td><td><b style="color:#245e94">Saldo Disponible para pagos</b> '+sub+'(neto − patente'+(ivaSeniatOn?' − IVA Seniat':'')+')</span></td><td class="r num" style="color:#245e94;font-weight:800">'+fmtBs(fondoDispB)+usdu(U(fondoDispB))+'</td></tr>'+
     ecSec('Pagos efectuados')+
     ecRow('−','Pago en Cremaciones '+sub+'(base + IVA · panel)</span>',pagCremBaseB)+
@@ -2151,7 +2168,8 @@ function renderDashboard(){
     var patB=patenteBs(),ivaSB=ivaSeniatBs();
     var totPagBs=n2(pagosCremBs()+opD.pagBs+gtD.pagBs);
     var cremPendU=rt.cremPendUsd;
-    var pendPagBs=n2(cremPendU*rt.bcvHoy+opD.pendBs+gtD.pendBs);
+    var trasPendFsB=n2(trasladosIncurridos().pendUsd*rt.bcvHoy);
+    var pendPagBs=n2(cremPendU*rt.bcvHoy+trasPendFsB+opD.pendBs+gtD.pendBs);
     var retFsB=retencionesTotalBs();var netoRecB=n2(recibBs-retFsB);
     var saldoRecBs=n2(netoRecB-patB-ivaSB-totPagBs-pendPagBs);
     function fcell(l,bs,col,cls){return '<div class="fundcell '+(cls||'')+'"><div class="fl">'+l+'</div><div class="fbig num" style="color:'+col+'">'+fmtBs(bs)+'</div><div class="fusd num">'+fmtUsd(Uf(bs))+'</div></div>';}
@@ -2230,8 +2248,8 @@ function renderDashboard(){
   var cxp=[
     {c:'#c0433f',rub:'Cremaciones a crematorios',det:fmtNum(cremacionesPagadasCount(),0)+' pagadas · '+fmtNum(cremPendN,0)+' sin pagar',paidU:cremPaidU,paidBs:n2(cremPaidU*bh),pendU:cremPendUsd,pendBs:n2(cremPendUsd*bh)},
     {c:'#d08a3a',rub:'Traslados incurridos (con IVA)',det:fmtNum(tiPaidN,0)+' pagados · '+fmtNum(tiPendN,0)+' pendientes estimados',paidU:ti.pagUsd,paidBs:n2(ti.pagUsd*bh),pendU:ti.pendUsd,pendBs:n2(ti.pendUsd*bh)},
-    {c:'#a13c38',rub:'Pagos operacionales (traslados/manipulación)',det:op.pagN+' pagado(s) · '+op.pendN+' pendiente(s)',paidU:op.pagUsd,paidBs:op.pagBs,pendU:op.pendUsd,pendBs:op.pendBs},
-    {c:'#B07A00',rub:'Gastos de logística',det:gt.pagN+' pagado(s) · '+gt.pendN+' pendiente(s)',paidU:gt.pagUsd,paidBs:gt.pagBs,pendU:gt.pendUsd,pendBs:gt.pendBs}
+    {c:'#a13c38',rub:'Pagos operacionales (traslados/manipulación)',det:op.pagN+' pagado(s) · '+op.pendN+' pendiente(s)',paidU:n2(op.pagBs/(bh||1)),paidBs:op.pagBs,pendU:n2(op.pendBs/(bh||1)),pendBs:op.pendBs},
+    {c:'#B07A00',rub:'Gastos de logística',det:gt.pagN+' pagado(s) · '+gt.pendN+' pendiente(s)',paidU:n2(gt.pagBs/(bh||1)),paidBs:gt.pagBs,pendU:n2(gt.pendBs/(bh||1)),pendBs:gt.pendBs}
   ].filter(function(x){return n2(x.pendU)>0.01;}); // solo registros con pendiente real (no embasurar el análisis)
   var totPaidU=n2(cxp.reduce(function(s,x){return s+x.paidU;},0)),totPaidB=n2(cxp.reduce(function(s,x){return s+x.paidBs;},0));
   var totPendU=n2(cxp.reduce(function(s,x){return s+x.pendU;},0)),totPendB=n2(cxp.reduce(function(s,x){return s+x.pendBs;},0));
