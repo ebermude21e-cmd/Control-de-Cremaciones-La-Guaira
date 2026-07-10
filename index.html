@@ -364,6 +364,7 @@ table.flujo tr.saldo td{border-top:2px solid var(--tp);font-weight:800}
         <button class="btn ghost" onclick="go('reportes')">Ir a Reportes ▸</button>
       </div>
     </div>
+    <div id="rentHeroDash"></div>
     <!-- KPIs de Gobernación movidos a Rentabilidad; el Panel queda con Resumen del Fondo + gráficos -->
     <div class="panel" style="margin-bottom:20px"><div class="ph"><h3>Resumen del Fondo — Gobernación</h3><span style="color:var(--slate);font-size:11.5px">servicios prestados · recibido · pagado · saldo del monto recibido</span></div>
       <div class="pb"><div class="fundrow" id="fundSummary"></div></div></div>
@@ -649,7 +650,7 @@ table.flujo tr.saldo td{border-top:2px solid var(--tp);font-weight:800}
   </section>
 </main>
 
-<div class="foot">Sistema de control interno · Gobernación del Estado La Guaira — Operador Seguros La Fe, C.A. · Datos almacenados localmente en este equipo. · <b>v8.1 · Panel Ejecutivo alimenta «Rentabilidad» y «Saldo del Fondo» con el interruptor de rentabilidad (el toggle re-renderiza el Panel para consistencia total de cifras); capa aditiva de solo lectura, sin tocar cálculos certificados · [Módulo Fondos por Periodo — Incremento 1, capa aditiva certificada] Liquidación tributaria PARAMÉTRICA POR ABONO: cada abono lleva su entidad/régimen (Funeraria Vallés / Seguros La Fe) y su alícuota de patente propia (Vallés 2% con IVA · Seguros La Fe 1,75% sin IVA); IVA y retenciones ya eran por abono. Infraestructura de tesorería USDT instalada (tasa USDT por día y operaciones de compra/venta bajo llaves nuevas). NADA de esto modifica el estado de cuenta, la rentabilidad ni el cuadre certificados — es solo lectura + datos nuevos. · Cada casilla de la Conciliación lleva una leyenda que explica qué significa (padrón, cremaciones registradas, conciliados, faltan por registrar, no respaldados) · Conciliación de expedientes: el archivo del Core se lee por REEMPLAZO total (lista acumulada completa), no por acumulación — el padrón queda igual al archivo y ya no se sobrecuenta; deduplicación por código dentro del archivo (última fila gana) y botón «Eliminar padrón» que limpia solo el padrón sin tocar cremaciones ni pagos · Consistencia total de cifras a tasa de hoy: traslado pagado = Bs realmente pagados ÷ tasa BCV de hoy (no el teórico) + pendiente estimado por regla de tres; gastos y operacionales de la Estructura de Costos y Cuentas por Pagar a tasa de hoy (no histórica), de modo que coinciden con el estado de cuenta · Resumen del Fondo — Gobernación incluye el traslado incurrido pendiente y cuadra con el estado de cuenta (mismo total pagado y mismo pendiente) · estado de cuenta suma «Total Retenciones» (IVA + ISLR + otras) y «Total Tributos» (patente + IVA Seniat) · Cremaciones a costo BASE puro ($174) sobre el padrón · patente 2% sobre monto a cobrar · sin IVA Seniat en la estructura</b></div>
+<div class="foot">Sistema de control interno · Gobernación del Estado La Guaira — Operador Seguros La Fe, C.A. · Datos almacenados localmente en este equipo. · <b>v8.2 · Hero de Rentabilidad y Margen (encabezado ejecutivo) en Panel y pantalla Rentabilidad · la app abre en Rentabilidad · check de Retención ISLR por abono (análogo al de IVA; Vallés aplica / Seguros La Fe no) · [Módulo Fondos por Periodo — Incremento 1, capa aditiva certificada] Liquidación tributaria PARAMÉTRICA POR ABONO: cada abono lleva su entidad/régimen (Funeraria Vallés / Seguros La Fe) y su alícuota de patente propia (Vallés 2% con IVA · Seguros La Fe 1,75% sin IVA); IVA y retenciones ya eran por abono. Infraestructura de tesorería USDT instalada (tasa USDT por día y operaciones de compra/venta bajo llaves nuevas). NADA de esto modifica el estado de cuenta, la rentabilidad ni el cuadre certificados — es solo lectura + datos nuevos. · Cada casilla de la Conciliación lleva una leyenda que explica qué significa (padrón, cremaciones registradas, conciliados, faltan por registrar, no respaldados) · Conciliación de expedientes: el archivo del Core se lee por REEMPLAZO total (lista acumulada completa), no por acumulación — el padrón queda igual al archivo y ya no se sobrecuenta; deduplicación por código dentro del archivo (última fila gana) y botón «Eliminar padrón» que limpia solo el padrón sin tocar cremaciones ni pagos · Consistencia total de cifras a tasa de hoy: traslado pagado = Bs realmente pagados ÷ tasa BCV de hoy (no el teórico) + pendiente estimado por regla de tres; gastos y operacionales de la Estructura de Costos y Cuentas por Pagar a tasa de hoy (no histórica), de modo que coinciden con el estado de cuenta · Resumen del Fondo — Gobernación incluye el traslado incurrido pendiente y cuadra con el estado de cuenta (mismo total pagado y mismo pendiente) · estado de cuenta suma «Total Retenciones» (IVA + ISLR + otras) y «Total Tributos» (patente + IVA Seniat) · Cremaciones a costo BASE puro ($174) sobre el padrón · patente 2% sobre monto a cobrar · sin IVA Seniat en la estructura</b></div>
 
 <!-- Modal Cremación -->
 <div class="modal-bg" id="modalCrem"><div class="modal">
@@ -740,6 +741,7 @@ table.flujo tr.saldo td{border-top:2px solid var(--tp);font-weight:800}
       <label class="fld" style="display:flex;align-items:flex-end"><span style="font-size:10.5px;color:var(--slate);line-height:1.4">Patente, IVA y retenciones se liquidan por abono según la entidad. Seguros La Fe: 1,75% y sin IVA · Vallés: 2% con IVA.</span></label>
     </div>
     <label class="chk" style="margin:12px 2px 4px;display:inline-flex;align-items:center;gap:9px;font-size:13px"><input type="checkbox" id="fIngIva" onchange="calcIng()"> Objeto de cálculo de IVA (16%)</label>
+    <label class="chk" style="margin:12px 2px 4px 16px;display:inline-flex;align-items:center;gap:9px;font-size:13px"><input type="checkbox" id="fIngIslr" onchange="calcIng()"> Aplica Retención ISLR (2%)</label>
     <div id="fIngBreak" class="ingbreak"></div>
     <div class="grid3" style="margin-top:12px">
       <label class="fld">Banco receptor<input id="fIngBanco" placeholder="Banco donde se recibió"></label>
@@ -1868,7 +1870,8 @@ function ingBreak(x){
     var iva=n2(Number(x.iva!=null?x.iva:(ivaOn?sub*(cfg.ivaPct||16)/100:0)));
     var total=n2(Number(x.total!=null?x.total:sub+iva));
     var retIva=n2(Number(x.retIva!=null?x.retIva:(ivaOn?iva*(cfg.retIvaPct||75)/100:0)));
-    var retIslr=n2(Number(x.retIslr!=null?x.retIslr:sub*(cfg.retIslrPct||2)/100));
+    var islrOn=(x.islrAplica!==false);
+    var retIslr=n2(Number(x.retIslr!=null?x.retIslr:(islrOn?sub*(cfg.retIslrPct||2)/100:0)));
     var neto=n2(Number(x.neto!=null?x.neto:total-retIva-retIslr));
     return {sub:sub,ivaOn:ivaOn,iva:iva,total:total,retIva:retIva,retIslr:retIslr,neto:neto};
   }
@@ -1881,9 +1884,10 @@ function calcIngVals(){
   var iva=ivaOn?n2(sub*(cfg.ivaPct||16)/100):0;
   var total=n2(sub+iva);
   var retIva=ivaOn?n2(iva*(cfg.retIvaPct||75)/100):0;
-  var retIslr=n2(sub*(cfg.retIslrPct||2)/100);
+  var islrOn=document.getElementById('fIngIslr')?document.getElementById('fIngIslr').checked:true;
+  var retIslr=islrOn?n2(sub*(cfg.retIslrPct||2)/100):0;
   var neto=n2(total-retIva-retIslr);
-  return {sub:n2(sub),ivaOn:ivaOn,iva:iva,total:total,retIva:retIva,retIslr:retIslr,neto:neto};
+  return {sub:n2(sub),ivaOn:ivaOn,islrOn:islrOn,iva:iva,total:total,retIva:retIva,retIslr:retIslr,neto:neto};
 }
 function calcIng(){
   var v=calcIngVals(),tasa=Number(document.getElementById('fIngTasa').value)||0;
@@ -1892,7 +1896,7 @@ function calcIng(){
     ['IVA '+(cfg.ivaPct||16)+'%'+(v.ivaOn?'':' (no aplica)'),v.iva,v.ivaOn?'#3a3550':'#9a97ad'],
     ['Total facturado',v.total,'#0D7A4E'],
     ['(−) Retención IVA '+(cfg.retIvaPct||75)+'%',v.retIva,'#B07A00'],
-    ['(−) Retención ISLR '+(cfg.retIslrPct||2)+'%',v.retIslr,'#B07A00']
+    ['(−) Retención ISLR '+(cfg.retIslrPct||2)+'%'+(v.islrOn?'':' (no aplica)'),v.retIslr,v.islrOn?'#B07A00':'#9a97ad']
   ];
   var html=rows.map(function(r){return '<div class="ibrow"><span>'+r[0]+'</span><b class="num" style="color:'+r[2]+'">'+fmtBs(r[1])+'</b></div>';}).join('');
   html+='<div class="ibrow tot"><span>Neto recibido (entra al fondo)</span><b class="num" style="color:#245e94">'+fmtBs(v.neto)+'</b></div>';
@@ -1900,21 +1904,21 @@ function calcIng(){
   document.getElementById('fIngUsdOut').textContent=fmtUsd(tasa>0?n2(v.neto/tasa):0);
 }
 function ingFechaChange(){var f=document.getElementById('fIngFecha').value;var r=bcvRate(f);if(r>0)document.getElementById('fIngTasa').value=r;calcIng();}
-function ingEntChange(){var e=document.getElementById('fIngEnt').value;var iva=document.getElementById('fIngIva'),pat=document.getElementById('fIngPatente');
-  if(e==='Funeraria Vallés'){iva.checked=true;if(!pat.value)pat.value='2';}
-  else{iva.checked=false;if(!pat.value)pat.value='1.75';}
+function ingEntChange(){var e=document.getElementById('fIngEnt').value;var iva=document.getElementById('fIngIva'),pat=document.getElementById('fIngPatente'),islr=document.getElementById('fIngIslr');
+  if(e==='Funeraria Vallés'){iva.checked=true;if(islr)islr.checked=true;if(!pat.value)pat.value='2';}
+  else{iva.checked=false;if(islr)islr.checked=false;if(!pat.value)pat.value='1.75';}
   calcIng();}
 function openIngreso(id){
   if(id){var x=ingresos.find(function(y){return y.id===id;});if(!x)return;document.getElementById('mIngTitle').textContent='Editar abono';var b=ingBreak(x);
-    document.getElementById('fIngId').value=x.id;document.getElementById('fIngFecha').value=x.fecha;document.getElementById('fIngSub').value=b.sub;document.getElementById('fIngIva').checked=b.ivaOn;document.getElementById('fIngTasa').value=x.tasa;document.getElementById('fIngEnt').value=x.entidad||(b.ivaOn?'Funeraria Vallés':'Seguros La Fe');document.getElementById('fIngPatente').value=(x.patentePct!=null?x.patentePct:(cfg.patentePct||''));document.getElementById('fIngBanco').value=x.banco||'';document.getElementById('fIngRef').value=x.ref||'';document.getElementById('fIngObs').value=x.obs||'';
-  }else{document.getElementById('mIngTitle').textContent='Registrar abono de la Gobernación';['fIngId','fIngSub','fIngBanco','fIngRef','fIngObs'].forEach(function(i){document.getElementById(i).value='';});document.getElementById('fIngIva').checked=false;document.getElementById('fIngEnt').value='Seguros La Fe';document.getElementById('fIngPatente').value='1.75';var hoy=today();document.getElementById('fIngFecha').value=hoy;document.getElementById('fIngTasa').value=bcvRate(hoy)||cfg.tasa;}
+    document.getElementById('fIngId').value=x.id;document.getElementById('fIngFecha').value=x.fecha;document.getElementById('fIngSub').value=b.sub;document.getElementById('fIngIva').checked=b.ivaOn;document.getElementById('fIngIslr').checked=(x.islrAplica!==false);document.getElementById('fIngTasa').value=x.tasa;document.getElementById('fIngEnt').value=x.entidad||(b.ivaOn?'Funeraria Vallés':'Seguros La Fe');document.getElementById('fIngPatente').value=(x.patentePct!=null?x.patentePct:(cfg.patentePct||''));document.getElementById('fIngBanco').value=x.banco||'';document.getElementById('fIngRef').value=x.ref||'';document.getElementById('fIngObs').value=x.obs||'';
+  }else{document.getElementById('mIngTitle').textContent='Registrar abono de la Gobernación';['fIngId','fIngSub','fIngBanco','fIngRef','fIngObs'].forEach(function(i){document.getElementById(i).value='';});document.getElementById('fIngIva').checked=false;document.getElementById('fIngIslr').checked=false;document.getElementById('fIngEnt').value='Seguros La Fe';document.getElementById('fIngPatente').value='1.75';var hoy=today();document.getElementById('fIngFecha').value=hoy;document.getElementById('fIngTasa').value=bcvRate(hoy)||cfg.tasa;}
   calcIng();document.getElementById('modalIngreso').classList.add('open');
 }
 function saveIngreso(){
   var fecha=document.getElementById('fIngFecha').value,tasa=Number(document.getElementById('fIngTasa').value)||0;
   var v=calcIngVals();
   if(!fecha||v.sub<=0||tasa<=0){toast('Complete fecha, subtotal (>0) y tasa (>0)');return;}
-  var rec={id:document.getElementById('fIngId').value||uid(),fecha:fecha,subtotal:v.sub,ivaAplica:v.ivaOn,iva:v.iva,total:v.total,retIva:v.retIva,retIslr:v.retIslr,neto:v.neto,bs:v.neto,tasa:Number(tasa),usd:n2(v.neto/tasa),entidad:document.getElementById('fIngEnt').value,patentePct:Number(document.getElementById('fIngPatente').value)||0,banco:document.getElementById('fIngBanco').value.trim(),ref:document.getElementById('fIngRef').value.trim(),obs:document.getElementById('fIngObs').value.trim()};
+  var rec={id:document.getElementById('fIngId').value||uid(),fecha:fecha,subtotal:v.sub,ivaAplica:v.ivaOn,islrAplica:v.islrOn,iva:v.iva,total:v.total,retIva:v.retIva,retIslr:v.retIslr,neto:v.neto,bs:v.neto,tasa:Number(tasa),usd:n2(v.neto/tasa),entidad:document.getElementById('fIngEnt').value,patentePct:Number(document.getElementById('fIngPatente').value)||0,banco:document.getElementById('fIngBanco').value.trim(),ref:document.getElementById('fIngRef').value.trim(),obs:document.getElementById('fIngObs').value.trim()};
   var snap=ingresos.slice();var i=ingresos.findIndex(function(x){return x.id===rec.id;});if(i>=0)ingresos[i]=rec;else ingresos.push(rec);
   if(!save(K.ingresos,ingresos)){ingresos=snap;return;}
   closeModal('modalIngreso');finRefresh();renderDashboard();toast('Abono registrado');
@@ -1934,6 +1938,22 @@ function margenPanel(t,mar,fact,prof){
   if(simuSup.length){var _r=bcvHoyRate()||1;addrow+='<table class="data" style="margin-top:12px"><thead><tr><th>Tipo</th><th>Concepto</th><th class="c">Carga</th><th class="r">Monto (Bs)</th><th class="r">Equiv. USD</th><th class="r">Efecto</th><th class="c">Acción</th></tr></thead><tbody>'+simuSup.map(function(x){var f=x.t==='f';var xbs=(x.bs!=null)?Number(x.bs):n2((Number(x.m)||0)*_r);var xusd=n2(xbs/_r);var cb=(x.cur==='usd')?'<span style="font-size:9.5px;font-weight:800;padding:1px 7px;border-radius:10px;background:#e8eefb;color:#245e94">USD '+fmtNum(Number(x.orig)||xusd,2)+'</span>':'<span style="font-size:9.5px;font-weight:800;padding:1px 7px;border-radius:10px;background:#eef2f6;color:#5b6b7a">Bs</span>';return '<tr><td><span style="font-size:10px;font-weight:800;padding:2px 9px;border-radius:12px;background:'+(f?'#e6f3ec':'#fbe9e8')+';color:'+(f?'#0D7A4E':'#c0433f')+'">'+(f?'Fondo':'Gasto')+'</span></td><td>'+esc(x.c)+'</td><td class="c">'+cb+'</td><td class="r num">'+fmtBs(xbs)+'</td><td class="r num" style="color:var(--slate)">'+fmtUsd(xusd)+'</td><td class="r num" style="color:'+(f?'#0D7A4E':'#c0433f')+';font-weight:700">'+(f?'+ ':'− ')+fmtBs(xbs)+'</td><td class="c"><button class="btn ghost icon sm" style="color:var(--danger);border-color:var(--danger)" onclick="delSupuesto(\''+x.id+'\')">🗑</button></td></tr>';}).join('')+'</tbody></table>';}
   addrow+='</div>';
   return '<div class="panel" style="margin-bottom:20px"><div class="ph"><h3>Margen de ganancia total</h3><span style="color:var(--slate);font-size:11.5px">indicador ejecutivo con modo simulación</span></div><div class="pb">'+simhead+gaugeRow+addrow+'</div></div>';
+}
+function rentHero(t){
+  var bh=t.bcvHoy||1;var rentB=n2((t.profit||0)*bh);var mar=Number(t.margen)||0;var on=!!t.rentCobra;
+  return '<div style="background:linear-gradient(135deg,#2D1860 0%,#4B2D8F 55%,#6d4bb8 100%);border-radius:16px;padding:22px 26px;margin-bottom:20px;color:#fff;box-shadow:0 10px 30px rgba(45,24,96,.28);display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:22px">'+
+    '<div style="min-width:240px">'+
+      '<div style="font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#E5C229">Rentabilidad del operativo</div>'+
+      '<div class="num" style="font-size:34px;font-weight:800;line-height:1.05;margin-top:6px">'+fmtBs(rentB)+'</div>'+
+      '<div class="num" style="font-size:15px;color:#cfc6e6;margin-top:2px">'+fmtUsd(n2(rentB/bh))+'</div>'+
+      '<div style="margin-top:11px;display:inline-flex;align-items:center;gap:7px;font-size:11.5px;font-weight:600;background:rgba(255,255,255,.14);padding:5px 13px;border-radius:20px"><span style="width:8px;height:8px;border-radius:50%;background:'+(on?'#5ee0a0':'#e0a35e')+'"></span>'+(on?'Cobrada por Seguros La Fe':'Excluida (simulación)')+'</div>'+
+    '</div>'+
+    '<div style="text-align:right;min-width:150px">'+
+      '<div style="font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#cfc6e6">Margen sobre lo facturado</div>'+
+      '<div class="num" style="font-size:46px;font-weight:800;line-height:1;margin-top:4px;color:#fff">'+fmtNum(mar,1)+'%</div>'+
+      '<div style="font-size:11.5px;color:#cfc6e6;margin-top:4px">'+(mar>30?'Excelente':(mar>=10?'Aceptable':'Por mejorar'))+'</div>'+
+    '</div>'+
+  '</div>';
 }
 function renderRentabilidad(){
   var host=document.getElementById('rentabilidadHost');if(!host)return;
@@ -2078,7 +2098,7 @@ function renderRentabilidad(){
   by.forEach(function(o){sc+=o.n;si+=o.ing;sco+=o.costo;su+=o.util;comp+='<tr><td>'+esc(o.crematorio)+'</td><td class="c num">'+fmtNum(o.n,0)+'</td><td class="r num">'+fmtUsd(tarifaUsd(o.crematorio))+'</td><td class="r num">'+fmtUsd(o.ing)+'</td><td class="r num">'+fmtUsd(o.costo)+'</td><td class="r num">'+fmtUsd(o.util)+'</td><td class="r num">'+fmtNum(o.margen,1)+'%</td></tr>';});
   comp+='</tbody><tfoot><tr><td class="r">TOTAL (sin gastos op.)</td><td class="c num">'+fmtNum(sc,0)+'</td><td></td><td class="r num">'+fmtUsd(n2(si))+'</td><td class="r num">'+fmtUsd(n2(sco))+'</td><td class="r num">'+fmtUsd(n2(su))+'</td><td class="r num">'+(si>0?fmtNum(su/si*100,1):'0')+'%</td></tr></tfoot></table>';
   var pComp='<div class="panel"><div class="ph"><h3>Composición por crematorio</h3><span style="color:var(--slate);font-size:11.5px">ingreso Gobernación − costo por cremación</span></div><div class="pb" style="padding:0"><div class="tablewrap" style="border:none;box-shadow:none">'+comp+'</div><div class="rfoot" style="padding:12px 18px;justify-content:flex-end;border-top:1px solid var(--line-2)"><button class="btn ghost sm" onclick="exportConc(\'rent_comp_tbl\',\'Rentabilidad_por_crematorio\')">⬇ Exportar</button></div></div></div>';
-  host.innerHTML=sec1+kB1+sec2+pB2+pMargen+casc;
+  host.innerHTML=rentHero(t)+sec1+kB1+sec2+pB2+pMargen+casc;
 }
 function exportRentabilidadExcel(){
   var t=rentTotals(),by=rentByCrem();
@@ -2177,6 +2197,7 @@ function renderDashboard(){
   var rHoy=bcvHoyRate(),lrd=lastRateDate();
   var bh=document.getElementById('bcvHoy');if(bh){bh.textContent=rHoy>0?fmtNum(rHoy,4):'—';document.getElementById('bcvHoyFecha').textContent=lrd?('al '+fmtDate(tasas[today()]!=null?today():lrd)):'';}
   var rt=rentTotals();
+  var _rh=document.getElementById('rentHeroDash');if(_rh)_rh.innerHTML=rentHero(rt);
   var opD=opTotals(),gtD=gastosTotals(),trD=trasladosPagados();
   var setK=function(id,v){var e=document.getElementById(id);if(e)e.textContent=v;};
   setK('kAdeuUsd',fmtBs(rt.facturadoBs));setK('kAdeuN',fmtUsd(rt.facturado)+' · '+fmtNum(rt.padron,0)+' expedientes');
@@ -2203,7 +2224,7 @@ function renderDashboard(){
     cells+=fcell('Monto Total Pagado',totPagBs,'#9d2f2c')+fcell('Monto Pendiente de Pago',pendPagBs,'#B07A00')+fcell('Saldo del fondo disponible',saldoRecBs,(saldoRecBs>=0?'#4B2D8F':'#c0433f'),'saldo');
     var rentBpe=n2((rt.profit||0)*bhF);
     var saldoFinPe=n2(saldoRecBs-(rt.rentCobra?rentBpe:0));
-    cells+=fcell('Rentabilidad '+(rt.rentCobra?'· cobrada':'· no cobrada')+' ('+fmtNum(rt.margen,1)+'% margen)',rentBpe,'#9d2f2c')+fcell('Saldo del Fondo'+(rt.rentCobra?'':' (rent. excluida)'),saldoFinPe,(saldoFinPe>=0?'#4B2D8F':'#c0433f'),'saldo');
+    cells+=fcell('Saldo del Fondo'+(rt.rentCobra?'':' (rent. excluida)'),saldoFinPe,(saldoFinPe>=0?'#4B2D8F':'#c0433f'),'saldo');
     fsHost.innerHTML=cells;
   }
 
@@ -2658,6 +2679,7 @@ document.addEventListener('keydown',function(e){if(e.key==='Escape')document.que
 
 /* ===== Init ===== */
 refreshSelects();refreshHeader();fillConfigForm();renderCrem();renderPagos();renderGasto();renderDashboard();renderFundBar();applyActiveFund();
+try{go('rentabilidad');}catch(e){}
 </script>
 </body>
 </html>
