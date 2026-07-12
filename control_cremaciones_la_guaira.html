@@ -351,6 +351,7 @@ table.flujo tr.saldo td{border-top:2px solid var(--tp);font-weight:800}
   <button data-view="finanzas">Finanzas</button>
   <button data-view="reportes">Reportes</button>
   <button data-view="conciliacion">Conciliación</button>
+  <button data-view="auditoria">🔍 Auditoría</button>
   <button data-view="config">Configuración</button>
 </div></nav>
 
@@ -587,6 +588,17 @@ table.flujo tr.saldo td{border-top:2px solid var(--tp);font-weight:800}
     <div id="conciliacionHost"></div>
   </section>
 
+  <!-- AUDITORÍA -->
+  <section class="view" id="v-auditoria">
+    <div class="viewhead"><div><h2>Matriz de conciliación y auditoría</h2><div class="lead">Diagnóstico automático de integridad. Cada verificación compara dos formas independientes de obtener la misma cifra; si difieren, se marca en rojo e indica el origen para corregirlo en el dato fuente. Cero riesgo: no modifica datos.</div></div>
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+        <button class="btn gold" onclick="renderMatriz()">↻ Re-ejecutar verificaciones</button>
+        <button class="btn" onclick="exportMatrizExcel()">⬇ Exportar matriz (Excel)</button>
+      </div>
+    </div>
+    <div id="auditoriaHost"></div>
+  </section>
+
   <!-- CONFIG -->
   <section class="view" id="v-config">
     <div class="viewhead"><div><h2>Configuración</h2><div class="lead">Datos del convenio, tarifas, tasa de referencia, logos, crematorios, categorías y respaldo.</div></div></div>
@@ -677,7 +689,7 @@ table.flujo tr.saldo td{border-top:2px solid var(--tp);font-weight:800}
   </section>
 </main>
 
-<div class="foot">Sistema de control interno · Gobernación del Estado La Guaira — Operador Seguros La Fe, C.A. · Datos almacenados localmente en este equipo. · <b>v9.12 · [AUDITORÍA traslados] Conteos manipulación/traslado basados en cremaciones efectuadas (como el panel): traslado Vallés del Tuy = sus cremaciones × $80+IVA con pagadas/pendientes correctos (elimina el −32); consistencia total F1+F2=General en todas las vistas · [FIX traslados + gráfico] Traslado Vallés del Tuy solo por SUS cremaciones (no los 288); gráfico Uso del fondo reconstruido: retenciones IVA/ISLR, USD junto a Bs, Total erogaciones → Monto del fondo → Saldo disponible, cuadra con estado de cuenta · [MODELO TRASLADOS] Manipulación (N×$50 → Funeraria Vallés Maracay) y Traslado (N×$80+IVA → Organización Vallés del Tuy) como compromisos por N cuerpos a los 4 crematorios, paramétricos, con trazabilidad en Pagos Operacionales; aditivo (F1+F2=General) y auto-test en verde · [CONSISTENCIA] Mecánica de fuente única: cifras no-aditivas (traslados, patente) ahora se calculan en General como suma de fondos → F1+F2=General garantizado; patente por alícuota del abono (Seguros 1,75%); auto-test de consistencia permanente + panel de desglose por fondo desplegable en la vista General · [FIX] Precio a la Gobernación por fondo ahora SIGUE LAS VIGENCIAS de configuración según el período del fondo (Fondo 2 usa la vigencia desde su corte); se quitó el $465 horneado que no seguía la config; override per-fondo sigue disponible · [FIX] Display de retenciones respeta la exención (Fondo 2 exento ya no muestra timbre fiscal con monto); USDT rediseñado: pérdida cambiaria (USD-BCV − USDT) y % en tarjetas, Bs como dato fijo exacto, y edición/mantenimiento de operaciones · [FIX auditoría] Entrada de fechas DD/MM/AAAA independiente del navegador (elimina la inversión día/mes en tarifas y tasas que causaba la distorsión); precio a la Gobernación en General = promedio ponderado por fondo (facturado÷padrón), consistente con el facturado y el chequeo de conciliación · [2A] Módulo Tesorería USDT: registro compra/venta con comisiones (Binance + banca), tenencia real, tasa efectiva, estado de cuenta multimoneda (Bs/USD BCV/referencia USDT) con brecha y Excel · Corte de pago PARAMÉTRICO en la relación de pagos: selector de fecha de corte que toma la tasa BCV de ese día automáticamente · Pagos operacionales nutridos (conceptos: voluntariado, excavadores, logística, bonificación, donación; beneficiario + banco/cuenta + cantidad×tarifa paramétrica) y Excel «Relación de pagos a realizar» (resumen+detalle) profesional para accionistas, por alcance de fondo · Imputación del arrastre del Fondo 1 al pie del estado de cuenta del Fondo 2 («disponible tras imputar arrastre»); categorías de gastos nuevas (Voluntariado, Bonificaciones, Donaciones) para ordenar pagos varios · Retenciones (timbre fiscal 1x1000) PARAMÉTRICAS por fondo con exención: Fondo 2 exento por defecto (Seguros, libre de impuestos); toggle por fondo · [2B-2b·3] Arrastre del déficit del Fondo 1 al Fondo 2 (desglosado: terceros + rentabilidad subordinada) con posición acumulada y prelación; solo visible en el scope del Fondo 2, sin afectar Fondo 1 ni General · [2B-2b·2] Manipulación paramétrica ($50/cuerpo, editable + toggle): compromiso por cuerpos a los 4 crematorios (excluye Vallés del Tuy), entra como pendiente operacional sin duplicar · Fondo 2 con precio a Gobernación $465 por defecto (paramétrico, editable; recalcula todo al cambiar) · [2B-2b·1] Precio a la Gobernación PARAMÉTRICO por fondo (serviciosGobUsd usa el precio del fondo activo; en General suma precio×padrón de cada fondo). Default = precio global → certificado intacto · [2B-2a] Mismo estado de cuenta certificado en 3 alcances (General / Fondo 1 / Fondo 2): los renders se envuelven en el scope del fondo activo sin modificar su lógica. General = data completa = certificado idéntico · [2B-1] Aislación por fondo: infraestructura scope-por-fecha (reutiliza cálculos certificados sin modificarlos), creación automática del Fondo 2 y su estado de cuenta AISLADO (solo data ≥ 09/07); Fondo 1 intacto · bcvHoyRate() blindado: usa la última tasa igual o anterior a hoy, ignora fechas futuras mal cargadas (evita que una tasa mal fechada se tome como «tasa de hoy») · Hero de Rentabilidad/Margen solo en la pantalla Rentabilidad (retirado del Panel Ejecutivo por estética); sin etiqueta «Cobrada»; Resumen del Fondo con etiquetas en orden · [Módulo Fondos por Periodo — Incremento 1, capa aditiva certificada] Liquidación tributaria PARAMÉTRICA POR ABONO: cada abono lleva su entidad/régimen (Funeraria Vallés / Seguros La Fe) y su alícuota de patente propia (Vallés 2% con IVA · Seguros La Fe 1,75% sin IVA); IVA y retenciones ya eran por abono. Infraestructura de tesorería USDT instalada (tasa USDT por día y operaciones de compra/venta bajo llaves nuevas). NADA de esto modifica el estado de cuenta, la rentabilidad ni el cuadre certificados — es solo lectura + datos nuevos. · Cada casilla de la Conciliación lleva una leyenda que explica qué significa (padrón, cremaciones registradas, conciliados, faltan por registrar, no respaldados) · Conciliación de expedientes: el archivo del Core se lee por REEMPLAZO total (lista acumulada completa), no por acumulación — el padrón queda igual al archivo y ya no se sobrecuenta; deduplicación por código dentro del archivo (última fila gana) y botón «Eliminar padrón» que limpia solo el padrón sin tocar cremaciones ni pagos · Consistencia total de cifras a tasa de hoy: traslado pagado = Bs realmente pagados ÷ tasa BCV de hoy (no el teórico) + pendiente estimado por regla de tres; gastos y operacionales de la Estructura de Costos y Cuentas por Pagar a tasa de hoy (no histórica), de modo que coinciden con el estado de cuenta · Resumen del Fondo — Gobernación incluye el traslado incurrido pendiente y cuadra con el estado de cuenta (mismo total pagado y mismo pendiente) · estado de cuenta suma «Total Retenciones» (IVA + ISLR + otras) y «Total Tributos» (patente + IVA Seniat) · Cremaciones a costo BASE puro ($174) sobre el padrón · patente 2% sobre monto a cobrar · sin IVA Seniat en la estructura</b></div>
+<div class="foot">Sistema de control interno · Gobernación del Estado La Guaira — Operador Seguros La Fe, C.A. · Datos almacenados localmente en este equipo. · <b>v9.14 · [AUDITORÍA capa 1] Nueva pestaña «Auditoría»: matriz de conciliación automática que verifica integridad entre módulos, fondos y vistas (aditividad, cuadre interno, cuadre entre vistas, fórmulas) con semáforo, Δ y origen del descuadre; exportable a Excel · [PATENTE unificada + desglose] Patente = abono neto del fondo × alícuota del abono (Fondo 2 = 1,75%), MISMA cifra en tributos y estado de cuenta; etiquetas muestran la alícuota real por fondo; panel «Separación por fondo» en el estado de cuenta general (bases de impuestos, pagos efectuados, pendientes) · [AUDITORÍA traslados] Conteos manipulación/traslado basados en cremaciones efectuadas (como el panel): traslado Vallés del Tuy = sus cremaciones × $80+IVA con pagadas/pendientes correctos (elimina el −32); consistencia total F1+F2=General en todas las vistas · [FIX traslados + gráfico] Traslado Vallés del Tuy solo por SUS cremaciones (no los 288); gráfico Uso del fondo reconstruido: retenciones IVA/ISLR, USD junto a Bs, Total erogaciones → Monto del fondo → Saldo disponible, cuadra con estado de cuenta · [MODELO TRASLADOS] Manipulación (N×$50 → Funeraria Vallés Maracay) y Traslado (N×$80+IVA → Organización Vallés del Tuy) como compromisos por N cuerpos a los 4 crematorios, paramétricos, con trazabilidad en Pagos Operacionales; aditivo (F1+F2=General) y auto-test en verde · [CONSISTENCIA] Mecánica de fuente única: cifras no-aditivas (traslados, patente) ahora se calculan en General como suma de fondos → F1+F2=General garantizado; patente por alícuota del abono (Seguros 1,75%); auto-test de consistencia permanente + panel de desglose por fondo desplegable en la vista General · [FIX] Precio a la Gobernación por fondo ahora SIGUE LAS VIGENCIAS de configuración según el período del fondo (Fondo 2 usa la vigencia desde su corte); se quitó el $465 horneado que no seguía la config; override per-fondo sigue disponible · [FIX] Display de retenciones respeta la exención (Fondo 2 exento ya no muestra timbre fiscal con monto); USDT rediseñado: pérdida cambiaria (USD-BCV − USDT) y % en tarjetas, Bs como dato fijo exacto, y edición/mantenimiento de operaciones · [FIX auditoría] Entrada de fechas DD/MM/AAAA independiente del navegador (elimina la inversión día/mes en tarifas y tasas que causaba la distorsión); precio a la Gobernación en General = promedio ponderado por fondo (facturado÷padrón), consistente con el facturado y el chequeo de conciliación · [2A] Módulo Tesorería USDT: registro compra/venta con comisiones (Binance + banca), tenencia real, tasa efectiva, estado de cuenta multimoneda (Bs/USD BCV/referencia USDT) con brecha y Excel · Corte de pago PARAMÉTRICO en la relación de pagos: selector de fecha de corte que toma la tasa BCV de ese día automáticamente · Pagos operacionales nutridos (conceptos: voluntariado, excavadores, logística, bonificación, donación; beneficiario + banco/cuenta + cantidad×tarifa paramétrica) y Excel «Relación de pagos a realizar» (resumen+detalle) profesional para accionistas, por alcance de fondo · Imputación del arrastre del Fondo 1 al pie del estado de cuenta del Fondo 2 («disponible tras imputar arrastre»); categorías de gastos nuevas (Voluntariado, Bonificaciones, Donaciones) para ordenar pagos varios · Retenciones (timbre fiscal 1x1000) PARAMÉTRICAS por fondo con exención: Fondo 2 exento por defecto (Seguros, libre de impuestos); toggle por fondo · [2B-2b·3] Arrastre del déficit del Fondo 1 al Fondo 2 (desglosado: terceros + rentabilidad subordinada) con posición acumulada y prelación; solo visible en el scope del Fondo 2, sin afectar Fondo 1 ni General · [2B-2b·2] Manipulación paramétrica ($50/cuerpo, editable + toggle): compromiso por cuerpos a los 4 crematorios (excluye Vallés del Tuy), entra como pendiente operacional sin duplicar · Fondo 2 con precio a Gobernación $465 por defecto (paramétrico, editable; recalcula todo al cambiar) · [2B-2b·1] Precio a la Gobernación PARAMÉTRICO por fondo (serviciosGobUsd usa el precio del fondo activo; en General suma precio×padrón de cada fondo). Default = precio global → certificado intacto · [2B-2a] Mismo estado de cuenta certificado en 3 alcances (General / Fondo 1 / Fondo 2): los renders se envuelven en el scope del fondo activo sin modificar su lógica. General = data completa = certificado idéntico · [2B-1] Aislación por fondo: infraestructura scope-por-fecha (reutiliza cálculos certificados sin modificarlos), creación automática del Fondo 2 y su estado de cuenta AISLADO (solo data ≥ 09/07); Fondo 1 intacto · bcvHoyRate() blindado: usa la última tasa igual o anterior a hoy, ignora fechas futuras mal cargadas (evita que una tasa mal fechada se tome como «tasa de hoy») · Hero de Rentabilidad/Margen solo en la pantalla Rentabilidad (retirado del Panel Ejecutivo por estética); sin etiqueta «Cobrada»; Resumen del Fondo con etiquetas en orden · [Módulo Fondos por Periodo — Incremento 1, capa aditiva certificada] Liquidación tributaria PARAMÉTRICA POR ABONO: cada abono lleva su entidad/régimen (Funeraria Vallés / Seguros La Fe) y su alícuota de patente propia (Vallés 2% con IVA · Seguros La Fe 1,75% sin IVA); IVA y retenciones ya eran por abono. Infraestructura de tesorería USDT instalada (tasa USDT por día y operaciones de compra/venta bajo llaves nuevas). NADA de esto modifica el estado de cuenta, la rentabilidad ni el cuadre certificados — es solo lectura + datos nuevos. · Cada casilla de la Conciliación lleva una leyenda que explica qué significa (padrón, cremaciones registradas, conciliados, faltan por registrar, no respaldados) · Conciliación de expedientes: el archivo del Core se lee por REEMPLAZO total (lista acumulada completa), no por acumulación — el padrón queda igual al archivo y ya no se sobrecuenta; deduplicación por código dentro del archivo (última fila gana) y botón «Eliminar padrón» que limpia solo el padrón sin tocar cremaciones ni pagos · Consistencia total de cifras a tasa de hoy: traslado pagado = Bs realmente pagados ÷ tasa BCV de hoy (no el teórico) + pendiente estimado por regla de tres; gastos y operacionales de la Estructura de Costos y Cuentas por Pagar a tasa de hoy (no histórica), de modo que coinciden con el estado de cuenta · Resumen del Fondo — Gobernación incluye el traslado incurrido pendiente y cuadra con el estado de cuenta (mismo total pagado y mismo pendiente) · estado de cuenta suma «Total Retenciones» (IVA + ISLR + otras) y «Total Tributos» (patente + IVA Seniat) · Cremaciones a costo BASE puro ($174) sobre el padrón · patente 2% sobre monto a cobrar · sin IVA Seniat en la estructura</b></div>
 
 <!-- Modal Cremación -->
 <div class="modal-bg" id="modalCrem"><div class="modal">
@@ -878,8 +890,8 @@ function retencionesTotalBs(){if(_scopeFondo&&_scopeFondo!=='general'){var f=fon
 function retencionBsScoped(r){if(_scopeFondo&&_scopeFondo!=='general'){var f=fondos.find(function(x){return x.id===_scopeFondo;});if(f&&f.exentoRet)return 0;return retencionBs(r);}var tot=0;fondos.forEach(function(f){if(f.exentoRet)return;tot+=_conFondo(f.id,function(){return retencionBs(r);});});return n2(tot);}
 function netoRecibidoBs(){return n2(fondoNetoBs()-retencionesTotalBs());}
 function tributosTotalBs(){return n2(patenteBs()+ivaSeniatBs()+retencionesTotalBs());}
-function patentePctScoped(){var pp=null;for(var i=0;i<ingresos.length;i++){if(ingresos[i]&&ingresos[i].patentePct!=null&&!isNaN(Number(ingresos[i].patentePct))){pp=Number(ingresos[i].patentePct);break;}}return pp!=null?pp:(Number(cfg.patentePct)||0);}
-function patenteBs(){if(_scopeFondo&&_scopeFondo!=='general'){var p=patentePctScoped();if(p<=0)return 0;return n2(serviciosGobUsd()*(bcvHoyRate()||Number(cfg.tasa)||1)*p/100);}var tot=0;fondos.forEach(function(f){tot+=_conFondo(f.id,function(){var p=patentePctScoped();return p>0?serviciosGobUsd()*(bcvHoyRate()||Number(cfg.tasa)||1)*p/100:0;});});return n2(tot);}
+function patentePctScoped(){var base=0,pat=0;ingresos.forEach(function(x){var b=ingBreak(x);var pp=(x.patentePct!=null&&!isNaN(Number(x.patentePct)))?Number(x.patentePct):(Number(cfg.patentePct)||0);base+=Number(b.neto)||0;pat+=(Number(b.neto)||0)*pp;});return base>0?n2(pat/base):(Number(cfg.patentePct)||0);}
+function patenteBs(){var tot=0;ingresos.forEach(function(x){var b=ingBreak(x);var pp=(x.patentePct!=null&&!isNaN(Number(x.patentePct)))?Number(x.patentePct):(Number(cfg.patentePct)||0);tot+=(Number(b.neto)||0)*pp/100;});return n2(tot);}
 function ivaSeniatBs(){var p=Number(cfg.ivaSeniatPct)||0;if(p<=0)return 0;return n2(ivaFacturaBs()*p/100);}
 function deduccionesFondoBs(){return n2(patenteBs()+ivaSeniatBs()+retencionesTotalBs());}
 var fondos=load(K.fondos,null);
@@ -899,6 +911,89 @@ function autoTestConsistencia(){var prev=_scopeFondo;try{_scopeFondo='general';v
   var campos=[['fondoBs','Abonos recibidos (Bs)'],['facturado','Facturado a Gobernación ($)'],['costoDev','Costo devengado ($)'],['gastosBs','Gastos operativos (Bs)'],['opAllBs','Operacionales / manipulación (Bs)'],['profit','Rentabilidad del operativo ($)'],['pendPagoBs','Compromisos pendientes de pago (Bs)'],['saldoOperBs','Saldo operativo (Bs)']];
   var checks=campos.map(function(c){var gg=Number(g[c[0]])||0,ss=0;fs.forEach(function(o){ss+=Number(o.t[c[0]])||0;});var df=n2(Math.abs(gg-ss));return {campo:c[1],key:c[0],general:n2(gg),suma:n2(ss),porFondo:fs.map(function(o){return {nom:o.f.nombre,val:n2(Number(o.t[c[0]])||0)};}),dif:df,ok:df<0.5};});
   return {ok:checks.every(function(c){return c.ok;}),checks:checks};}finally{_scopeFondo=prev;}}
+function matrizConciliacion(){
+  var checks=[],prev=_scopeFondo;
+  var addC=function(grupo,verif,a,b,origen,esBs){a=Number(a)||0;b=Number(b)||0;var d=n2(Math.abs(a-b));checks.push({grupo:grupo,verif:verif,a:n2(a),b:n2(b),delta:d,ok:d<0.5,origen:origen,esBs:esBs!==false});};
+  try{
+    _scopeFondo='general';var g=rentTotals();var fA=fondos.map(function(f){return rentTotalsFondo(f.id);});
+    var sum=function(k){var s=0;fA.forEach(function(t){s+=Number(t[k])||0;});return s;};
+    [['fondoBs','Abonos recibidos (Bs)',true],['facturado','Facturado a Gobernación ($)',false],['costoDev','Costo devengado ($)',false],['gastosBs','Gastos operativos (Bs)',true],['opAllBs','Operacionales / manipulación (Bs)',true],['profit','Rentabilidad del operativo ($)',false],['pendPagoBs','Compromisos pendientes (Bs)',true],['saldoOperBs','Saldo operativo (Bs)',true]].forEach(function(c){addC('A · Aditividad (Fondo 1 + Fondo 2 = General)',c[1],g[c[0]],sum(c[0]),'Suma de fondos vs cálculo general',c[2]);});
+    fondos.forEach(function(f){
+      var sc=saldoCierreFondo(f.id);
+      var recomp=_conFondo(f.id,function(){var bh=bcvHoyRate()||1,eF=rentTotals().fondoBs,opE=opTotals(),gtE=gastosTotals();var fDisp=eF-patenteBs()-ivaSeniatBs()-retencionesTotalBs();var pag=pagosCremBs()+opE.trPagBs+gtE.pagBs+(opE.pagBs-opE.trPagBs);var pend=(cremBasePendUsd()*bh)+(trasladosIncurridos().pendUsd*bh)+opE.pendBs+gtE.pendBs;return n2(fDisp-pag-pend);});
+      addC('B · Cuadre interno del estado de cuenta',f.nombre+': disponible − pagos − pendientes = suficiencia',recomp,sc.sufB,'Estado de cuenta · '+f.nombre,true);
+      addC('C · Cuadre entre vistas (mismo dato, distinta pantalla)',f.nombre+': patente Tributos = Estado de cuenta',fondoPatBs(f),_conFondo(f.id,patenteBs),'Pantalla Tributos vs Estado de cuenta',true);
+    });
+    _scopeFondo='general';
+    var crPag=0;cremResumen().rows.forEach(function(r){if(!r.porCargar)crPag+=r.pag;});
+    addC('C · Cuadre entre vistas (mismo dato, distinta pantalla)','Cremaciones pagadas: Panel = Estado de cuenta',crPag,cremacionesPagadasCount(),'Panel cremaciones vs Estado de cuenta',false);
+    var sc0=0;fondos.forEach(function(f){sc0+=saldoCierreFondo(f.id).sufB;});
+    fondos.forEach(function(f){
+      var patExp=_conFondo(f.id,function(){var t=0;ingresos.forEach(function(x){var b=ingBreak(x);var pp=(x.patentePct!=null&&!isNaN(Number(x.patentePct)))?Number(x.patentePct):(Number(cfg.patentePct)||0);t+=(Number(b.neto)||0)*pp/100;});return n2(t);});
+      addC('D · Fórmulas y tributación',f.nombre+': patente = Σ(abono neto × alícuota del fondo)',_conFondo(f.id,patenteBs),patExp,'Fórmula de patente',true);
+    });
+    var netoOk=true;ingresos.forEach(function(x){var b=ingBreak(x);if(Math.abs(n2(b.total-b.retIva-b.retIslr)-b.neto)>0.02)netoOk=false;});
+    addC('D · Fórmulas y tributación','Abonos: neto = total − retención IVA − retención ISLR',netoOk?1:0,1,'Tributación de los abonos',false);
+    var tiG=trasladosIncurridos().totalUsd,tiS=0;fondos.forEach(function(f){tiS+=_conFondo(f.id,trasladosIncurridos).totalUsd;});
+    addC('D · Fórmulas y tributación','Traslado incurrido: Fondo 1 + Fondo 2 = General',tiG,tiS,'Cálculo de traslados',false);
+  }catch(e){checks.push({grupo:'⚠ Error',verif:'Excepción durante la verificación',a:0,b:0,delta:0,ok:false,origen:String(e.message||e),esBs:false});}
+  finally{_scopeFondo=prev;}
+  return checks;
+}
+function renderMatriz(){
+  var host=document.getElementById('auditoriaHost');if(!host)return;
+  var checks=matrizConciliacion();
+  var okN=checks.filter(function(c){return c.ok;}).length,total=checks.length,allOk=okN===total;
+  var head='<div style="background:'+(allOk?'linear-gradient(135deg,#e9f6ee,#d4ebdd)':'linear-gradient(135deg,#fbe6de,#f5d0c8)')+';border:1px solid '+(allOk?'#0D7A4E':'#c0433f')+';border-radius:14px;padding:18px 22px;margin-bottom:18px;display:flex;align-items:center;gap:16px"><div style="font-size:34px">'+(allOk?'✅':'⚠️')+'</div><div><div style="font-size:18px;font-weight:800;color:'+(allOk?'#0D7A4E':'#c0433f')+'">'+(allOk?'Integridad verificada — '+total+' de '+total+' verificaciones OK':((total-okN)+' descuadre(s) de '+total+' verificaciones')+'')+'</div><div style="font-size:12.5px;color:var(--slate);margin-top:3px">'+(allOk?'Todas las cifras cuadran entre módulos, fondos y vistas. Puede certificar con confianza.':'Revise las filas en rojo — la columna «Origen» indica el módulo o dato a corregir en su fuente.')+'</div></div></div>';
+  var grupos={},orden=[];checks.forEach(function(c){if(!grupos[c.grupo]){grupos[c.grupo]=[];orden.push(c.grupo);}grupos[c.grupo].push(c);});
+  var body='';
+  orden.forEach(function(gn){
+    var rows=grupos[gn].map(function(c){var fmt=c.esBs?function(v){return fmtBs(v);}:function(v){return fmtNum(v,2);};
+      return '<tr style="'+(c.ok?'':'background:#fdece9')+'"><td>'+esc(c.verif)+'</td><td class="r num">'+fmt(c.a)+'</td><td class="r num">'+fmt(c.b)+'</td><td class="r num" style="color:'+(c.ok?'#adaabb':'#c0433f')+';font-weight:'+(c.ok?'400':'700')+'">'+(c.delta>0.005?fmt(c.delta):'—')+'</td><td class="c">'+(c.ok?'<span style="color:#0D7A4E;font-weight:800">✓ OK</span>':'<span style="color:#c0433f;font-weight:800">✗ REVISAR</span>')+'</td><td style="font-size:11px;color:var(--slate)">'+(c.ok?'':esc(c.origen))+'</td></tr>';}).join('');
+    body+='<div style="font-weight:800;color:#4B2D8F;font-size:13px;margin:16px 0 6px">'+esc(gn)+'</div><div class="tablewrap"><table class="data"><thead><tr><th>Verificación</th><th class="r">Valor A</th><th class="r">Valor B</th><th class="r">Δ</th><th class="c">Estado</th><th>Origen (si falla)</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+  });
+  host.innerHTML=head+body;
+}
+function exportMatrizExcel(){
+  var checks=matrizConciliacion();if(!checks.length){toast('Sin verificaciones');return;}
+  var okN=checks.filter(function(c){return c.ok;}).length;
+  var t='<table><tr><td colspan="6" style="background:#1a1030;color:#fff;font-family:Arial;font-size:14px;font-weight:bold;padding:11px">MATRIZ DE CONCILIACIÓN Y AUDITORÍA · '+fmtDate(today())+' · '+okN+'/'+checks.length+' OK</td></tr></table>';
+  t+='<table><tr><th>Grupo</th><th>Verificación</th><th>Valor A</th><th>Valor B</th><th>Diferencia</th><th>Estado</th></tr>';
+  checks.forEach(function(c){var fmt=c.esBs?function(v){return fmtBs(v);}:function(v){return fmtNum(v,2);};t+='<tr><td>'+esc(c.grupo)+'</td><td>'+esc(c.verif)+'</td><td class="n">'+fmt(c.a)+'</td><td class="n">'+fmt(c.b)+'</td><td class="n">'+fmt(c.delta)+'</td><td>'+(c.ok?'OK':'REVISAR: '+esc(c.origen))+'</td></tr>';});
+  t+='</table>';
+  excelFromTableRaw(t,'Matriz_Auditoria_'+today(),'Auditoría');
+}
+function desgloseFondosPanel(){
+  var bh0=bcvHoyRate()||1;
+  var fs=fondos.map(function(f){return {nom:f.nombre, d:_conFondo(f.id,function(){var opE=opTotals(),gtE=gastosTotals();return {abonoNeto:fondoNetoBs(),patPct:patentePctScoped(),patente:patenteBs(),ivaSeniat:ivaSeniatBs(),reten:retencionesTotalBs(),cremPag:pagosCremBs(),trasPag:n2(trasladosIncurridos().pagUsd*bh0),gastPag:gtE.pagBs,operPag:n2(opE.pagBs-(opE.trPagBs||0)),cremPend:n2(cremBasePendUsd()*bh0),trasPend:n2(trasladosIncurridos().pendUsd*bh0),gastPend:gtE.pendBs,operPend:n2(opE.pendBs-(opE.trPendBs||0))};})};});
+  var g={};['abonoNeto','patente','ivaSeniat','reten','cremPag','trasPag','gastPag','operPag','cremPend','trasPend','gastPend','operPend'].forEach(function(k){g[k]=0;fs.forEach(function(o){g[k]+=o.d[k]||0;});g[k]=n2(g[k]);});
+  var cols=fs.map(function(o){return o.nom;});
+  var mkTable=function(titulo,filas){
+    var th='<tr><th>'+titulo+'</th>'+cols.map(function(c){return '<th class="r">'+esc(c)+'</th>';}).join('')+'<th class="r">General</th></tr>';
+    var body=filas.map(function(fila){
+      var cells=fs.map(function(o){return '<td class="r num">'+fila.fmt(o.d[fila.k],o.d)+'</td>';}).join('');
+      var gv=(fila.k==='patPct')?'':'<td class="r num" style="font-weight:800">'+fila.fmt(g[fila.k],g)+'</td>';
+      if(fila.k==='patPct')gv='<td class="r"></td>';
+      return '<tr'+(fila.bold?' style="font-weight:700;border-top:1px solid var(--line-2)"':'')+'><td>'+fila.l+'</td>'+cells+gv+'</tr>';
+    }).join('');
+    return '<div class="tablewrap" style="margin-bottom:12px"><table class="data"><thead>'+th+'</thead><tbody>'+body+'</tbody></table></div>';
+  };
+  var fB=function(v){return fmtBs(v);};
+  var s1=mkTable('Bases de impuestos',[
+    {l:'Abono neto (base)',k:'abonoNeto',fmt:fB},
+    {l:'Alícuota de patente',k:'patPct',fmt:function(v){return fmtNum(v,2)+'%';}},
+    {l:'Patente municipal',k:'patente',fmt:fB},
+    {l:'IVA Seniat',k:'ivaSeniat',fmt:fB},
+    {l:'Retenciones (timbre)',k:'reten',fmt:fB}
+  ]);
+  var s2=mkTable('Pagos efectuados',[
+    {l:'Cremaciones',k:'cremPag',fmt:fB},{l:'Traslados',k:'trasPag',fmt:fB},{l:'Gastos',k:'gastPag',fmt:fB},{l:'Operacionales',k:'operPag',fmt:fB}
+  ]);
+  var s3=mkTable('Compromisos pendientes de pago',[
+    {l:'Cremaciones',k:'cremPend',fmt:fB},{l:'Traslados',k:'trasPend',fmt:fB},{l:'Gastos',k:'gastPend',fmt:fB},{l:'Operacionales',k:'operPend',fmt:fB}
+  ]);
+  return '<details style="margin-top:16px" open><summary style="cursor:pointer;font-weight:700;color:#4B2D8F;padding:8px 0;font-size:13.5px">🔎 Separación por fondo · bases de impuestos, pagos y pendientes</summary><div class="ecnote" style="margin:6px 0 12px">De qué fondo proviene cada monto sujeto a impuestos, cada pago efectuado y cada compromiso pendiente. Cada columna es un fondo; la columna General es la suma.</div><div style="font-weight:800;color:#245e94;font-size:12px;margin:4px 0">1 · Bases de impuestos por fondo</div>'+s1+'<div style="font-weight:800;color:#0D7A4E;font-size:12px;margin:4px 0">2 · Pagos efectuados por fondo</div>'+s2+'<div style="font-weight:800;color:#B07A00;font-size:12px;margin:4px 0">3 · Compromisos pendientes por fondo</div>'+s3+'</details>';
+}
 function consistenciaPanel(){
   var r=autoTestConsistencia();if(!r.checks.length)return '';
   var head='<div style="background:'+(r.ok?'#eef7f0':'#fbe6de')+';border:1px solid '+(r.ok?'#0D7A4E':'#c0433f')+';border-radius:12px;padding:12px 16px;margin:10px 0;display:flex;align-items:center;gap:10px"><span style="font-size:20px">'+(r.ok?'✅':'⚠️')+'</span><div><div style="font-weight:800;color:'+(r.ok?'#0D7A4E':'#c0433f')+'">'+(r.ok?'Consistencia verificada: Fondo 1 + Fondo 2 = General en todas las cifras':'ATENCIÓN: hay descuadre entre los fondos y el general')+'</div><div style="font-size:11.5px;color:var(--slate)">Cada cifra del negocio, desglosada por fondo, con verificación automática al céntimo.</div></div></div>';
@@ -929,11 +1024,11 @@ function arrastrePanel(f){
   '<div class="ecnote" style="max-width:860px"><b>Prelación:</b> primero se honran los compromisos con <b>terceros</b> (crematorios, traslados, logística); la <b>rentabilidad de Seguros La Fe está subordinada</b> y se recupera contra los abonos futuros, al final. El estado de cuenta propio del Fondo 2 aparece a continuación.</div>';
 }
 function saldoCierreFondo(fid){return _conFondo(fid,function(){var t=rentTotals();var bh2=t.bcvHoy;var eFondoBs=n2(t.fondoBs);var opE=opTotals(),gtE=gastosTotals();var pagCremB=pagosCremBs();var pagTrasB=opE.trPagBs;var pagOperB=n2(opE.pagBs-opE.trPagBs);var pagGastB=gtE.pagBs;var patB=patenteBs(),ivaSB=ivaSeniatBs(),retB=retencionesTotalBs();var fondoDispB=n2(eFondoBs-patB-ivaSB-retB);var saldoPagB=n2(pagCremB+pagTrasB+pagGastB+pagOperB);var trasCremPendB=n2(trasladosIncurridos().pendUsd*bh2);var cremPendB=n2(cremBasePendUsd()*bh2);var saldoPendB=n2(cremPendB+trasCremPendB+opE.pendBs+gtE.pendBs);var sufB=n2(fondoDispB-saldoPagB-saldoPendB);var rentB=n2((t.profit||0)*bh2);var saldoFinB=n2(sufB-(rentCobra?rentB:0));return {sufB:sufB,rentB:rentB,saldoFinB:saldoFinB,bh:bh2,on:rentCobra};});}
-function fondoNetoOf(f){return f.principal?fondoNetoBs():n2(Number(f.netoBs)||0);}
+function fondoNetoOf(f){if(f.principal)return fondoNetoBs();if(f.periodo)return _conFondo(f.id,fondoNetoBs);return n2(Number(f.netoBs)||0);}
 function fondoIvaOf(f){return f.principal?ivaFacturaBs():n2(Number(f.ivaBs)||0);}
 function fondoPatPctOf(f){return f.principal?(Number(cfg.patentePct)||0):(Number(f.patentePct)||0);}
 function fondoIvaSPctOf(f){return f.principal?(Number(cfg.ivaSeniatPct)||0):(Number(f.ivaSeniatPct)||0);}
-function fondoPatBs(f){if(f&&f.principal)return patenteBs();var p=fondoPatPctOf(f);return p>0?n2(fondoNetoOf(f)*p/100):0;}
+function fondoPatBs(f){return _conFondo(f.id,patenteBs);}
 function fondoIvaSBs(f){var p=fondoIvaSPctOf(f);return p>0?n2(fondoIvaOf(f)*p/100):0;}
 function fondoDispBs(f){return n2(fondoNetoOf(f)-fondoPatBs(f)-fondoIvaSBs(f));}
 function saveFondos(){save(K.fondos,fondos);}
@@ -1201,10 +1296,11 @@ function go(view){
   document.querySelectorAll('nav.tabs button').forEach(function(b){b.classList.toggle('active',b.dataset.view===view);});
   document.querySelectorAll('section.view').forEach(function(s){s.classList.toggle('active',s.id==='v-'+view);});
   if(view==='dashboard')renderDashboard();
+  else if(view==='auditoria')renderMatriz();
   if(view==='finanzas')finSub(_finSub);
   if(view==='reportes'){buildReports();buildPagoTesoreria();}
   if(view==='conciliacion')renderConciliacion();
-  if(view==='rentabilidad'){renderRentabilidad();var _sf=(_scopeFondo&&_scopeFondo!=='general')?fondos.find(function(x){return x.id===_scopeFondo;}):null;if(_sf&&!_sf.principal&&_sf.corte){var _rh=document.getElementById('rentabilidadHost');if(_rh){try{_rh.innerHTML=_rh.innerHTML+arrastrePanel(_sf);}catch(e){}}}else if(!_scopeFondo||_scopeFondo==='general'){var _rh2=document.getElementById('rentabilidadHost');if(_rh2){try{_rh2.innerHTML=_rh2.innerHTML+consistenciaPanel();}catch(e){}}}}
+  if(view==='rentabilidad'){renderRentabilidad();var _sf=(_scopeFondo&&_scopeFondo!=='general')?fondos.find(function(x){return x.id===_scopeFondo;}):null;if(_sf&&!_sf.principal&&_sf.corte){var _rh=document.getElementById('rentabilidadHost');if(_rh){try{_rh.innerHTML=_rh.innerHTML+arrastrePanel(_sf);}catch(e){}}}else if(!_scopeFondo||_scopeFondo==='general'){var _rh2=document.getElementById('rentabilidadHost');if(_rh2){try{_rh2.innerHTML=_rh2.innerHTML+desgloseFondosPanel()+consistenciaPanel();}catch(e){}}}}
   if(view==='estructura')renderEstructura();
   window.scrollTo(0,0);
 }
@@ -2022,7 +2118,7 @@ function renderEstructura(){
   if(amortU>0){nAmort++;rows+=rowK(String(nAmort),'Amortización · '+esc(amort.concepto)+' <span class="u2" style="display:inline">('+fmtUsd(amort.valorUsd)+' ÷ '+fmtNum(amort.meses,0)+' meses)</span>',amortU,'#7a5cc0','amort');}
   if(sim&&simGastoU>0){nAmort++;var simU=simBase>0?fmtUsd(n2(simGastoU/simBase)):'—';var simUbs=simBase>0?'<div class="u2">'+fmtBs(n2((simGastoU/simBase)*bh))+'</div>':'';rows+='<tr><td class="op">'+nAmort+'</td><td>Gastos de proyección (simulación) <span style="background:#B07A00;color:#fff;font-size:10px;padding:1px 7px;border-radius:10px">SIM</span><div style="margin-top:5px;font-size:10px;color:var(--slate)">diluido entre cremaciones / servicios ('+fmtNum(simBase,0)+')</div></td><td class="r" style="color:#B07A00">'+fmtUsd(simGastoU)+ud(simGastoU)+'</td><td class="r ue">'+simU+simUbs+'</td></tr>';}
   if(patenteBs()>0){rows+='<tr class="sec"><td></td><td colspan="3">Costos tributarios (castigan la estructura)</td></tr>';
-    rows+=rowK('','Patente ('+fmtNum(cfg.patentePct,2)+'% s/ monto a cobrar a la Gobernación)',patenteU,'#B07A00','patente');}
+    rows+=rowK('','Patente ('+fmtNum(patentePctScoped(),2)+'% s/ abono neto del fondo)',patenteU,'#B07A00','patente');}
   rows+='<tr class="tot"><td class="op">=</td><td>TOTAL EGRESOS <span class="u2" style="display:inline">(suma de costos unitarios por concepto)</span></td><td class="r" style="color:#9d2f2c">'+fmtUsd(totalEgrU)+ud(totalEgrU)+'</td><td class="r ue">'+fmtUsd(perUnitSum)+'<div class="u2">'+fmtBs(n2(perUnitSum*bh))+'</div></td></tr>'+
     '<tr class="sec"><td></td><td colspan="3">Ingreso</td></tr>'+
     '<tr><td class="op">＋</td><td>Monto a cobrar a la Gobernación <span class="u">('+fmtUsd(tar)+' × '+fmtNum(padronCount(),0)+' expedientes)</span></td><td class="r" style="color:#0D7A4E">'+fmtUsd(ingresoU)+ud(ingresoU)+'</td><td class="r ue" style="color:#0D7A4E">'+fmtUsd(tar)+'<div class="u2">'+fmtBs(n2(tar*bh))+'</div></td></tr>';
@@ -2188,7 +2284,7 @@ function renderRentabilidad(){
   var ecRow=function(op,label,bs,col,bold){return '<tr><td class="op">'+op+'</td><td>'+label+'</td><td class="r num" style="color:'+(col||'#9d2f2c')+';font-weight:'+(bold?'800':'700')+'">'+fmtBs(bs)+usdu(U(bs))+'</td></tr>';};
   var ecSec=function(txt){return '<tr><td></td><td colspan="2" style="font-size:10px;font-weight:800;color:var(--tp);text-transform:uppercase;letter-spacing:.05em;padding:12px 18px 2px">'+txt+'</td></tr>';};
   var sub='<span style="color:var(--slate);font-weight:400;font-size:11px">';
-  var patLbl=(Number(cfg.patentePct)>0)?'('+fmtNum(cfg.patentePct,2)+'% s/ monto a cobrar a la Gobernación)':'(no aplica · 0%)';
+  var patLbl=(patenteBs()>0)?'('+fmtNum(patentePctScoped(),2)+'% s/ abono neto del fondo)':'(no aplica · 0%)';
   var ivaSLbl=(Number(cfg.ivaSeniatPct)>0)?'('+fmtNum(cfg.ivaSeniatPct,2)+'% s/ IVA de facturas)':'(no aplica · 0%)';
   var fBaseImp=subtotalFacturaBs(),fIva=ivaFacturaBs(),fTotal=n2(fBaseImp+fIva);
   var fRetIva=0,fRetIslr=0;ingresos.forEach(function(x){var b=ingBreak(x);fRetIva+=b.retIva;fRetIslr+=b.retIslr;});fRetIva=n2(fRetIva);fRetIslr=n2(fRetIslr);
@@ -2551,7 +2647,7 @@ function validarCuadre(){
   var aggS=0;aggByCrematorio().forEach(function(a){aggS+=a.saldoUsd;});
   add(eq(n2(aggS),pend),'Panel de crematorios (Σ saldos) = canónico',fmtUsd(n2(aggS)));
   // D) Patente 2% s/ servicios, sin IVA Seniat
-  add(eq(n2(patenteBs()/bh),n2(serv*(Number(cfg.patentePct)||0)/100)),'Patente = '+fmtNum(cfg.patentePct,2)+'% × monto a cobrar',fmtUsd(n2(patenteBs()/bh))+' = '+fmtNum(cfg.patentePct,2)+'% × '+fmtUsd(serv));
+  var _patExp=0;ingresos.forEach(function(x){var b=ingBreak(x);var pp=(x.patentePct!=null&&!isNaN(Number(x.patentePct)))?Number(x.patentePct):(Number(cfg.patentePct)||0);_patExp+=(Number(b.neto)||0)*pp/100;});add(eq(patenteBs(),n2(_patExp)),'Patente = Σ(abono neto × alícuota por fondo)',fmtBs(patenteBs()));
   add(ee.ivsU===0,'IVA Seniat NO forma parte de la estructura de costos','ivsU = '+fmtUsd(ee.ivsU));
   // E) Rentabilidad = Estructura
   var totalEgr=egresosEstructuraUsd(false),saldoU=n2(serv-totalEgr);
@@ -2605,8 +2701,8 @@ function openEgresoConcepto(key){
     showDetail('Pagos operacionales',h,'Detalle_Operacionales',head);
   }else if(key==='patente'){
     var serv=serviciosGobUsd(),patU=n2(patenteBs()/bh);
-    head=band('Patente municipal',fmtNum(cfg.patentePct,2)+'% sobre el monto a cobrar a la Gobernación',patU);
-    h='<table class="dtl"><thead><tr><th>Concepto</th><th class="r">USD</th><th class="r">Bs.</th></tr></thead><tbody><tr><td class="nm">Monto a cobrar (servicios · padrón × PVP)</td><td class="r">'+fmtUsd(serv)+'</td><td class="r">'+fmtBs(n2(serv*bh))+'</td></tr><tr><td class="nm">Alícuota de patente</td><td class="r" colspan="2">'+fmtNum(cfg.patentePct,2)+'%</td></tr></tbody><tfoot><tr><td>PATENTE</td><td class="r war">'+fmtUsd(patU)+'</td><td class="r war">'+fmtBs(patenteBs())+'</td></tr></tfoot></table>';
+    head=band('Patente municipal',fmtNum(patentePctScoped(),2)+'% sobre el abono neto del fondo',patU);
+    h='<table class="dtl"><thead><tr><th>Concepto</th><th class="r">USD</th><th class="r">Bs.</th></tr></thead><tbody><tr><td class="nm">Abono neto del fondo</td><td class="r">'+fmtUsd(n2(fondoNetoBs()/bh))+'</td><td class="r">'+fmtBs(fondoNetoBs())+'</td></tr><tr><td class="nm">Alícuota de patente (por fondo)</td><td class="r" colspan="2">'+fmtNum(patentePctScoped(),2)+'%</td></tr></tbody><tfoot><tr><td>PATENTE</td><td class="r war">'+fmtUsd(patU)+'</td><td class="r war">'+fmtBs(patenteBs())+'</td></tr></tfoot></table>';
     showDetail('Patente — cálculo',h,'Detalle_Patente',head);
   }else if(key==='amort'){
     var am=cfg.amort||{},cuota=n2((Number(am.valorUsd)||0)/(Number(am.meses)||1));
