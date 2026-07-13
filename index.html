@@ -396,7 +396,7 @@ table.flujo tr.saldo td{border-top:2px solid var(--tp);font-weight:800}
       <div class="side-group">Sistema</div>
       <button data-view="config">Configuración</button>
     </nav>
-    <div class="side-foot">Control de Cremaciones · v9.30</div>
+    <div class="side-foot">Control de Cremaciones · v9.31</div>
   </aside>
   <div class="sidebar-scrim" id="sideScrim" onclick="toggleSide(false)"></div>
   <div class="mainarea">
@@ -1272,19 +1272,17 @@ function renderCtasGob(){
 }
 function ctasSub(which){window._ctasSub=which;renderCtasGob();}
 function ctasRelacionData(){
-  var padByCode={},padByName={};padron.forEach(function(p){if(p.code)padByCode[String(p.code).toUpperCase().replace(/\s/g,'')]=p;if(p.nombre)padByName[String(p.nombre).toUpperCase().replace(/\s+/g,' ').trim()]=p;});
-  var cedDe=function(c){var k1=String(c.exp||'').toUpperCase().replace(/\s/g,''),k2=String(c.cod||'').toUpperCase().replace(/\s/g,'');var p=padByCode[k1]||padByCode[k2]||padByName[String(c.nombre||'').toUpperCase().replace(/\s+/g,' ').trim()];return p?(p.ced||'—'):'—';};
-  var all=cremaciones.slice().sort(function(a,b){return (a.fecha||'')<(b.fecha||'')?-1:((a.fecha||'')>(b.fecha||'')?1:0);});
+  var all=padron.slice().sort(function(a,b){var fa=a.frec||'zzzz',fb=b.frec||'zzzz';return fa<fb?-1:(fa>fb?1:0);});
   var idx=0,funds=[];
   fondos.forEach(function(f){
     var fu=_conFondo(f.id,function(){var s=0;ingresos.forEach(function(x){var b=ingBreak(x);var t=Number(x.tasa)||0;if(t>0)s+=(Number(b.total)||0)/t;});return n2(s);});
     var pvp=n2(precioGobDe(f.id));var cubre=pvp>0?Math.floor(fu/pvp+1e-6):0;
-    var casos=all.slice(idx,idx+cubre).map(function(c){return {fecha:c.fecha||'',exp:c.exp||c.cod||'—',nombre:c.nombre||'—',ced:cedDe(c)};});
+    var casos=all.slice(idx,idx+cubre).map(function(p){return {fecha:p.frec||'',exp:p.code||'—',nombre:p.nombre||'—',ced:p.ced||'—'};});
     idx+=casos.length;
     funds.push({nombre:f.nombre,fu:n2(fu),pvp:pvp,casos:casos,usado:n2(casos.length*pvp),saldo:n2(fu-casos.length*pvp)});
   });
-  var fechas=all.map(function(c){return c.fecha;}).filter(Boolean).sort();
-  var restCasos=all.slice(idx).map(function(c){return {fecha:c.fecha||'',exp:c.exp||c.cod||'—',nombre:c.nombre||'—',ced:cedDe(c)};});
+  var restCasos=all.slice(idx).map(function(p){return {fecha:p.frec||'',exp:p.code||'—',nombre:p.nombre||'—',ced:p.ced||'—'};});
+  var fechas=all.map(function(p){return p.frec;}).filter(Boolean).sort();
   return {funds:funds,rest:restCasos.length,restCasos:restCasos,rango:fechas.length?[fechas[0],fechas[fechas.length-1]]:null};
 }
 function ctasRelacionHtml(){
@@ -1319,31 +1317,46 @@ function ctasRelacionHtml(){
   }
   return h;
 }
+function _relFechaRango(casos){var fs=casos.map(function(c){return c.fecha;}).filter(Boolean).sort();return fs.length?(fmtDate(fs[0])+' al '+fmtDate(fs[fs.length-1])):'—';}
+function _relSeccionExcel(titulo,rango,fondoLbl,fondoBs,pvp,casos,esPend){
+  var n=casos.length,monto=n2(n*pvp),saldo=esPend?0:n2(fondoBs-monto);
+  var h='<table style="margin-top:16px;border-collapse:collapse"><tr><td colspan="5" style="background:#2E1A5E;color:#fff;font-family:Arial;font-size:14px;font-weight:bold;padding:11px 12px;border:1px solid #23134a">'+esc(titulo)+'</td></tr>'+
+    '<tr><td colspan="5" style="background:#4B2D8F;color:#fff;font-family:Arial;font-size:11px;padding:6px 12px;border:1px solid #3A1D6E">Desde el '+rango+'</td></tr></table>';
+  h+='<table style="margin-top:6px;border-collapse:collapse">'+
+    '<tr><td style="background:#f0edf7;font-family:Arial;font-size:11px;font-weight:bold;padding:6px 12px;border:1px solid #d5d0e2;width:280px">'+(esPend?'Servicios pendientes de pago':'Fondos recibidos')+'</td><td style="font-family:Consolas,Arial;font-size:11px;padding:6px 12px;border:1px solid #d5d0e2;text-align:right">'+(esPend?fmtNum(n,0):fmtUsd(fondoBs))+'</td></tr>'+
+    '<tr><td style="background:#f0edf7;font-family:Arial;font-size:11px;font-weight:bold;padding:6px 12px;border:1px solid #d5d0e2">'+(esPend?'PVP por caso':'Total servicios atendidos')+'</td><td style="font-family:Consolas,Arial;font-size:11px;padding:6px 12px;border:1px solid #d5d0e2;text-align:right">'+(esPend?fmtUsd(pvp):fmtNum(n,0))+'</td></tr>'+
+    '<tr><td style="background:#f0edf7;font-family:Arial;font-size:11px;font-weight:bold;padding:6px 12px;border:1px solid #d5d0e2">'+(esPend?'Monto total pendiente':'PVP por caso')+'</td><td style="font-family:Consolas,Arial;font-size:11px;padding:6px 12px;border:1px solid #d5d0e2;text-align:right">'+(esPend?fmtUsd(monto):fmtUsd(pvp))+'</td></tr>'+
+    (esPend?'':'<tr><td style="background:#f0edf7;font-family:Arial;font-size:11px;font-weight:bold;padding:6px 12px;border:1px solid #d5d0e2">Monto total de los servicios</td><td style="font-family:Consolas,Arial;font-size:11px;padding:6px 12px;border:1px solid #d5d0e2;text-align:right">'+fmtUsd(monto)+'</td></tr>'+
+    '<tr><td style="background:#e4f4f2;font-family:Arial;font-size:11px;font-weight:bold;padding:6px 12px;border:1px solid #bfe6e1;color:#0b5f58">Saldo a favor</td><td style="font-family:Consolas,Arial;font-size:11px;font-weight:bold;padding:6px 12px;border:1px solid #bfe6e1;text-align:right;color:#0b5f58">'+fmtUsd(saldo)+'</td></tr>')+
+  '</table>';
+  var rows=casos.map(function(c,i){return '<tr><td style="border:1px solid #d5d0e2;font-family:Consolas,Arial;font-size:10.5px;padding:4px 9px;text-align:right">'+(i+1)+'</td><td style="border:1px solid #d5d0e2;font-family:Arial;font-size:10.5px;padding:4px 9px">'+fmtDate(c.fecha)+'</td><td style="border:1px solid #d5d0e2;font-family:Arial;font-size:10.5px;padding:4px 9px">'+esc(c.exp)+'</td><td style="border:1px solid #d5d0e2;font-family:Arial;font-size:10.5px;padding:4px 9px">'+esc(c.nombre)+'</td><td style="border:1px solid #d5d0e2;font-family:Arial;font-size:10.5px;padding:4px 9px">'+esc(c.ced)+'</td></tr>';}).join('');
+  h+='<table style="margin-top:6px;border-collapse:collapse"><tr>'+
+    '<th style="background:#3A1D6E;color:#fff;border:1px solid #2E1A5E;font-family:Arial;font-size:10.5px;padding:7px 9px">N°</th>'+
+    '<th style="background:#3A1D6E;color:#fff;border:1px solid #2E1A5E;font-family:Arial;font-size:10.5px;padding:7px 9px;text-align:left">Fecha</th>'+
+    '<th style="background:#3A1D6E;color:#fff;border:1px solid #2E1A5E;font-family:Arial;font-size:10.5px;padding:7px 9px;text-align:left">Expediente Nro.</th>'+
+    '<th style="background:#3A1D6E;color:#fff;border:1px solid #2E1A5E;font-family:Arial;font-size:10.5px;padding:7px 9px;text-align:left">Nombre del fallecido</th>'+
+    '<th style="background:#3A1D6E;color:#fff;border:1px solid #2E1A5E;font-family:Arial;font-size:10.5px;padding:7px 9px;text-align:left">Cédula de identidad</th></tr>'+rows+'</table>';
+  return h;
+}
 function exportRelacionExcel(){
   var d=ctasRelacionData();
-  var rango=d.rango?(fmtDate(d.rango[0])+' al '+fmtDate(d.rango[1])):'todo el período';
-  var inner='<table style="border-collapse:collapse;margin-bottom:6px"><tr>'+
-    '<td style="border:none;padding:4px 10px 4px 2px;vertical-align:middle"><img src="'+LAFE_LOGO+'" height="70"></td>'+
-    '<td style="border:none;padding:4px;font-family:Arial;vertical-align:middle">'+
-      '<div style="font-size:17px;font-weight:bold;color:#3A1D6E">Administración de Fondos para Gestión de Asistencia Funeraria</div>'+
-      '<div style="font-size:11px;color:#444;margin-top:2px">Seguros La Fe, C.A. &nbsp;·&nbsp; Gobernación del Estado La Guaira</div>'+
-      '<div style="font-size:11px;color:#444">Relación de servicios y fondos &nbsp;·&nbsp; Período: '+rango+'</div>'+
-      '<div style="font-size:10px;color:#888;margin-top:2px">Emitido: '+fmtDate(today())+'</div>'+
+  var rango=d.rango?(fmtDate(d.rango[0])+' al '+fmtDate(d.rango[1])):'—';
+  var inner='<table style="border-collapse:collapse;margin-bottom:4px"><tr>'+
+    '<td style="border:none;padding:2px 12px 2px 2px;vertical-align:middle"><img src="'+LAFE_LOGO+'" height="82"></td>'+
+    '<td style="border:none;padding:2px;font-family:Arial;vertical-align:middle">'+
+      '<div style="font-size:12px;color:#666;font-weight:bold">República Bolivariana de Venezuela · Gobernación del Estado La Guaira</div>'+
+      '<div style="font-size:19px;font-weight:bold;color:#3A1D6E;margin:2px 0">Administración de Fondos para Gestión de Asistencia Funeraria</div>'+
+      '<div style="font-size:11.5px;color:#444">Relación de servicios y fondos &nbsp;·&nbsp; Operador: Seguros La Fe, C.A.</div>'+
+      '<div style="font-size:11.5px;color:#444">Período de la relación: '+rango+' &nbsp;·&nbsp; Emitido: '+fmtDate(today())+'</div>'+
     '</td></tr></table>';
   d.funds.forEach(function(fd){
-    inner+='<table style="margin-top:10px"><tr><td colspan="5" style="background:#3A1D6E;color:#fff;font-family:Arial;font-weight:bold;font-size:13px;padding:9px 11px;border:1px solid #2E1A5E">'+esc(fd.nombre)+' — Relación de cremaciones pagadas con el fondo</td></tr></table>';
-    inner+='<table><tr><th>Fondos recibidos</th><th>PVP por caso</th><th>Cremaciones pagadas</th><th>Monto usado</th><th>Saldo a favor</th></tr>'+
-      '<tr><td class="n">'+fmtUsd(fd.fu)+'</td><td class="n">'+fmtUsd(fd.pvp)+'</td><td class="n">'+fmtNum(fd.casos.length,0)+'</td><td class="n">'+fmtUsd(fd.usado)+'</td><td class="n">'+fmtUsd(fd.saldo)+'</td></tr></table>';
-    var det=fd.casos.map(function(c,i){return '<tr><td class="n">'+(i+1)+'</td><td>'+fmtDate(c.fecha)+'</td><td>'+esc(c.exp)+'</td><td>'+esc(c.nombre)+'</td><td>'+esc(c.ced)+'</td></tr>';}).join('');
-    inner+='<table><tr><th>N°</th><th>Fecha</th><th>Expediente</th><th>Nombre del fallecido</th><th>Cédula de identidad</th></tr>'+(det||'<tr><td colspan="5">Sin casos cubiertos por este fondo.</td></tr>')+'</table>';
+    inner+=_relSeccionExcel('Relación de Cremaciones Atendidas con cargo al '+fd.nombre, _relFechaRango(fd.casos), fd.nombre, fd.fu, fd.pvp, fd.casos, false);
   });
   if(d.rest){
     var pvpP=n2(precioGobDe(fondos[fondos.length-1].id));
-    inner+='<table style="margin-top:12px"><tr><td colspan="5" style="background:#B07A00;color:#fff;font-family:Arial;font-weight:bold;font-size:13px;padding:9px 11px;border:1px solid #8a6d1f">CORTE — Cremaciones pendientes de pago ('+d.rest+' casos · monto requerido '+fmtUsd(n2(d.rest*pvpP))+' al PVP '+fmtUsd(pvpP)+')</td></tr></table>';
-    var detP=d.restCasos.map(function(c,i){return '<tr><td class="n">'+(i+1)+'</td><td>'+fmtDate(c.fecha)+'</td><td>'+esc(c.exp)+'</td><td>'+esc(c.nombre)+'</td><td>'+esc(c.ced)+'</td></tr>';}).join('');
-    inner+='<table><tr><th>N°</th><th>Fecha</th><th>Expediente</th><th>Nombre del fallecido</th><th>Cédula de identidad</th></tr>'+detP+'</table>';
+    inner+=_relSeccionExcel('Servicios Pendientes de Pago por la Gobernación', _relFechaRango(d.restCasos), 'Pendiente', 0, pvpP, d.restCasos, true);
   }
-  excelFromTableRaw(inner,'Relacion_Servicios_Fondos_'+today(),'Relación');
+  excelFromTableRaw(inner,'Relacion_Servicios_Fondos_'+today(),'Relación de Servicios');
 }
 
 function usdtResultadoFinanciero(){
