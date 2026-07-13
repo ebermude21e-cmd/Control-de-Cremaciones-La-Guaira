@@ -396,7 +396,7 @@ table.flujo tr.saldo td{border-top:2px solid var(--tp);font-weight:800}
       <div class="side-group">Sistema</div>
       <button data-view="config">Configuración</button>
     </nav>
-    <div class="side-foot">Control de Cremaciones · v9.32</div>
+    <div class="side-foot">Control de Cremaciones · v9.34</div>
   </aside>
   <div class="sidebar-scrim" id="sideScrim" onclick="toggleSide(false)"></div>
   <div class="mainarea">
@@ -1340,6 +1340,90 @@ function _relSeccionExcel(titulo,rango,fondoLbl,fondoBs,pvp,casos,esPend){
     '<th style="background:#3A1D6E;color:#fff;border:1px solid #2E1A5E;font-family:Arial;font-size:10.5px;padding:7px 9px;text-align:left">Cédula de identidad</th></tr>'+rows+'</table>';
   return h;
 }
+function numeroALetras(num){
+  num=Math.floor(Math.abs(Number(num)||0));
+  var U=['','UNO','DOS','TRES','CUATRO','CINCO','SEIS','SIETE','OCHO','NUEVE'];
+  var D10=['DIEZ','ONCE','DOCE','TRECE','CATORCE','QUINCE','DIECISÉIS','DIECISIETE','DIECIOCHO','DIECINUEVE'];
+  var D20=['VEINTE','VEINTIUNO','VEINTIDÓS','VEINTITRÉS','VEINTICUATRO','VEINTICINCO','VEINTISÉIS','VEINTISIETE','VEINTIOCHO','VEINTINUEVE'];
+  var DEC=['','','','TREINTA','CUARENTA','CINCUENTA','SESENTA','SETENTA','OCHENTA','NOVENTA'];
+  var CEN=['','CIENTO','DOSCIENTOS','TRESCIENTOS','CUATROCIENTOS','QUINIENTOS','SEISCIENTOS','SETECIENTOS','OCHOCIENTOS','NOVECIENTOS'];
+  function tres(n){if(n===0)return '';if(n===100)return 'CIEN';var c=Math.floor(n/100),r=n%100,s=CEN[c],t='';if(r<10)t=U[r];else if(r<20)t=D10[r-10];else if(r<30)t=D20[r-20];else{var d=Math.floor(r/10),u=r%10;t=DEC[d]+(u>0?' Y '+U[u]:'');}return (s+(s&&t?' ':'')+t).trim();}
+  if(num===0)return 'CERO';
+  var millon=Math.floor(num/1000000),miles=Math.floor((num%1000000)/1000),r=num%1000,out='';
+  if(millon>0)out+=(millon===1?'UN MILLÓN':tres(millon)+' MILLONES')+' ';
+  if(miles>0)out+=(miles===1?'MIL':tres(miles)+' MIL')+' ';
+  if(r>0)out+=tres(r);
+  return out.replace(/\s+/g,' ').trim();
+}
+function generarReciboFondo(id){
+  var x=ingresos.find(function(i){return i.id===id;});if(!x){toast('Aporte no encontrado');return;}
+  var b=ingBreak(x);
+  var fid=(typeof fondoDeReg==='function')?fondoDeReg(x,'fecha'):(fondos[0]&&fondos[0].id);
+  var tarifa=n2(precioGobDe(fid));
+  var fRec=fondos.find(function(ff){return ff.id===fid;});
+  var exentoRet=!!(fRec&&fRec.exentoRet);
+  var timbre=0;
+  if(!exentoRet){(cfg.retenciones||[]).forEach(function(r){var pct=Number(r&&r.pct)||0;if(pct<=0)return;var base=r.base==='iva'?b.iva:(r.base==='total'?b.total:(r.base==='fondo'?b.neto:b.sub));timbre+=base*pct/100;});timbre=n2(timbre);}
+  var retIva=exentoRet?0:n2(b.retIva),retIslr=exentoRet?0:n2(b.retIslr);
+  var totalRet=n2(retIva+retIslr+timbre);
+  var netoRec=n2(b.total-totalRet);
+  var ord=ingresos.slice().sort(function(a,c){return (a.fecha||'')<(c.fecha||'')?-1:1;});
+  var pos=0;for(var k=0;k<ord.length;k++){if(ord[k].id===id){pos=k+1;break;}}
+  var recNo=x.ref?esc(x.ref):('RFG-'+String(pos).padStart(4,'0'));
+  var letras=numeroALetras(netoRec)+' BOLÍVARES';
+  var fila=function(l,v){return '<tr><td class="lbl">'+l+'</td><td class="val">'+v+'</td></tr>';};
+  var bullet=function(t,d){return '<div class="alc"><b>'+t+':</b> '+d+'</div>';};
+  var doc='<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><title>Recibo de Fondo · '+recNo+'</title>'+
+  '<style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,Helvetica,sans-serif;color:#231640;padding:26px 32px;background:#fff;font-size:12px;line-height:1.45}'+
+  '.bar{text-align:center;margin-bottom:14px}.bar button{font-size:13px;font-weight:bold;background:#4B2D8F;color:#fff;border:none;border-radius:8px;padding:9px 18px;cursor:pointer}'+
+  '.hd{display:flex;align-items:center;gap:15px;background:linear-gradient(135deg,#2E1A5E,#4B2D8F);color:#fff;padding:16px 20px;border-radius:12px 12px 0 0}.hd img{height:66px;background:#fff;border-radius:8px;padding:3px}'+
+  '.hd h1{font-size:16px;line-height:1.2}.hd .co{font-size:11px;opacity:.85;margin-top:3px}'+
+  '.meta{display:flex;justify-content:space-between;background:#f0edf7;border:1px solid #e0d9f0;border-top:none;padding:8px 20px;font-size:11px;font-weight:bold;color:#3A1D6E}'+
+  '.concept{border:1px solid #e0d9f0;border-top:none;padding:12px 20px;font-size:11.5px;background:#fbfaff;text-align:justify}'+
+  '.sect{background:#3A1D6E;color:#fff;font-size:11px;font-weight:bold;letter-spacing:.5px;padding:7px 20px;margin-top:14px}'+
+  'table{width:100%;border-collapse:collapse}td{padding:7px 20px;border-bottom:1px solid #eee;font-size:11.5px;vertical-align:top}td.lbl{width:210px;font-weight:bold;background:#faf9fd;color:#4B2D8F}td.val{font-family:Consolas,Arial}'+
+  '.alc{padding:8px 20px;font-size:11px;text-align:justify;border-bottom:1px solid #f0eef7}.alc b{color:#3A1D6E}'+
+  '.firmas{display:flex;gap:30px;margin-top:34px;padding:0 20px}.fm{flex:1;text-align:center;border-top:1px solid #333;padding-top:6px;font-size:10.5px}.fm b{display:block;font-size:11.5px}'+
+  '.foot{margin-top:18px;font-size:9.5px;color:#888;text-align:center;border-top:1px solid #eee;padding-top:9px}'+
+  '@media print{body{padding:8px 12px}.noprint{display:none}}</style></head><body>'+
+  '<div class="bar noprint"><button onclick="window.print()">Imprimir / Guardar como PDF</button></div>'+
+  '<div class="hd"><img src="'+LAFE_LOGO+'"><div><h1>RECIBO DE FONDO PARA GESTIÓN ASISTENCIA FUNERARIA INTEGRAL</h1><div class="co">Seguros La Fe, C.A. &nbsp;·&nbsp; RIF J-000467382 &nbsp;·&nbsp; Organización Vallés</div></div></div>'+
+  '<div class="meta"><span>RECIBO N.° '+recNo+'</span><span>Fecha de emisión: '+fmtDate(x.fecha)+'</span></div>'+
+  '<div class="concept"><b>Concepto:</b> Soporte de pago con cargo al Fondo para la Gestión de Asistencia Funeraria Integral administrado por Seguros La Fe, C.A., por la ejecución del Plan de Asistencia Funeraria Integral prestado al colectivo de personas fallecidas atendidas bajo demanda, con ocasión del doble evento sísmico ocurrido el 24 de junio de 2026 en el Estado La Guaira.</div>'+
+  '<div class="sect">DATOS DEL SOPORTE DE PAGO</div>'+
+  '<table>'+fila('Recibido de','Gobernación del Estado La Guaira (ente contratante)')+fila('A la orden de','Seguros La Fe, C.A. — RIF J-000467382 · Organización Vallés')+fila('Condición','Proveedor autorizado para la recepción y administración de los fondos')+'</table>'+
+  '<div class="sect">ALCANCE DEL SERVICIO (conforme al contrato suscrito con la Gobernación)</div>'+
+  bullet('Objeto','Prestación de servicios de asistencia integral funerarios, logísticos, de traslado y cremación en el Eje La Guaira – Gran Caracas y Centro Occidental, para atender la contingencia derivada del evento sísmico del 24 de junio de 2026.')+
+  bullet('Cobertura','Asistencia funeraria integral, incluyendo el proceso de cremación, para las personas fallecidas con ocasión del doble evento sísmico, atendidas bajo demanda y sin costo alguno para las familias.')+
+  bullet('Operación en sitio y trazabilidad','Operación permanente en el puerto de La Guaira y en la morgue provisional de «Los Silos»; plataforma automatizada de registro, identificación y trazabilidad; call center y notificación multicanal (SMS, correo y WhatsApp); custodia y gestión documental (certificado y acta de defunción, permiso de cremación).')+
+  bullet('Logística y traslado','Traslado de los cuerpos bajo estricta cadena de frío hacia la región centro-occidental (Maracay y Valencia), ejecución de la cremación, retorno e identificación de los restos y entrega formal de las cenizas a los familiares en los puntos habilitados.')+
+  bullet('Coordinación','Operativo coordinado de forma centralizada por Seguros La Fe, C.A. (Organización Vallés), bajo estándares de dignidad, respeto y profesionalismo. La tarifa única comprende la totalidad de servicios, movilizaciones, soportes e impuestos aplicables, sin cargo adicional alguno.')+
+  '<div class="sect">DATOS DEL PAGO</div>'+
+  '<table>'+
+    fila('Tipo de moneda','Dólares BCV')+
+    fila('Tarifa por caso','$ '+fmtNum(tarifa,2))+
+    fila('Base imponible (subtotal de facturas)','Bs. '+fmtNum(b.sub,2))+
+    fila('IVA facturado ('+(cfg.ivaPct||16)+'%)','Bs. '+fmtNum(b.iva,2))+
+    fila('Total factura','Bs. '+fmtNum(b.total,2))+
+    (exentoRet?
+      '<tr><td class="lbl">Retenciones</td><td class="val" style="color:#0D7A4E">Exento — fondo pagado directamente a la aseguradora (Seguros La Fe, C.A.)</td></tr>'
+     :(
+      fila('(−) Retención de IVA (75% del IVA)','Bs. '+fmtNum(retIva,2))+
+      fila('(−) Retención de ISLR','Bs. '+fmtNum(retIslr,2))+
+      fila('(−) Retención de timbre fiscal','Bs. '+fmtNum(timbre,2))+
+      '<tr><td class="lbl" style="background:#f3eefb">Total retenciones</td><td class="val" style="font-weight:bold;color:#B07A00">Bs. '+fmtNum(totalRet,2)+'</td></tr>'
+     ))+
+    '<tr><td class="lbl" style="background:#e4f4f2;color:#0b5f58">MONTO NETO RECIBIDO</td><td class="val" style="font-weight:bold;color:#0b5f58;font-size:12.5px">Bs. '+fmtNum(netoRec,2)+'</td></tr>'+
+    fila('Cantidad en letras',letras)+
+    fila('Forma de pago',esc(x.banco||'Transferencia bancaria'))+
+    fila('Referencia / N.° de operación',esc(x.ref||'—'))+
+    fila('Fecha del pago',fmtDate(x.fecha))+
+  '</table>'+
+  '<div class="firmas"><div class="fm"><b>Por Seguros La Fe, C.A.</b>Eduardo José Vallés — Presidente<br>Emisor / Receptor de fondos</div><div class="fm"><b>Por la Gobernación del Edo. La Guaira</b>Nombre y cargo: ____________________<br>Ente contratante / Autoriza</div></div>'+
+  '<div class="foot">Seguros La Fe, C.A. · RIF J-000467382 · Organización Vallés · Documento de control interno del Fondo para Gestión de Asistencia Funeraria Integral</div>'+
+  '</body></html>';
+  try{var blob=new Blob([doc],{type:'text/html;charset=utf-8'});downloadBlob(blob,'Recibo_Fondo_'+recNo.replace(/[^A-Za-z0-9]/g,'')+'_'+(x.fecha||today())+'.html');toast('Recibo generado — ábralo e imprima o guarde como PDF');}catch(e){toast('No se pudo generar el recibo');}
+}
 function descargarEstadoGob(){
   var d=ctasRelacionData();
   var totFondos=0,totCancel=0,totCasos=0,totSaldo=0;
@@ -1705,7 +1789,7 @@ function renderAbonos(){
   var tSub=0,tIva=0,tTot=0,tRIva=0,tRIslr=0,tNeto=0,tUsd=0;
   ingresos.forEach(function(x){var b=ingBreak(x);tSub+=b.sub;tIva+=b.iva;tTot+=b.total;tRIva+=b.retIva;tRIslr+=b.retIslr;tNeto+=b.neto;tUsd+=Number(x.usd)||0;});
   var ab='<table class="data" id="rent_abonos_tbl"><thead><tr><th class="c">#</th><th>Fecha</th><th class="r">Subtotal (Bs.)</th><th class="c">IVA</th><th class="r">IVA 16% (Bs.)</th><th class="r">Total (Bs.)</th><th class="r">Ret. IVA 75% (Bs.)</th><th class="r">Ret. ISLR 2% (Bs.)</th><th class="r">Neto recibido (Bs.)</th><th class="r">Tasa BCV</th><th class="r">Neto USD</th><th>Banco</th><th>Ref.</th><th class="c">Acción</th></tr></thead><tbody>';
-  if(ingresos.length){ingresos.slice().sort(function(a,b){return a.fecha<b.fecha?1:-1;}).forEach(function(x,i){var b=ingBreak(x);ab+='<tr><td class="c num">'+(i+1)+'</td><td class="num">'+fmtDate(x.fecha)+'</td><td class="r num">'+fmtBs(b.sub)+'</td><td class="c">'+(b.ivaOn?'<span style="color:#0D7A4E;font-weight:800">Sí</span>':'<span style="color:#9a97ad">No</span>')+'</td><td class="r num">'+fmtBs(b.iva)+'</td><td class="r num">'+fmtBs(b.total)+'</td><td class="r num" style="color:#B07A00">'+fmtBs(b.retIva)+'</td><td class="r num" style="color:#B07A00">'+fmtBs(b.retIslr)+'</td><td class="r num" style="color:#245e94;font-weight:700">'+fmtBs(b.neto)+'</td><td class="r num">'+fmtNum(x.tasa,4)+'</td><td class="r num">'+fmtUsd(x.usd)+'</td><td>'+esc(x.banco||'—')+'</td><td class="num">'+esc(x.ref||'—')+'</td><td class="c" style="white-space:nowrap"><button class="btn ghost icon sm" onclick="openIngreso(\''+x.id+'\')">✎</button> <button class="btn ghost icon sm" style="color:var(--danger);border-color:var(--danger)" onclick="delIngreso(\''+x.id+'\')">🗑</button></td></tr>';});}
+  if(ingresos.length){ingresos.slice().sort(function(a,b){return a.fecha<b.fecha?1:-1;}).forEach(function(x,i){var b=ingBreak(x);ab+='<tr><td class="c num">'+(i+1)+'</td><td class="num">'+fmtDate(x.fecha)+'</td><td class="r num">'+fmtBs(b.sub)+'</td><td class="c">'+(b.ivaOn?'<span style="color:#0D7A4E;font-weight:800">Sí</span>':'<span style="color:#9a97ad">No</span>')+'</td><td class="r num">'+fmtBs(b.iva)+'</td><td class="r num">'+fmtBs(b.total)+'</td><td class="r num" style="color:#B07A00">'+fmtBs(b.retIva)+'</td><td class="r num" style="color:#B07A00">'+fmtBs(b.retIslr)+'</td><td class="r num" style="color:#245e94;font-weight:700">'+fmtBs(b.neto)+'</td><td class="r num">'+fmtNum(x.tasa,4)+'</td><td class="r num">'+fmtUsd(x.usd)+'</td><td>'+esc(x.banco||'—')+'</td><td class="num">'+esc(x.ref||'—')+'</td><td class="c" style="white-space:nowrap"><button class="btn ghost icon sm" title="Recibo del fondo" onclick="generarReciboFondo(\''+x.id+'\')">🧾</button> <button class="btn ghost icon sm" onclick="openIngreso(\''+x.id+'\')">✎</button> <button class="btn ghost icon sm" style="color:var(--danger);border-color:var(--danger)" onclick="delIngreso(\''+x.id+'\')">🗑</button></td></tr>';});}
   else ab+='<tr><td colspan="14"><div class="empty" style="padding:20px"><div class="em-t">Sin abonos registrados</div>Use «＋ Registrar abono».</div></td></tr>';
   ab+='</tbody><tfoot><tr><td colspan="2" class="r">TOTALES</td><td class="r num">'+fmtBs(n2(tSub))+'</td><td></td><td class="r num">'+fmtBs(n2(tIva))+'</td><td class="r num">'+fmtBs(n2(tTot))+'</td><td class="r num" style="color:#B07A00">'+fmtBs(n2(tRIva))+'</td><td class="r num" style="color:#B07A00">'+fmtBs(n2(tRIslr))+'</td><td class="r num" style="color:#245e94">'+fmtBs(n2(tNeto))+'</td><td></td><td class="r num">'+fmtUsd(n2(tUsd))+'</td><td colspan="3"></td></tr></tfoot></table>';
   host.innerHTML='<div class="panel"><div class="ph"><h3>Ingresos recibidos (abonos de la Gobernación)</h3><span style="color:var(--slate);font-size:11.5px">Bs → USD por la tasa BCV del día del abono</span></div><div class="pb" style="padding:0"><div class="tablewrap" style="border:none;box-shadow:none">'+ab+'</div></div></div>';
@@ -2690,7 +2774,7 @@ function renderRentabilidad(){
   // abonos
   var abSub=0,abIva=0,abTot=0,abRIva=0,abRIslr=0,abNeto=0,abUsd=0;ingresos.forEach(function(x){var bb=ingBreak(x);abSub+=bb.sub;abIva+=bb.iva;abTot+=bb.total;abRIva+=bb.retIva;abRIslr+=bb.retIslr;abNeto+=bb.neto;abUsd+=Number(x.usd)||0;});
   var ab='<table class="data" id="rent_abonos_tbl"><thead><tr><th class="c">#</th><th>Fecha</th><th class="r">Subtotal (Bs.)</th><th class="c">IVA</th><th class="r">IVA 16% (Bs.)</th><th class="r">Total (Bs.)</th><th class="r">Ret. IVA 75% (Bs.)</th><th class="r">Ret. ISLR 2% (Bs.)</th><th class="r">Neto recibido (Bs.)</th><th class="r">Tasa</th><th class="r">Neto USD</th><th>Banco</th><th>Ref.</th><th class="c">Acción</th></tr></thead><tbody>';
-  if(ingresos.length){ingresos.slice().sort(function(a,b){return a.fecha<b.fecha?1:-1;}).forEach(function(x,i){var bb=ingBreak(x);ab+='<tr><td class="c num">'+(i+1)+'</td><td class="num">'+fmtDate(x.fecha)+'</td><td class="r num">'+fmtBs(bb.sub)+'</td><td class="c">'+(bb.ivaOn?'<span style="color:#0D7A4E;font-weight:800">Sí</span>':'<span style="color:#9a97ad">No</span>')+'</td><td class="r num">'+fmtBs(bb.iva)+'</td><td class="r num">'+fmtBs(bb.total)+'</td><td class="r num" style="color:#B07A00">'+fmtBs(bb.retIva)+'</td><td class="r num" style="color:#B07A00">'+fmtBs(bb.retIslr)+'</td><td class="r num" style="color:#245e94;font-weight:700">'+fmtBs(bb.neto)+'</td><td class="r num">'+fmtNum(x.tasa,4)+'</td><td class="r num">'+fmtUsd(x.usd)+'</td><td>'+esc(x.banco||'—')+'</td><td class="num">'+esc(x.ref||'—')+'</td><td class="c" style="white-space:nowrap"><button class="btn ghost icon sm" onclick="openIngreso(\''+x.id+'\')">✎</button> <button class="btn ghost icon sm" style="color:var(--danger);border-color:var(--danger)" onclick="delIngreso(\''+x.id+'\')">🗑</button></td></tr>';});}
+  if(ingresos.length){ingresos.slice().sort(function(a,b){return a.fecha<b.fecha?1:-1;}).forEach(function(x,i){var bb=ingBreak(x);ab+='<tr><td class="c num">'+(i+1)+'</td><td class="num">'+fmtDate(x.fecha)+'</td><td class="r num">'+fmtBs(bb.sub)+'</td><td class="c">'+(bb.ivaOn?'<span style="color:#0D7A4E;font-weight:800">Sí</span>':'<span style="color:#9a97ad">No</span>')+'</td><td class="r num">'+fmtBs(bb.iva)+'</td><td class="r num">'+fmtBs(bb.total)+'</td><td class="r num" style="color:#B07A00">'+fmtBs(bb.retIva)+'</td><td class="r num" style="color:#B07A00">'+fmtBs(bb.retIslr)+'</td><td class="r num" style="color:#245e94;font-weight:700">'+fmtBs(bb.neto)+'</td><td class="r num">'+fmtNum(x.tasa,4)+'</td><td class="r num">'+fmtUsd(x.usd)+'</td><td>'+esc(x.banco||'—')+'</td><td class="num">'+esc(x.ref||'—')+'</td><td class="c" style="white-space:nowrap"><button class="btn ghost icon sm" title="Recibo del fondo" onclick="generarReciboFondo(\''+x.id+'\')">🧾</button> <button class="btn ghost icon sm" onclick="openIngreso(\''+x.id+'\')">✎</button> <button class="btn ghost icon sm" style="color:var(--danger);border-color:var(--danger)" onclick="delIngreso(\''+x.id+'\')">🗑</button></td></tr>';});}
   else ab+='<tr><td colspan="14"><div class="empty" style="padding:20px">Sin abonos registrados. Use «＋ Registrar abono».</div></td></tr>';
   ab+='</tbody><tfoot><tr><td colspan="2" class="r">TOTALES</td><td class="r num">'+fmtBs(n2(abSub))+'</td><td></td><td class="r num">'+fmtBs(n2(abIva))+'</td><td class="r num">'+fmtBs(n2(abTot))+'</td><td class="r num" style="color:#B07A00">'+fmtBs(n2(abRIva))+'</td><td class="r num" style="color:#B07A00">'+fmtBs(n2(abRIslr))+'</td><td class="r num" style="color:#245e94">'+fmtBs(t.fondoBs)+'</td><td></td><td class="r num">'+fmtUsd(t.fondoUsd)+'</td><td colspan="3"></td></tr></tfoot></table>';
   var pAb='<div class="panel" style="margin-bottom:20px"><div class="ph"><h3>Ingresos recibidos (abonos de la Gobernación)</h3><span style="color:var(--slate);font-size:11.5px">El fondo se alimenta con el <b>neto recibido</b> (total facturado − retenciones IVA/ISLR)</span></div><div class="pb" style="padding:0"><div class="tablewrap" style="border:none;box-shadow:none">'+ab+'</div></div></div>';
