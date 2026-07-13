@@ -308,6 +308,39 @@ table.flujo tr.saldo td{border-top:2px solid var(--tp);font-weight:800}
 .ibrow{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:7px 0;font-size:12.5px;border-top:1px dashed var(--line-2)}
 .ibrow:first-child{border-top:none}
 .ibrow.tot{border-top:2px solid var(--line);font-weight:800;margin-top:2px}
+
+/* ===== SIDEBAR LAYOUT ===== */
+.applayout{display:flex;min-height:100vh}
+.sidebar{width:250px;flex-shrink:0;background:linear-gradient(180deg,#2a1650,#3A1D6E 60%,#42207d);color:#fff;display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto;z-index:60}
+.side-brand{display:flex;align-items:center;gap:11px;padding:18px 18px 16px;border-bottom:1px solid rgba(255,255,255,.1)}
+.side-brand .seal{width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,#fff,#e9e2fb);display:flex;align-items:center;justify-content:center;font-weight:900;color:#3A1D6E;font-size:14px;flex-shrink:0;box-shadow:0 4px 12px rgba(0,0,0,.25)}
+.side-brandtxt .sb-co{font-weight:800;font-size:13.5px;line-height:1.2}
+.side-brandtxt .sb-sub{font-size:10.5px;opacity:.7;margin-top:2px}
+.side-nav{flex:1;padding:10px 10px 6px}
+.side-group{font-size:9.5px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:#a48fd6;padding:14px 12px 6px}
+.side-nav button{display:block;width:100%;text-align:left;background:none;border:none;color:#d8cff0;padding:9px 13px;font-size:13px;font-weight:600;cursor:pointer;border-radius:9px;font-family:inherit;margin-bottom:2px;transition:background .15s,color .15s}
+.side-nav button:hover{background:rgba(255,255,255,.09);color:#fff}
+.side-nav button.active{background:#fff;color:#3A1D6E;font-weight:800;box-shadow:0 5px 14px -5px rgba(0,0,0,.4)}
+.side-foot{padding:12px 18px;font-size:10px;color:rgba(255,255,255,.4);border-top:1px solid rgba(255,255,255,.1)}
+.sidebar-scrim{display:none}
+.mainarea{flex:1;min-width:0;display:flex;flex-direction:column}
+.topbar{display:flex;align-items:center;gap:18px;padding:15px 28px;background:var(--surface);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:40}
+.topbar .hamb{display:none;background:none;border:1px solid var(--line);border-radius:8px;font-size:18px;padding:4px 11px;cursor:pointer;color:var(--p2,#4B2D8F)}
+.topbar .htitles{flex:1;min-width:0}
+.topbar .htitles .eyebrow{font-size:10px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:#6b4bb8}
+.topbar .htitles h1{font-size:16.5px;font-weight:800;margin:2px 0;color:var(--ink,#231640);line-height:1.2}
+.topbar .htitles .sub{font-size:12px;color:var(--slate)}
+.topbar .hmeta{display:flex;gap:24px;flex-shrink:0}
+.topbar .hmeta .cell .k{font-size:9.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--slate)}
+.topbar .hmeta .cell .v{font-size:15px;font-weight:800;color:var(--ink,#231640)}
+@media(max-width:900px){
+  .sidebar{position:fixed;left:0;top:0;transform:translateX(-100%);transition:transform .25s;box-shadow:6px 0 24px rgba(0,0,0,.25)}
+  .sidebar.open{transform:translateX(0)}
+  .sidebar-scrim.show{display:block;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:55}
+  .topbar .hamb{display:block}
+  .topbar .hmeta{display:none}
+  .topbar .htitles h1{font-size:14.5px}
+}
 </style>
 <style>
   .attlink{color:var(--steel);cursor:pointer;text-decoration:underline;font-size:12.5px;background:none;border:none;padding:0;font-family:inherit}
@@ -331,36 +364,48 @@ table.flujo tr.saldo td{border-top:2px solid var(--tp);font-weight:800}
 </head>
 <body>
 
-<header class="app">
-  <div class="hbar">
-    <div class="seal" id="seal">LG</div>
-    <div class="htitles">
-      <div class="eyebrow">Gobernación del Estado La Guaira</div>
-      <h1>Control de Cremaciones · Operativo de Emergencia Sísmica</h1>
-      <div class="sub">Rendición de cuentas — Operador: <b id="hOperador">Seguros La Fe, C.A.</b></div>
+<div class="applayout">
+  <aside class="sidebar" id="sidebar">
+    <div class="side-brand">
+      <div class="seal" id="seal">LG</div>
+      <div class="side-brandtxt"><div class="sb-co">La Fe · Cremaciones</div><div class="sb-sub">Gobernación La Guaira</div></div>
     </div>
-    <div class="hmeta">
-      <div class="cell"><div class="k">Tarifa base</div><div class="v"><span class="num" id="hTarifa">$174.00</span> <small>c/u</small></div></div>
-      <div class="cell"><div class="k">Actualizado</div><div class="v"><span id="hFecha">—</span></div></div>
-    </div>
-  </div>
-</header>
-
-<div class="fundbar" id="fundBar"></div>
-
-<nav class="tabs"><div class="tabsinner">
-  <button data-view="rentabilidad">Rentabilidad</button>
-  <button data-view="dashboard" class="active">Panel Ejecutivo</button>
-  <button data-view="estructura">Estructura de Costos</button>
-  <button data-view="cremaciones">Cremaciones</button>
-  <button data-view="finanzas">Finanzas</button>
-  <button data-view="reportes">Reportes</button>
-  <button data-view="conciliacion">Conciliación</button>
-  <button data-view="auditoria">🔍 Auditoría</button>
-  <button data-view="config">Configuración</button>
-</div></nav>
-
-<main>
+    <nav class="side-nav">
+      <div class="side-group">Resultados</div>
+      <button data-view="dashboard" class="active">Panel Ejecutivo</button>
+      <button data-view="rentabilidad">Rentabilidad</button>
+      <button data-view="estructura">Estructura de Costos</button>
+      <div class="side-group">Operación</div>
+      <button data-view="cremaciones">Cremaciones</button>
+      <button data-view="finanzas">Finanzas</button>
+      <div class="side-group">Tesorería</div>
+      <button data-view="usdtmov">Movimiento de Fondo USDT</button>
+      <button data-view="ctasgob">Cuentas Gobernación</button>
+      <div class="side-group">Control</div>
+      <button data-view="reportes">Reportes</button>
+      <button data-view="conciliacion">Conciliación</button>
+      <button data-view="auditoria">Auditoría</button>
+      <div class="side-group">Sistema</div>
+      <button data-view="config">Configuración</button>
+    </nav>
+    <div class="side-foot">Control de Cremaciones · v9.21</div>
+  </aside>
+  <div class="sidebar-scrim" id="sideScrim" onclick="toggleSide(false)"></div>
+  <div class="mainarea">
+    <header class="topbar">
+      <button class="hamb" onclick="toggleSide(true)" aria-label="Abrir menú">☰</button>
+      <div class="htitles">
+        <div class="eyebrow">Gobernación del Estado La Guaira</div>
+        <h1>Control de Cremaciones · Operativo de Emergencia Sísmica</h1>
+        <div class="sub">Operador: <b id="hOperador">Seguros La Fe, C.A.</b></div>
+      </div>
+      <div class="hmeta">
+        <div class="cell"><div class="k">Tarifa base</div><div class="v"><span class="num" id="hTarifa">$174.00</span> <small>c/u</small></div></div>
+        <div class="cell"><div class="k">Actualizado</div><div class="v"><span id="hFecha">—</span></div></div>
+      </div>
+    </header>
+    <div class="fundbar" id="fundBar"></div>
+    <main>
   <!-- DASHBOARD -->
   <section class="view active" id="v-dashboard">
     <div class="viewhead">
@@ -439,35 +484,12 @@ table.flujo tr.saldo td{border-top:2px solid var(--tp);font-weight:800}
       <button data-sub="oper" onclick="finSub('oper')">Pagos operacionales</button>
       <button data-sub="gastos" onclick="finSub('gastos')">Gastos de logística</button>
       <button data-sub="fondos" onclick="finSub('fondos')">Fondos · tributos</button>
-      <button data-sub="usdt" onclick="finSub('usdt')">Tesorería USDT</button>
     </div>
     <div id="finSummary" style="margin-bottom:16px"></div>
 
     <div class="subpane active" id="fin-abonos">
       <div class="toolbar"><button class="btn gold" onclick="openIngreso()">＋ Registrar abono</button><span class="lead" style="margin:0">Abonos de la Gobernación al fondo (Bs → USD por la tasa BCV del día).</span></div>
       <div id="finAbonosHost"></div>
-    </div>
-
-    <div class="subpane" id="fin-usdt">
-      <div class="toolbar"><span class="lead" style="margin:0">Tesorería USDT: compra (Bs → USDT) y venta (USDT → Bs) con comisiones (Binance + banca). El USDT es cobertura; para pagar se vende a Bs a tasa BCV.</span></div>
-      <div class="panel" style="margin:0 0 14px"><div class="ph"><h3>Registrar operación USDT</h3><button class="btn" onclick="exportUsdtExcel()" style="margin-left:auto">⬇ Estado de cuenta USDT (Excel)</button></div><div class="pb">
-        <div class="toolbar" style="padding:0;flex-wrap:wrap">
-          <select id="uTipo" onchange="usdtCalc()"><option value="compra">Compra (Bs → USDT)</option><option value="venta">Venta (USDT → Bs)</option></select>
-          <input type="date" id="uFecha">
-          <input type="number" id="uBs" placeholder="Bs" style="width:150px" step="0.01" oninput="usdtCalc()">
-          <input type="number" id="uTasa" placeholder="Tasa Bs/USDT" style="width:130px" step="0.0001" oninput="usdtCalc()">
-          <input type="number" id="uUsdt" placeholder="USDT" style="width:120px" step="0.0001" oninput="usdtCalc()">
-          <input type="number" id="uComBin" placeholder="Com. Binance (USDT)" style="width:160px" step="0.0001" oninput="usdtCalc()">
-          <input type="number" id="uComBco" placeholder="Com. banca (Bs)" style="width:150px" step="0.01" oninput="usdtCalc()">
-          <button class="btn gold" id="uAddBtn" onclick="addUsdtOp()">Registrar</button>
-        </div>
-        <div id="uPreview" style="margin-top:10px;font-size:12.5px;color:var(--slate)"></div>
-      </div></div>
-      <div id="usdtResumen" style="margin-bottom:14px"></div>
-      <div class="tablewrap"><table class="data" id="uTbl">
-        <thead><tr><th class="c">#</th><th>Fecha</th><th>Tipo</th><th class="r">Bs</th><th class="r">USDT</th><th class="r">Tasa Bs/USDT</th><th class="r">Com. Binance (USDT)</th><th class="r">Com. banca (Bs)</th><th class="r">Tasa efectiva</th><th class="c">Acción</th></tr></thead>
-        <tbody id="uBody"></tbody><tfoot id="uFoot"></tfoot></table></div>
-      <div id="usdtCorteHost" style="margin-top:26px"></div>
     </div>
 
     <div class="subpane" id="fin-pagos">
@@ -606,6 +628,38 @@ table.flujo tr.saldo td{border-top:2px solid var(--tp);font-weight:800}
     <div id="auditoriaHost"></div>
   </section>
 
+  <!-- MOVIMIENTO DE FONDO USDT -->
+  <section class="view" id="v-usdtmov">
+    <div class="viewhead"><div><h2>Movimiento de Fondo USDT</h2><div class="lead">Compra (Bs → USDT) y venta (USDT → Bs) con comisiones. El USDT es cobertura del Fondo 2; para pagar se vende a Bs. Los valores se expresan a la tasa USDT de cada operación (compra/venta), no a tasa BCV.</div></div></div>
+    
+      <div class="toolbar"><span class="lead" style="margin:0">Tesorería USDT: compra (Bs → USDT) y venta (USDT → Bs) con comisiones (Binance + banca). El USDT es cobertura del Fondo 2; para pagar se vende a Bs. Cada operación usa su propia tasa USDT (compra/venta).</span></div>
+      <div class="panel" style="margin:0 0 14px"><div class="ph"><h3>Registrar operación USDT</h3><button class="btn" onclick="exportUsdtExcel()" style="margin-left:auto">⬇ Estado de cuenta USDT (Excel)</button></div><div class="pb">
+        <div class="toolbar" style="padding:0;flex-wrap:wrap">
+          <select id="uTipo" onchange="usdtCalc()"><option value="compra">Compra (Bs → USDT)</option><option value="venta">Venta (USDT → Bs)</option></select>
+          <input type="date" id="uFecha">
+          <input type="number" id="uBs" placeholder="Bs" style="width:150px" step="0.01" oninput="usdtCalc()">
+          <input type="number" id="uTasa" placeholder="Tasa Bs/USDT" style="width:130px" step="0.0001" oninput="usdtCalc()">
+          <input type="number" id="uUsdt" placeholder="USDT" style="width:120px" step="0.0001" oninput="usdtCalc()">
+          <input type="number" id="uComBin" placeholder="Com. Binance (USDT)" style="width:160px" step="0.0001" oninput="usdtCalc()">
+          <input type="number" id="uComBco" placeholder="Com. banca (Bs)" style="width:150px" step="0.01" oninput="usdtCalc()">
+          <button class="btn gold" id="uAddBtn" onclick="addUsdtOp()">Registrar</button>
+        </div>
+        <div id="uPreview" style="margin-top:10px;font-size:12.5px;color:var(--slate)"></div>
+      </div></div>
+      <div id="usdtResumen" style="margin-bottom:14px"></div>
+      <div class="tablewrap"><table class="data" id="uTbl">
+        <thead><tr><th class="c">#</th><th>Fecha</th><th>Tipo</th><th class="r">Bs</th><th class="r">USDT</th><th class="r">Tasa Bs/USDT</th><th class="r">Com. Binance (USDT)</th><th class="r">Com. banca (Bs)</th><th class="r">Tasa efectiva</th><th class="c">Acción</th></tr></thead>
+        <tbody id="uBody"></tbody><tfoot id="uFoot"></tfoot></table></div>
+      <div id="usdtCorteHost" style="margin-top:26px"></div>
+    
+  </section>
+
+  <!-- CUENTAS GOBERNACIÓN LA GUAIRA -->
+  <section class="view" id="v-ctasgob">
+    <div class="viewhead"><div><h2>Cuentas · Gobernación La Guaira</h2><div class="lead">Fondos recibidos por la Gobernación (con la tasa del día en que se recibieron), cremaciones pagadas con esos fondos, y cuentas por cobrar a precio PVP. El precio PVP es paramétrico: se ajusta en Configuración.</div></div></div>
+    <div id="ctasgobHost"></div>
+  </section>
+
   <!-- CONFIG -->
   <section class="view" id="v-config">
     <div class="viewhead"><div><h2>Configuración</h2><div class="lead">Datos del convenio, tarifas, tasa de referencia, logos, crematorios, categorías y respaldo.</div></div></div>
@@ -695,8 +749,10 @@ table.flujo tr.saldo td{border-top:2px solid var(--tp);font-weight:800}
     <div id="fondoGenHost"></div>
   </section>
 </main>
+  </div>
+</div>
 
-<div class="foot">Sistema de control interno · Gobernación del Estado La Guaira — Operador Seguros La Fe, C.A. · Datos almacenados localmente en este equipo. · <b>v9.19 · [USDT capas 2 y 3] Estado de Cuenta del Manejo de USDT en Tesorería: cuadre global venta→pagos (Fondos por venta de USDT = Pagos con fondos USDT) con rubros desplegables (cremaciones, gastos, operacionales) y detalle por pago; Resultado financiero del USDT en la rentabilidad de Fondo 2 y General (operativo − comisiones ± cambiario realizado = neto), nunca en Fondo 1; marca discreta «USDT» en las tablas de pagos/gastos/operacionales. Todo lectura, sin duplicar ni tocar lo certificado (auto-test 17/17) · [USDT capa 1] Casilla «Cancelado con fondos USDT» al registrar pagos (crematorios, gastos, operacionales): marca manual que guarda la trazabilidad de qué pagos se cubrieron con la venta de divisas; no afecta ninguna cifra certificada (auto-test 17/17) · [FIX] Tarjetas de Finanzas (Total/Pagado/Pendiente de gastos, abonos, pagos, operacionales) ahora respetan el fondo activo, consistentes con la tabla (antes mostraban todos los fondos → pendiente «fantasma» en la vista de un fondo) · [FIX] Conciliación muestra el padrón MAESTRO completo (ya no filtrado por fondo); check «Margen por cremación» usa precio promedio ponderado (cuadra) · [CUADRE vs Excel] Patente sobre BASE IMPONIBLE (F1 632.547,41 · F2 770.000); traslado Vallés del Tuy usa el monto REAL de la factura (1.980.871,68), no recálculo a tasa de hoy; cremaciones pagadas 24.801.739,02; todo contrastado con el Excel del cliente · [AUDITORÍA capa 1] Nueva pestaña «Auditoría»: matriz de conciliación automática que verifica integridad entre módulos, fondos y vistas (aditividad, cuadre interno, cuadre entre vistas, fórmulas) con semáforo, Δ y origen del descuadre; exportable a Excel · [PATENTE unificada + desglose] Patente = abono neto del fondo × alícuota del abono (Fondo 2 = 1,75%), MISMA cifra en tributos y estado de cuenta; etiquetas muestran la alícuota real por fondo; panel «Separación por fondo» en el estado de cuenta general (bases de impuestos, pagos efectuados, pendientes) · [AUDITORÍA traslados] Conteos manipulación/traslado basados en cremaciones efectuadas (como el panel): traslado Vallés del Tuy = sus cremaciones × $80+IVA con pagadas/pendientes correctos (elimina el −32); consistencia total F1+F2=General en todas las vistas · [FIX traslados + gráfico] Traslado Vallés del Tuy solo por SUS cremaciones (no los 288); gráfico Uso del fondo reconstruido: retenciones IVA/ISLR, USD junto a Bs, Total erogaciones → Monto del fondo → Saldo disponible, cuadra con estado de cuenta · [MODELO TRASLADOS] Manipulación (N×$50 → Funeraria Vallés Maracay) y Traslado (N×$80+IVA → Organización Vallés del Tuy) como compromisos por N cuerpos a los 4 crematorios, paramétricos, con trazabilidad en Pagos Operacionales; aditivo (F1+F2=General) y auto-test en verde · [CONSISTENCIA] Mecánica de fuente única: cifras no-aditivas (traslados, patente) ahora se calculan en General como suma de fondos → F1+F2=General garantizado; patente por alícuota del abono (Seguros 1,75%); auto-test de consistencia permanente + panel de desglose por fondo desplegable en la vista General · [FIX] Precio a la Gobernación por fondo ahora SIGUE LAS VIGENCIAS de configuración según el período del fondo (Fondo 2 usa la vigencia desde su corte); se quitó el $465 horneado que no seguía la config; override per-fondo sigue disponible · [FIX] Display de retenciones respeta la exención (Fondo 2 exento ya no muestra timbre fiscal con monto); USDT rediseñado: pérdida cambiaria (USD-BCV − USDT) y % en tarjetas, Bs como dato fijo exacto, y edición/mantenimiento de operaciones · [FIX auditoría] Entrada de fechas DD/MM/AAAA independiente del navegador (elimina la inversión día/mes en tarifas y tasas que causaba la distorsión); precio a la Gobernación en General = promedio ponderado por fondo (facturado÷padrón), consistente con el facturado y el chequeo de conciliación · [2A] Módulo Tesorería USDT: registro compra/venta con comisiones (Binance + banca), tenencia real, tasa efectiva, estado de cuenta multimoneda (Bs/USD BCV/referencia USDT) con brecha y Excel · Corte de pago PARAMÉTRICO en la relación de pagos: selector de fecha de corte que toma la tasa BCV de ese día automáticamente · Pagos operacionales nutridos (conceptos: voluntariado, excavadores, logística, bonificación, donación; beneficiario + banco/cuenta + cantidad×tarifa paramétrica) y Excel «Relación de pagos a realizar» (resumen+detalle) profesional para accionistas, por alcance de fondo · Imputación del arrastre del Fondo 1 al pie del estado de cuenta del Fondo 2 («disponible tras imputar arrastre»); categorías de gastos nuevas (Voluntariado, Bonificaciones, Donaciones) para ordenar pagos varios · Retenciones (timbre fiscal 1x1000) PARAMÉTRICAS por fondo con exención: Fondo 2 exento por defecto (Seguros, libre de impuestos); toggle por fondo · [2B-2b·3] Arrastre del déficit del Fondo 1 al Fondo 2 (desglosado: terceros + rentabilidad subordinada) con posición acumulada y prelación; solo visible en el scope del Fondo 2, sin afectar Fondo 1 ni General · [2B-2b·2] Manipulación paramétrica ($50/cuerpo, editable + toggle): compromiso por cuerpos a los 4 crematorios (excluye Vallés del Tuy), entra como pendiente operacional sin duplicar · Fondo 2 con precio a Gobernación $465 por defecto (paramétrico, editable; recalcula todo al cambiar) · [2B-2b·1] Precio a la Gobernación PARAMÉTRICO por fondo (serviciosGobUsd usa el precio del fondo activo; en General suma precio×padrón de cada fondo). Default = precio global → certificado intacto · [2B-2a] Mismo estado de cuenta certificado en 3 alcances (General / Fondo 1 / Fondo 2): los renders se envuelven en el scope del fondo activo sin modificar su lógica. General = data completa = certificado idéntico · [2B-1] Aislación por fondo: infraestructura scope-por-fecha (reutiliza cálculos certificados sin modificarlos), creación automática del Fondo 2 y su estado de cuenta AISLADO (solo data ≥ 09/07); Fondo 1 intacto · bcvHoyRate() blindado: usa la última tasa igual o anterior a hoy, ignora fechas futuras mal cargadas (evita que una tasa mal fechada se tome como «tasa de hoy») · Hero de Rentabilidad/Margen solo en la pantalla Rentabilidad (retirado del Panel Ejecutivo por estética); sin etiqueta «Cobrada»; Resumen del Fondo con etiquetas en orden · [Módulo Fondos por Periodo — Incremento 1, capa aditiva certificada] Liquidación tributaria PARAMÉTRICA POR ABONO: cada abono lleva su entidad/régimen (Funeraria Vallés / Seguros La Fe) y su alícuota de patente propia (Vallés 2% con IVA · Seguros La Fe 1,75% sin IVA); IVA y retenciones ya eran por abono. Infraestructura de tesorería USDT instalada (tasa USDT por día y operaciones de compra/venta bajo llaves nuevas). NADA de esto modifica el estado de cuenta, la rentabilidad ni el cuadre certificados — es solo lectura + datos nuevos. · Cada casilla de la Conciliación lleva una leyenda que explica qué significa (padrón, cremaciones registradas, conciliados, faltan por registrar, no respaldados) · Conciliación de expedientes: el archivo del Core se lee por REEMPLAZO total (lista acumulada completa), no por acumulación — el padrón queda igual al archivo y ya no se sobrecuenta; deduplicación por código dentro del archivo (última fila gana) y botón «Eliminar padrón» que limpia solo el padrón sin tocar cremaciones ni pagos · Consistencia total de cifras a tasa de hoy: traslado pagado = Bs realmente pagados ÷ tasa BCV de hoy (no el teórico) + pendiente estimado por regla de tres; gastos y operacionales de la Estructura de Costos y Cuentas por Pagar a tasa de hoy (no histórica), de modo que coinciden con el estado de cuenta · Resumen del Fondo — Gobernación incluye el traslado incurrido pendiente y cuadra con el estado de cuenta (mismo total pagado y mismo pendiente) · estado de cuenta suma «Total Retenciones» (IVA + ISLR + otras) y «Total Tributos» (patente + IVA Seniat) · Cremaciones a costo BASE puro ($174) sobre el padrón · patente 2% sobre monto a cobrar · sin IVA Seniat en la estructura</b></div>
+<div class="foot">Sistema de control interno · Gobernación del Estado La Guaira — Operador Seguros La Fe, C.A. · Datos almacenados localmente en este equipo. · <b>v9.21 · [UI profesional] Navegación reemplazada por barra lateral (sidebar) vertical agrupada — Resultados · Operación · Tesorería · Control · Sistema — al estilo de los ERP financieros; encabezado institucional en barra superior; en móvil/tablet la barra se colapsa a botón ☰. Cambio puramente visual: ninguna cifra ni lógica alterada (auto-test 17/17) · [Reestructura USDT + Cuentas Gobernación] Nueva pestaña «Movimiento de Fondo USDT» (el USDT sale de Finanzas a su propia acción); el corte USDT se expresa a tasa USDT (compra/venta), no BCV. Nueva pestaña «Cuentas Gobernación La Guaira»: fondos recibidos con la tasa del día de recepción, PVP paramétrico (ajustable en Configuración), control de cremaciones pagadas/pendientes a PVP, y cuentas por cobrar a la Gobernación. Todo lectura, auto-test 17/17 · [USDT capas 2 y 3] Estado de Cuenta del Manejo de USDT en Tesorería: cuadre global venta→pagos (Fondos por venta de USDT = Pagos con fondos USDT) con rubros desplegables (cremaciones, gastos, operacionales) y detalle por pago; Resultado financiero del USDT en la rentabilidad de Fondo 2 y General (operativo − comisiones ± cambiario realizado = neto), nunca en Fondo 1; marca discreta «USDT» en las tablas de pagos/gastos/operacionales. Todo lectura, sin duplicar ni tocar lo certificado (auto-test 17/17) · [USDT capa 1] Casilla «Cancelado con fondos USDT» al registrar pagos (crematorios, gastos, operacionales): marca manual que guarda la trazabilidad de qué pagos se cubrieron con la venta de divisas; no afecta ninguna cifra certificada (auto-test 17/17) · [FIX] Tarjetas de Finanzas (Total/Pagado/Pendiente de gastos, abonos, pagos, operacionales) ahora respetan el fondo activo, consistentes con la tabla (antes mostraban todos los fondos → pendiente «fantasma» en la vista de un fondo) · [FIX] Conciliación muestra el padrón MAESTRO completo (ya no filtrado por fondo); check «Margen por cremación» usa precio promedio ponderado (cuadra) · [CUADRE vs Excel] Patente sobre BASE IMPONIBLE (F1 632.547,41 · F2 770.000); traslado Vallés del Tuy usa el monto REAL de la factura (1.980.871,68), no recálculo a tasa de hoy; cremaciones pagadas 24.801.739,02; todo contrastado con el Excel del cliente · [AUDITORÍA capa 1] Nueva pestaña «Auditoría»: matriz de conciliación automática que verifica integridad entre módulos, fondos y vistas (aditividad, cuadre interno, cuadre entre vistas, fórmulas) con semáforo, Δ y origen del descuadre; exportable a Excel · [PATENTE unificada + desglose] Patente = abono neto del fondo × alícuota del abono (Fondo 2 = 1,75%), MISMA cifra en tributos y estado de cuenta; etiquetas muestran la alícuota real por fondo; panel «Separación por fondo» en el estado de cuenta general (bases de impuestos, pagos efectuados, pendientes) · [AUDITORÍA traslados] Conteos manipulación/traslado basados en cremaciones efectuadas (como el panel): traslado Vallés del Tuy = sus cremaciones × $80+IVA con pagadas/pendientes correctos (elimina el −32); consistencia total F1+F2=General en todas las vistas · [FIX traslados + gráfico] Traslado Vallés del Tuy solo por SUS cremaciones (no los 288); gráfico Uso del fondo reconstruido: retenciones IVA/ISLR, USD junto a Bs, Total erogaciones → Monto del fondo → Saldo disponible, cuadra con estado de cuenta · [MODELO TRASLADOS] Manipulación (N×$50 → Funeraria Vallés Maracay) y Traslado (N×$80+IVA → Organización Vallés del Tuy) como compromisos por N cuerpos a los 4 crematorios, paramétricos, con trazabilidad en Pagos Operacionales; aditivo (F1+F2=General) y auto-test en verde · [CONSISTENCIA] Mecánica de fuente única: cifras no-aditivas (traslados, patente) ahora se calculan en General como suma de fondos → F1+F2=General garantizado; patente por alícuota del abono (Seguros 1,75%); auto-test de consistencia permanente + panel de desglose por fondo desplegable en la vista General · [FIX] Precio a la Gobernación por fondo ahora SIGUE LAS VIGENCIAS de configuración según el período del fondo (Fondo 2 usa la vigencia desde su corte); se quitó el $465 horneado que no seguía la config; override per-fondo sigue disponible · [FIX] Display de retenciones respeta la exención (Fondo 2 exento ya no muestra timbre fiscal con monto); USDT rediseñado: pérdida cambiaria (USD-BCV − USDT) y % en tarjetas, Bs como dato fijo exacto, y edición/mantenimiento de operaciones · [FIX auditoría] Entrada de fechas DD/MM/AAAA independiente del navegador (elimina la inversión día/mes en tarifas y tasas que causaba la distorsión); precio a la Gobernación en General = promedio ponderado por fondo (facturado÷padrón), consistente con el facturado y el chequeo de conciliación · [2A] Módulo Tesorería USDT: registro compra/venta con comisiones (Binance + banca), tenencia real, tasa efectiva, estado de cuenta multimoneda (Bs/USD BCV/referencia USDT) con brecha y Excel · Corte de pago PARAMÉTRICO en la relación de pagos: selector de fecha de corte que toma la tasa BCV de ese día automáticamente · Pagos operacionales nutridos (conceptos: voluntariado, excavadores, logística, bonificación, donación; beneficiario + banco/cuenta + cantidad×tarifa paramétrica) y Excel «Relación de pagos a realizar» (resumen+detalle) profesional para accionistas, por alcance de fondo · Imputación del arrastre del Fondo 1 al pie del estado de cuenta del Fondo 2 («disponible tras imputar arrastre»); categorías de gastos nuevas (Voluntariado, Bonificaciones, Donaciones) para ordenar pagos varios · Retenciones (timbre fiscal 1x1000) PARAMÉTRICAS por fondo con exención: Fondo 2 exento por defecto (Seguros, libre de impuestos); toggle por fondo · [2B-2b·3] Arrastre del déficit del Fondo 1 al Fondo 2 (desglosado: terceros + rentabilidad subordinada) con posición acumulada y prelación; solo visible en el scope del Fondo 2, sin afectar Fondo 1 ni General · [2B-2b·2] Manipulación paramétrica ($50/cuerpo, editable + toggle): compromiso por cuerpos a los 4 crematorios (excluye Vallés del Tuy), entra como pendiente operacional sin duplicar · Fondo 2 con precio a Gobernación $465 por defecto (paramétrico, editable; recalcula todo al cambiar) · [2B-2b·1] Precio a la Gobernación PARAMÉTRICO por fondo (serviciosGobUsd usa el precio del fondo activo; en General suma precio×padrón de cada fondo). Default = precio global → certificado intacto · [2B-2a] Mismo estado de cuenta certificado en 3 alcances (General / Fondo 1 / Fondo 2): los renders se envuelven en el scope del fondo activo sin modificar su lógica. General = data completa = certificado idéntico · [2B-1] Aislación por fondo: infraestructura scope-por-fecha (reutiliza cálculos certificados sin modificarlos), creación automática del Fondo 2 y su estado de cuenta AISLADO (solo data ≥ 09/07); Fondo 1 intacto · bcvHoyRate() blindado: usa la última tasa igual o anterior a hoy, ignora fechas futuras mal cargadas (evita que una tasa mal fechada se tome como «tasa de hoy») · Hero de Rentabilidad/Margen solo en la pantalla Rentabilidad (retirado del Panel Ejecutivo por estética); sin etiqueta «Cobrada»; Resumen del Fondo con etiquetas en orden · [Módulo Fondos por Periodo — Incremento 1, capa aditiva certificada] Liquidación tributaria PARAMÉTRICA POR ABONO: cada abono lleva su entidad/régimen (Funeraria Vallés / Seguros La Fe) y su alícuota de patente propia (Vallés 2% con IVA · Seguros La Fe 1,75% sin IVA); IVA y retenciones ya eran por abono. Infraestructura de tesorería USDT instalada (tasa USDT por día y operaciones de compra/venta bajo llaves nuevas). NADA de esto modifica el estado de cuenta, la rentabilidad ni el cuadre certificados — es solo lectura + datos nuevos. · Cada casilla de la Conciliación lleva una leyenda que explica qué significa (padrón, cremaciones registradas, conciliados, faltan por registrar, no respaldados) · Conciliación de expedientes: el archivo del Core se lee por REEMPLAZO total (lista acumulada completa), no por acumulación — el padrón queda igual al archivo y ya no se sobrecuenta; deduplicación por código dentro del archivo (última fila gana) y botón «Eliminar padrón» que limpia solo el padrón sin tocar cremaciones ni pagos · Consistencia total de cifras a tasa de hoy: traslado pagado = Bs realmente pagados ÷ tasa BCV de hoy (no el teórico) + pendiente estimado por regla de tres; gastos y operacionales de la Estructura de Costos y Cuentas por Pagar a tasa de hoy (no histórica), de modo que coinciden con el estado de cuenta · Resumen del Fondo — Gobernación incluye el traslado incurrido pendiente y cuadra con el estado de cuenta (mismo total pagado y mismo pendiente) · estado de cuenta suma «Total Retenciones» (IVA + ISLR + otras) y «Total Tributos» (patente + IVA Seniat) · Cremaciones a costo BASE puro ($174) sobre el padrón · patente 2% sobre monto a cobrar · sin IVA Seniat en la estructura</b></div>
 
 <!-- Modal Cremación -->
 <div class="modal-bg" id="modalCrem"><div class="modal">
@@ -1133,7 +1189,7 @@ function usdtCorteData(){
 function renderUsdtCorte(){
   var host=document.getElementById('usdtCorteHost');if(!host)return;
   var d=usdtCorteData();
-  var uV=function(bs){return d.bh>0?n2(bs/d.bh):0;};
+  var tasaU=d.ventUsdt>0?n2(d.ventBs/d.ventUsdt):d.bh;var uV=function(bs){return tasaU>0?n2(bs/tasaU):0;};
   var cuadra=Math.abs(d.dif)<0.5, sobra=d.dif>0;
   var estColor=cuadra?'#0D7A4E':(sobra?'#245e94':'#c0433f');
   var estTxt=cuadra?'Cuadra':(sobra?'Sobra':'Falta');
@@ -1143,9 +1199,9 @@ function renderUsdtCorte(){
   var hero='<div style="background:#fff;border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:0 14px 34px -22px rgba(58,29,110,.3);margin-bottom:16px">'+
     '<div style="padding:13px 20px;border-bottom:1px solid var(--line-2);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px"><b style="font-size:14px">Cuadre del corte</b><span style="font-size:11.5px;color:var(--slate)">venta global de USDT → pagos globales</span></div>'+
     '<div style="display:grid;grid-template-columns:1fr auto 1fr;align-items:center">'+
-      '<div style="padding:22px 24px;background:linear-gradient(180deg,#e4f4f2,#fff)"><div style="font-size:10.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--slate)">Fondos por venta de USDT</div><div class="num" style="font-size:26px;font-weight:800;color:#0e9488;margin-top:5px">'+fmtBs(d.ventBs)+'</div><div class="num" style="font-size:12px;color:var(--slate);margin-top:2px">'+fmtNum(d.ventUsdt,2)+' USDT vendidos · '+fmtUsd(uV(d.ventBs))+' BCV</div></div>'+
+      '<div style="padding:22px 24px;background:linear-gradient(180deg,#e4f4f2,#fff)"><div style="font-size:10.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--slate)">Fondos por venta de USDT</div><div class="num" style="font-size:26px;font-weight:800;color:#0e9488;margin-top:5px">'+fmtBs(d.ventBs)+'</div><div class="num" style="font-size:12px;color:var(--slate);margin-top:2px">'+fmtNum(d.ventUsdt,2)+' USDT vendidos · tasa '+fmtNum(tasaU,2)+' Bs/USDT</div></div>'+
       '<div style="width:82px;height:82px;border-radius:50%;background:'+estColor+';color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;margin:0 -8px;z-index:2;box-shadow:0 8px 22px -8px '+estColor+'"><div style="font-size:26px;line-height:1">'+(cuadra?'✓':(sobra?'▲':'▼'))+'</div><div style="font-size:9px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;margin-top:2px">'+estTxt+'</div></div>'+
-      '<div style="padding:22px 24px;background:linear-gradient(180deg,#f3eefb,#fff);text-align:right"><div style="font-size:10.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--slate)">Pagos con fondos USDT</div><div class="num" style="font-size:26px;font-weight:800;color:#4B2D8F;margin-top:5px">'+fmtBs(d.totalPag)+'</div><div class="num" style="font-size:12px;color:var(--slate);margin-top:2px">'+d.rubros.reduce(function(s,r){return s+r.rows.length;},0)+' pagos · '+fmtUsd(uV(d.totalPag))+' BCV</div></div>'+
+      '<div style="padding:22px 24px;background:linear-gradient(180deg,#f3eefb,#fff);text-align:right"><div style="font-size:10.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--slate)">Pagos con fondos USDT</div><div class="num" style="font-size:26px;font-weight:800;color:#4B2D8F;margin-top:5px">'+fmtBs(d.totalPag)+'</div><div class="num" style="font-size:12px;color:var(--slate);margin-top:2px">'+d.rubros.reduce(function(s,r){return s+r.rows.length;},0)+' pagos · '+fmtNum(uV(d.totalPag),2)+' USDT equiv.</div></div>'+
     '</div>'+
     '<div style="padding:10px 20px;background:'+(cuadra?'#e8f5ee':(sobra?'#eaf2f9':'#fcebe9'))+';border-top:1px solid var(--line-2);font-size:12px;color:'+estColor+';font-weight:600">● '+footTxt+'</div>'+
   '</div>';
@@ -1154,11 +1210,54 @@ function renderUsdtCorte(){
     '<div style="padding:13px 18px;background:linear-gradient(180deg,#faf9fd,#fff);border-bottom:1px solid var(--line-2);display:flex;justify-content:space-between;align-items:center"><b style="font-size:13px">Aplicación de la venta a los pagos</b><span style="font-size:10.5px;color:var(--slate)">clic en cada rubro para ver el detalle</span></div>';
   if(!d.rubros.length){acc+='<div class="empty" style="padding:20px"><div class="em-t">Sin pagos marcados con fondos USDT</div>Marque pagos con «Cancelado con fondos USDT» para verlos aquí.</div>';}
   d.rubros.forEach(function(r){
-    var det=r.rows.slice().sort(function(a,b){return b.bs-a.bs;}).map(function(x){return '<tr><td>'+esc(x.nom||'—')+(x.sub?('<div style="font-size:10.5px;color:var(--slate)">'+esc(x.sub)+'</div>'):'')+'</td><td class="r num" style="white-space:nowrap">'+fmtBs(x.bs)+'<div style="font-size:10px;color:var(--slate);font-weight:400">'+fmtUsd(uV(x.bs))+'</div></td></tr>';}).join('');
-    acc+='<details class="urubro" style="border-bottom:1px solid var(--line-2)"><summary style="list-style:none;cursor:pointer;display:grid;grid-template-columns:24px 1fr auto;gap:12px;align-items:center;padding:13px 18px"><span class="uchev" style="width:22px;height:22px;border-radius:6px;background:#f0edf7;color:#4B2D8F;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px">›</span><span style="font-weight:700;font-size:13.5px;display:flex;align-items:center;gap:9px"><span style="width:10px;height:10px;border-radius:3px;background:'+r.color+'"></span>'+esc(r.nom)+' <span style="font-size:11px;color:var(--slate);font-weight:600">· '+r.rows.length+' pago(s)</span></span><span class="num" style="font-weight:800;font-size:14px;text-align:right">'+fmtBs(r.bs)+'<div style="font-size:10.5px;color:var(--slate);font-weight:600">'+fmtUsd(uV(r.bs))+'</div></span></summary><div style="padding:2px 18px 12px 54px;background:#fcfbfe"><table class="data" style="font-size:12.5px"><tbody>'+det+'</tbody></table></div></details>';
+    var det=r.rows.slice().sort(function(a,b){return b.bs-a.bs;}).map(function(x){return '<tr><td>'+esc(x.nom||'—')+(x.sub?('<div style="font-size:10.5px;color:var(--slate)">'+esc(x.sub)+'</div>'):'')+'</td><td class="r num" style="white-space:nowrap">'+fmtBs(x.bs)+'<div style="font-size:10px;color:var(--slate);font-weight:400">'+fmtNum(uV(x.bs),2)+' USDT'+'</div></td></tr>';}).join('');
+    acc+='<details class="urubro" style="border-bottom:1px solid var(--line-2)"><summary style="list-style:none;cursor:pointer;display:grid;grid-template-columns:24px 1fr auto;gap:12px;align-items:center;padding:13px 18px"><span class="uchev" style="width:22px;height:22px;border-radius:6px;background:#f0edf7;color:#4B2D8F;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px">›</span><span style="font-weight:700;font-size:13.5px;display:flex;align-items:center;gap:9px"><span style="width:10px;height:10px;border-radius:3px;background:'+r.color+'"></span>'+esc(r.nom)+' <span style="font-size:11px;color:var(--slate);font-weight:600">· '+r.rows.length+' pago(s)</span></span><span class="num" style="font-weight:800;font-size:14px;text-align:right">'+fmtBs(r.bs)+'<div style="font-size:10.5px;color:var(--slate);font-weight:600">'+fmtNum(uV(r.bs),2)+' USDT'+'</div></span></summary><div style="padding:2px 18px 12px 54px;background:#fcfbfe"><table class="data" style="font-size:12.5px"><tbody>'+det+'</tbody></table></div></details>';
   });
-  acc+='<div style="display:grid;grid-template-columns:24px 1fr auto;gap:12px;align-items:center;padding:14px 18px;background:#f3eefb"><span></span><span style="font-weight:800;color:#231640;font-size:13px">TOTAL PAGADO CON FONDOS USDT</span><span class="num" style="font-weight:800;color:#231640;font-size:15px;text-align:right">'+fmtBs(d.totalPag)+'<div style="font-size:10.5px;color:var(--slate)">'+fmtUsd(uV(d.totalPag))+'</div></span></div></div>';
+  acc+='<div style="display:grid;grid-template-columns:24px 1fr auto;gap:12px;align-items:center;padding:14px 18px;background:#f3eefb"><span></span><span style="font-weight:800;color:#231640;font-size:13px">TOTAL PAGADO CON FONDOS USDT</span><span class="num" style="font-weight:800;color:#231640;font-size:15px;text-align:right">'+fmtBs(d.totalPag)+'<div style="font-size:10.5px;color:var(--slate)">'+fmtNum(uV(d.totalPag),2)+' USDT'+'</div></span></div></div>';
   host.innerHTML='<div class="ec-sec-title" style="font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#4B2D8F;margin:0 0 12px">Estado de cuenta del manejo de USDT</div>'+hero+acc;
+}
+function renderCtasGob(){
+  var host=document.getElementById('ctasgobHost');if(!host)return;
+  var frRows='',totBs=0,totUsd=0;
+  fondos.forEach(function(f){
+    var ings=ingresos.filter(function(x){return fondoDeReg(x,'fecha')===f.id;});
+    if(!ings.length){frRows+='<tr><td>'+esc(f.nombre)+'</td><td colspan="4" style="color:var(--slate)">Sin fondo recibido</td></tr>';return;}
+    ings.forEach(function(x){var b=ingBreak(x);var bs=n2(b.total||0);var tasa=Number(x.tasa)||0;var usd=tasa>0?n2(bs/tasa):0;totBs+=bs;totUsd+=usd;
+      frRows+='<tr><td>'+esc(f.nombre)+'</td><td class="num">'+fmtDate(x.fecha)+'</td><td class="r num">'+fmtBs(bs)+'</td><td class="r num">'+fmtNum(tasa,2)+'</td><td class="r num">'+fmtUsd(usd)+'</td></tr>';});
+  });
+  totBs=n2(totBs);totUsd=n2(totUsd);
+  var pvp=precioGobPromedio();
+  var serviciosUsd=serviciosGobUsd();
+  var cremPag=cremacionesPagadasCount(),cremPend=cremBasePendCount();
+  var cxc=n2(serviciosUsd-totUsd);
+  var pagPvp=n2(cremPag*pvp),pendPvp=n2(cremPend*pvp);
+  var card=function(k,v,s,c){return '<div style="background:#fff;border:1px solid var(--line);border-radius:13px;padding:14px 16px"><div style="font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--slate)">'+k+'</div><div class="num" style="font-size:20px;font-weight:800;margin-top:5px;color:'+(c||'#231640')+'">'+v+'</div><div style="font-size:11px;color:var(--slate);margin-top:2px">'+s+'</div></div>';};
+  var h='';
+  // Bloque A: fondos recibidos
+  h+='<div style="font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#4B2D8F;margin:0 0 12px">Fondos recibidos de la Gobernación</div>';
+  h+='<div class="tablewrap" style="margin-bottom:8px"><table class="data"><thead><tr><th>Fondo</th><th>Fecha de recepción</th><th class="r">Monto Bs.</th><th class="r">Tasa del día</th><th class="r">Equivalente USD</th></tr></thead><tbody>'+frRows+'</tbody><tfoot><tr><td colspan="2" class="r">TOTAL RECIBIDO</td><td class="r num">'+fmtBs(totBs)+'</td><td></td><td class="r num">'+fmtUsd(totUsd)+'</td></tr></tfoot></table></div>';
+  h+='<div style="font-size:11px;color:var(--slate);margin-bottom:22px">Cada fondo se expresa en Bolívares y en su equivalente USD a la tasa del día en que se recibió.</div>';
+  // Bloque B: PVP paramétrico + control cremaciones
+  h+='<div style="font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#4B2D8F;margin:0 0 12px">Precio PVP y control de cremaciones</div>';
+  h+='<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:13px;margin-bottom:8px">'+
+    card('Precio PVP Gobernación',fmtUsd(pvp),'paramétrico · se ajusta en Configuración','#0e9488')+
+    card('Cremaciones pagadas',fmtNum(cremPag,0),'a crematorio · '+fmtUsd(pagPvp)+' a PVP','#0D7A4E')+
+    card('Cremaciones pendientes',fmtNum(cremPend,0),'de pago · '+fmtUsd(pendPvp)+' a PVP','#B07A00')+
+    card('Servicios prestados',fmtUsd(serviciosUsd),'cremaciones realizadas × PVP','#4B2D8F')+
+  '</div>';
+  h+='<div style="font-size:11px;color:var(--slate);margin-bottom:22px">El precio PVP es paramétrico: si el accionista lo cambia en <b>Configuración</b>, todas estas cifras se recalculan automáticamente.</div>';
+  // Bloque C: cuentas por cobrar
+  var cxcColor=cxc>=0?'#B07A00':'#0D7A4E';
+  h+='<div style="background:#fff;border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:0 14px 34px -22px rgba(58,29,110,.3)">'+
+    '<div style="padding:14px 20px;border-bottom:1px solid var(--line-2)"><b style="font-size:14px">Cuentas por cobrar a la Gobernación</b></div>'+
+    '<div style="padding:16px 20px">'+
+      '<div style="display:flex;justify-content:space-between;padding:9px 2px;border-bottom:1px solid var(--line-2)"><span>Servicios prestados (cremaciones realizadas × PVP)</span><span class="num" style="font-weight:700">'+fmtUsd(serviciosUsd)+'</span></div>'+
+      '<div style="display:flex;justify-content:space-between;padding:9px 2px;border-bottom:1px solid var(--line-2)"><span>(−) Fondos recibidos</span><span class="num" style="font-weight:700;color:#0D7A4E">'+fmtUsd(totUsd)+'</span></div>'+
+      '<div style="display:flex;justify-content:space-between;padding:11px 2px;border-top:2px solid #d9d3ec;margin-top:3px"><span style="font-weight:800;font-size:15px">= '+(cxc>=0?'Saldo por cobrar':'Fondos recibidos por adelantado')+'</span><span class="num" style="font-weight:800;font-size:17px;color:'+cxcColor+'">'+fmtUsd(Math.abs(cxc))+'</span></div>'+
+    '</div>'+
+    '<div style="padding:10px 20px;background:#f7f6fb;border-top:1px solid var(--line-2);font-size:11.5px;color:var(--slate)">'+(cxc>=0?'La Gobernación debe este monto por servicios ya prestados aún no cubiertos por los fondos recibidos.':'Los fondos recibidos superan los servicios prestados: hay un adelanto a favor del contrato.')+'</div>'+
+  '</div>';
+  host.innerHTML=h;
 }
 function usdtResultadoFinanciero(){
   var bh=bcvHoyRate()||Number(cfg.tasa)||1;
@@ -1374,12 +1473,16 @@ function tarifaUsd(c){return tarifaBreak(c).total;}
 function entClass(e){return e==='Entregado'?'ok':(e==='En proceso'?'part':'warn');}
 
 /* ===== Navegación ===== */
+function toggleSide(open){var sb=document.getElementById("sidebar"),sc=document.getElementById("sideScrim");if(!sb)return;if(open){sb.classList.add("open");if(sc)sc.classList.add("show");}else{sb.classList.remove("open");if(sc)sc.classList.remove("show");}}
 function go(view){
   _lastOpView=view;
-  document.querySelectorAll('nav.tabs button').forEach(function(b){b.classList.toggle('active',b.dataset.view===view);});
+  document.querySelectorAll('[data-view]').forEach(function(b){b.classList.toggle('active',b.dataset.view===view);});
   document.querySelectorAll('section.view').forEach(function(s){s.classList.toggle('active',s.id==='v-'+view);});
+  try{if(window.innerWidth<=900)toggleSide(false);}catch(e){}
   if(view==='dashboard')renderDashboard();
   else if(view==='auditoria')renderMatriz();
+  else if(view==='usdtmov')renderUsdt();
+  else if(view==='ctasgob')renderCtasGob();
   if(view==='finanzas')finSub(_finSub);
   if(view==='reportes'){buildReports();buildPagoTesoreria();}
   if(view==='conciliacion')renderConciliacion();
@@ -1396,7 +1499,6 @@ function finSub(which){_finSub=which;
   else if(which==='oper')renderOper();
   else if(which==='gastos')renderGasto();
   else if(which==='fondos')renderFondos();
-  else if(which==='usdt')renderUsdt();
   finSummary(which);
 }
 function finSummaryCard(items){
@@ -1466,7 +1568,7 @@ function renderAbonos(){
   host.innerHTML='<div class="panel"><div class="ph"><h3>Ingresos recibidos (abonos de la Gobernación)</h3><span style="color:var(--slate);font-size:11.5px">Bs → USD por la tasa BCV del día del abono</span></div><div class="pb" style="padding:0"><div class="tablewrap" style="border:none;box-shadow:none">'+ab+'</div></div></div>';
 }
 function finRefresh(){if(document.getElementById('finAbonosHost'))renderAbonos();if(document.getElementById('rentabilidadHost'))renderRentabilidad();}
-document.querySelectorAll('nav.tabs button').forEach(function(b){b.addEventListener('click',function(){go(b.dataset.view);});});
+document.querySelectorAll('[data-view]').forEach(function(b){b.addEventListener('click',function(){go(b.dataset.view);});});
 
 /* ===== Selects ===== */
 function fillSelect(el,arr,allLabel){var h=allLabel!=null?'<option value="">'+allLabel+'</option>':'';arr.forEach(function(x){h+='<option value="'+esc(x)+'">'+esc(x)+'</option>';});el.innerHTML=h;}
