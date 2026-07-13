@@ -396,7 +396,7 @@ table.flujo tr.saldo td{border-top:2px solid var(--tp);font-weight:800}
       <div class="side-group">Sistema</div>
       <button data-view="config">Configuración</button>
     </nav>
-    <div class="side-foot">Control de Cremaciones · v9.29</div>
+    <div class="side-foot">Control de Cremaciones · v9.30</div>
   </aside>
   <div class="sidebar-scrim" id="sideScrim" onclick="toggleSide(false)"></div>
   <div class="mainarea">
@@ -1240,11 +1240,12 @@ function renderCtasGob(){
     return '<tr><td style="font-weight:700">'+esc(fd.nombre)+'</td><td class="r num">'+fmtUsd(fd.pvp)+'</td><td class="r num">'+fmtNum(fd.casos.length,0)+'</td><td class="r num">'+fmtUsd(fd.usado)+'</td><td class="r num">'+fmtUsd(fd.fu)+'</td><td class="r num" style="color:#0e9488;font-weight:700">'+fmtUsd(fd.saldo)+'</td></tr>';
   }).join('');
   totFondos=n2(totFondos);totCancel=n2(totCancel);totSaldo=n2(totSaldo);totCasos=Math.round(totCasos);
-  var prestados=0;fondos.forEach(function(f){prestados+=precioGobDe(f.id)*_conFondo(f.id,padronCount);});prestados=n2(prestados);
-  var pendVal=n2(prestados-totCancel);
   var padTot=padron.length;
   var pendCount=Math.max(0,padTot-totCasos);
-  var cxc=n2(prestados-totFondos);
+  var pvpLast=n2(precioGobDe(fondos[fondos.length-1].id));
+  var pendVal=n2(pendCount*pvpLast);
+  var prestados=n2(totCancel+pendVal);
+  var cxc=pendVal;
   var card=function(k,v,s,c){return '<div style="background:#fff;border:1px solid var(--line);border-radius:13px;padding:14px 16px"><div style="font-size:10.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--slate)">'+k+'</div><div class="num" style="font-size:19px;font-weight:800;margin-top:5px;color:'+(c||'#231640')+'">'+v+'</div><div style="font-size:11px;color:var(--slate);margin-top:2px">'+s+'</div></div>';};
   var h='<div style="font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#4B2D8F;margin:0 0 12px">Servicios pagados por fondo (en dólares)</div>';
   h+='<div class="tablewrap" style="margin-bottom:8px"><table class="data"><thead><tr><th>Fondo</th><th class="r">PVP por caso</th><th class="r">Casos atendidos</th><th class="r">Servicios cancelados</th><th class="r">Fondos recibidos</th><th class="r">Saldo a favor</th></tr></thead><tbody>'+frows+'</tbody>'+
@@ -1252,19 +1253,21 @@ function renderCtasGob(){
   h+='<div style="font-size:11.5px;color:var(--slate);margin-bottom:22px">Servicios cancelados ('+fmtUsd(totCancel)+') + Saldo a favor ('+fmtUsd(totSaldo)+') = Fondos recibidos ('+fmtUsd(totFondos)+'). Cada fondo paga solo cremaciones completas a su PVP; el resto queda como saldo a favor (sin sobregiro).</div>';
   h+='<div style="font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#4B2D8F;margin:0 0 12px">Resumen de servicios (según padrón)</div>';
   h+='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:13px;margin-bottom:10px">'+
-    card('Total servicios prestados',fmtUsd(prestados),fmtNum(padTot,0)+' expedientes del padrón × PVP','#4B2D8F')+
+    card('Total servicios prestados',fmtUsd(prestados),fmtNum(padTot,0)+' servicios del padrón ('+fmtNum(totCasos,0)+' cancelados + '+fmtNum(pendCount,0)+' pendientes)','#4B2D8F')+
     card('Servicios cancelados por la Gobernación',fmtUsd(totCancel),fmtNum(totCasos,0)+' casos pagados con los fondos','#0D7A4E')+
-    card('Servicios pendientes por pagar',fmtUsd(pendVal),fmtNum(pendCount,0)+' servicios aún sin fondo','#B07A00')+
+    card('Servicios pendientes por pagar',fmtUsd(pendVal),fmtNum(pendCount,0)+' servicios × '+fmtUsd(pvpLast),'#B07A00')+
   '</div>';
   h+='<div style="font-size:11.5px;color:var(--slate);margin-bottom:22px">Servicios cancelados + Servicios pendientes = Total servicios prestados. Los pendientes esperan el próximo fondo de la Gobernación.</div>';
-  var cxcColor=cxc>=0?'#B07A00':'#0D7A4E';
+  var cxcColor='#B07A00';
   h+='<div style="background:#fff;border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:0 14px 34px -22px rgba(58,29,110,.3)">'+
-    '<div style="padding:14px 20px;border-bottom:1px solid var(--line-2)"><b style="font-size:14px">Cuentas por cobrar a la Gobernación</b></div>'+
+    '<div style="padding:14px 20px;border-bottom:1px solid var(--line-2)"><b style="font-size:14px">Resumen de fondos</b></div>'+
     '<div style="padding:16px 20px">'+
-      '<div style="display:flex;justify-content:space-between;padding:9px 2px;border-bottom:1px solid var(--line-2)"><span>Total servicios prestados (según padrón)</span><span class="num" style="font-weight:700">'+fmtUsd(prestados)+'</span></div>'+
-      '<div style="display:flex;justify-content:space-between;padding:9px 2px;border-bottom:1px solid var(--line-2)"><span>(−) Fondos recibidos de la Gobernación</span><span class="num" style="font-weight:700;color:#0D7A4E">'+fmtUsd(totFondos)+'</span></div>'+
-      '<div style="display:flex;justify-content:space-between;padding:11px 2px;border-top:2px solid #d9d3ec;margin-top:3px"><span style="font-weight:800;font-size:15px">= '+(cxc>=0?'Saldo por cobrar':'Fondos por adelantado')+'</span><span class="num" style="font-weight:800;font-size:17px;color:'+cxcColor+'">'+fmtUsd(Math.abs(cxc))+'</span></div>'+
-    '</div></div>';
+      '<div style="display:flex;justify-content:space-between;padding:9px 2px;border-bottom:1px solid var(--line-2)"><span>Total servicios prestados</span><span class="num" style="font-weight:700">'+fmtUsd(prestados)+'</span></div>'+
+      '<div style="display:flex;justify-content:space-between;padding:9px 2px;border-bottom:1px solid var(--line-2)"><span>(−) Servicios cancelados por la Gobernación</span><span class="num" style="font-weight:700;color:#0D7A4E">'+fmtUsd(totCancel)+'</span></div>'+
+      '<div style="display:flex;justify-content:space-between;padding:11px 2px;border-top:2px solid #d9d3ec;margin-top:3px"><span style="font-weight:800;font-size:15px">= Saldo por pagar</span><span class="num" style="font-weight:800;font-size:17px;color:'+cxcColor+'">'+fmtUsd(pendVal)+'</span></div>'+
+    '</div>'+
+    '<div style="padding:10px 20px;background:#f7f6fb;border-top:1px solid var(--line-2);font-size:11.5px;color:var(--slate)">El saldo por pagar equivale a los '+fmtNum(pendCount,0)+' servicios pendientes × '+fmtUsd(pvpLast)+' que la Gobernación aún debe cancelar.</div>'+
+  '</div>';
   host.innerHTML=nav+h;
 }
 function ctasSub(which){window._ctasSub=which;renderCtasGob();}
