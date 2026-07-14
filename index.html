@@ -396,7 +396,7 @@ table.flujo tr.saldo td{border-top:2px solid var(--tp);font-weight:800}
       <div class="side-group">Sistema</div>
       <button data-view="config">Configuración</button>
     </nav>
-    <div class="side-foot">Control de Cremaciones · v9.39</div>
+    <div class="side-foot">Control de Cremaciones · v9.40</div>
   </aside>
   <div class="sidebar-scrim" id="sideScrim" onclick="toggleSide(false)"></div>
   <div class="mainarea">
@@ -2689,7 +2689,7 @@ function renderRentabilidad(){
   var _rb=document.getElementById('rentBcv');if(_rb)_rb.textContent=fmtNum(bcvHoyRate(),4);
   var t=rentTotals(),by=rentByCrem();
   var sec1='';
-  var bh=t.bcvHoy;
+  var bhHist=(function(){var b=0,u=0;ingresos.forEach(function(x){var tt=ingBreak(x).total,r=bcvRate(x.fecha)||0;b+=tt;if(r>0)u+=tt/r;});return u>0?n2(b/u):(t.bcvHoy||1);})();var bh=bhHist;
   var opR=opTotals(),gtR=gastosTotals();
   var totalPagosBs=n2(t.costoBs+opR.pagBs+gtR.pagBs);
   var totalPagosUsd=n2(t.costo+opR.pagUsd+gtR.pagUsd);
@@ -2709,7 +2709,7 @@ function renderRentabilidad(){
   var supF=(sim&&t.fSup>0)?' <span style="color:#8a5e00;font-size:11px">(+ '+fmtUsd(t.fSup)+' sup.)</span>':'';
   var supG=(sim&&t.gSup>0)?' <span style="color:#8a5e00;font-size:11px">(+ '+fmtUsd(t.gSup)+' sup.)</span>':'';
   var usdu=function(u){return '<div style="font-size:10.5px;color:var(--slate);font-weight:400">'+fmtUsd(u)+'</div>';};
-  var bh2=t.bcvHoy;
+  var bh2=bhHist;
   var eFondoBs=n2(t.fondoBs+(sim?t.fSup*bh2:0));
   var opE=opTotals(), gtE=gastosTotals();
   var pagCremB=pagosCremBs();
