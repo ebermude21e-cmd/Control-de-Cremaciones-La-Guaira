@@ -396,7 +396,7 @@ table.flujo tr.saldo td{border-top:2px solid var(--tp);font-weight:800}
       <div class="side-group">Sistema</div>
       <button data-view="config">Configuración</button>
     </nav>
-    <div class="side-foot">Control de Cremaciones · v9.44</div>
+    <div class="side-foot">Control de Cremaciones · v9.46</div>
   </aside>
   <div class="sidebar-scrim" id="sideScrim" onclick="toggleSide(false)"></div>
   <div class="mainarea">
@@ -1291,7 +1291,7 @@ function renderCtasGob(){
     '<button class="btn'+(_sub==='estado'?' gold':'')+'" onclick="ctasSub(\'estado\')">Estado de cuenta</button>'+
     '<button class="btn'+(_sub==='relacion'?' gold':'')+'" onclick="ctasSub(\'relacion\')">Relación de servicios y fondos</button>'+
   '</div>';
-  if(_sub==='relacion'){host.innerHTML=nav+'<div style="display:flex;justify-content:flex-end;margin-bottom:14px"><button class="btn gold" onclick="exportRelacionExcel()">⬇ Exportar relación (Excel)</button></div>'+ctasRelacionHtml();return;}
+  if(_sub==='relacion'){host.innerHTML=nav+'<div style="display:flex;justify-content:flex-end;margin-bottom:14px"><button class="btn gold" onclick="exportRelacionExcel()">⬇ Exportar relación (Excel)</button><button class="btn ghost sm" onclick="descargarRelacionGob()">🖨 Imprimir relación (PDF)</button></div>'+ctasRelacionHtml();return;}
   var d=ctasRelacionData();
   var totFondos=0,totCancel=0,totCasos=0,totSaldo=0;
   var frows=d.funds.map(function(fd){
@@ -1522,6 +1522,41 @@ function descargarEstadoGob(){
   '<div class="foot">Documento generado por el sistema Control de Asistencia Funeraria Integral La Guaira · Seguros La Fe, C.A.</div>'+
   '</body></html>';
   try{var blob=new Blob([doc],{type:'text/html;charset=utf-8'});downloadBlob(blob,'Estado_Cuenta_Gobernacion_'+today()+'.html');toast('Estado de cuenta descargado — ábralo e imprima o guarde como PDF');}catch(e){toast('No se pudo descargar');}
+}
+function descargarRelacionGob(){
+  var d=ctasRelacionData();
+  var rango=d.rango?(fmtDate(d.rango[0])+' \u2014 '+fmtDate(d.rango[1])):'\u2014';
+  var casoRows=function(casos){return casos.map(function(c,i){return '<tr><td class="c num">'+(i+1)+'</td><td class="num">'+(c.fecha?fmtDate(c.fecha):'\u2014')+'</td><td class="num">'+esc(c.exp)+'</td><td>'+esc(c.nombre||'\u2014')+'</td><td class="num">'+esc(c.ced||'\u2014')+'</td></tr>';}).join('');};
+  var miniHead='<div class="minihead"><img src="'+LAFE_LOGO+'"><div><div class="mh-t">Rep\u00fablica Bolivariana de Venezuela \u00b7 Gobernaci\u00f3n del Estado La Guaira</div><div class="mh-s">Relaci\u00f3n de Asistencia Funeraria Integral \u00b7 Operador: Seguros La Fe, C.A.</div></div><div class="mh-d">Emitido<br><b>'+fmtDate(today())+'</b></div></div>';
+  var thead='<thead><tr><th class="c">#</th><th>Fecha recepci\u00f3n</th><th>Expediente</th><th>Beneficiario (fallecido)</th><th>C\u00e9dula</th></tr></thead>';
+  var secciones='';
+  d.funds.forEach(function(fd,idx){
+    secciones+='<section class="page">'+miniHead+
+      '<div class="sect">Relaci\u00f3n de Asistencia Funeraria Integral con cargo al Fondo N\u00b0 '+(idx+1)+'</div>'+
+      '<div class="fmeta">PVP por servicio: <b>'+fmtUsd(fd.pvp)+'</b> &nbsp;\u00b7&nbsp; Servicios cubiertos: <b>'+fmtNum(fd.casos.length,0)+'</b> &nbsp;\u00b7&nbsp; Fondo recibido: <b>'+fmtUsd(fd.fu)+'</b> &nbsp;\u00b7&nbsp; Servicios cancelados: <b>'+fmtUsd(fd.usado)+'</b> &nbsp;\u00b7&nbsp; Saldo a favor: <b style="color:#0e9488">'+fmtUsd(fd.saldo)+'</b></div>'+
+      '<table>'+thead+'<tbody>'+(fd.casos.length?casoRows(fd.casos):'<tr><td colspan="5" style="text-align:center;padding:16px;color:#888">Sin servicios asignados a este fondo</td></tr>')+'</tbody></table>'+
+      '</section>';
+  });
+  secciones+='<section class="page last">'+miniHead+
+    '<div class="sect">Corte de Servicios Pendientes por Reportar</div>'+
+    '<div class="fmeta">Servicios pendientes (padr\u00f3n \u2212 reportados): <b>'+fmtNum(d.restCasos.length,0)+'</b></div>'+
+    '<table>'+thead+'<tbody>'+(d.restCasos.length?casoRows(d.restCasos):'<tr><td colspan="5" style="text-align:center;padding:16px;color:#888">Sin servicios pendientes</td></tr>')+'</tbody></table>'+
+    '</section>';
+  var st='<style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,Helvetica,sans-serif;color:#231640;padding:24px 30px;background:#fff}'+
+  '.minihead{display:flex;align-items:center;gap:14px;border-bottom:3px solid #3A1D6E;padding-bottom:12px;margin-bottom:8px}.minihead img{height:64px}.minihead .mh-t{font-size:10.5px;font-weight:bold;color:#666;letter-spacing:.4px}.minihead .mh-s{font-size:14px;color:#3A1D6E;font-weight:bold;margin-top:2px}.minihead .mh-d{margin-left:auto;text-align:right;font-size:10px;color:#777}'+
+  '.sect{font-size:13px;font-weight:bold;letter-spacing:.5px;color:#4B2D8F;margin:16px 0 6px}.fmeta{font-size:11px;color:#555;margin-bottom:10px;line-height:1.6}'+
+  'table{width:100%;border-collapse:collapse;font-size:11.5px}th{background:#3A1D6E;color:#fff;padding:7px 10px;text-align:left;font-size:10.5px}th.c,td.c{text-align:center}td{padding:6px 10px;border-bottom:1px solid #e7e4f0}td.num{font-variant-numeric:tabular-nums}tr:nth-child(even) td{background:#faf9fd}'+
+  '.foot{margin-top:16px;font-size:9.5px;color:#888;text-align:center;border-top:1px solid #e7e4f0;padding-top:8px}'+
+  '.bar{text-align:center;margin-bottom:14px}.bar button{font-size:13px;font-weight:bold;background:#4B2D8F;color:#fff;border:none;border-radius:8px;padding:10px 22px;cursor:pointer}'+
+  '.page{page-break-after:always}.page.last{page-break-after:auto}'+
+  '@media print{body{padding:8px 12px}.noprint{display:none}.page{page-break-after:always}}</style>';
+  var doc='<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><title>Relaci\u00f3n de Asistencia Funeraria Integral \u00b7 Gobernaci\u00f3n La Guaira</title>'+st+'</head><body>'+
+  '<div class="bar noprint"><button onclick="window.print()">Imprimir / Guardar como PDF</button></div>'+
+  '<div class="fmeta noprint" style="text-align:center;margin-bottom:6px">Rango de fechas de recepci\u00f3n: <b>'+rango+'</b></div>'+
+  secciones+
+  '<div class="foot">Documento generado por el sistema Control de Asistencia Funeraria Integral La Guaira \u00b7 Seguros La Fe, C.A.</div>'+
+  '</body></html>';
+  try{var blob=new Blob([doc],{type:'text/html;charset=utf-8'});downloadBlob(blob,'Relacion_Asistencia_Funeraria_Integral_'+today()+'.html');toast('Relaci\u00f3n descargada \u2014 \u00e1brala e imprima o guarde como PDF');}catch(e){toast('No se pudo descargar');}
 }
 function exportRelacionExcel(){
   var d=ctasRelacionData();
@@ -2363,7 +2398,7 @@ function commitGastoImport(){
   var P=_gastoPreview;if(!P){closeModal('modalImportGasto');return;}var totalUpd=Object.keys(P.updates).length;
   if(!P.nuevos.length&&!totalUpd){closeModal('modalImportGasto');return;}
   P.nuevasCat.forEach(function(c){if(cats.indexOf(c)<0)cats.push(c);});if(P.nuevasCat.length)save(K.cats,cats);
-  Object.keys(P.updates).forEach(function(id){var i=gastos.findIndex(function(x){return x.id===id;});if(i>=0)Object.assign(gastos[i],P.updates[id]);});
+  Object.keys(P.updates).forEach(function(id){var i=gastos.findIndex(function(x){return x.id===id;});if(i>=0)Object.assign(gastos[i],P.updates[id]);else gastos.push(Object.assign({},P.updates[id],{id:uid()}));});
   gastos=gastos.concat(P.nuevos);save(K.gasto,gastos);_gastoPreview=null;
   refreshSelects();renderChips();renderGasto();renderDashboard();closeModal('modalImportGasto');
   toast(P.nuevos.length+' nuevos · '+totalUpd+' actualizados');
