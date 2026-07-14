@@ -396,7 +396,7 @@ table.flujo tr.saldo td{border-top:2px solid var(--tp);font-weight:800}
       <div class="side-group">Sistema</div>
       <button data-view="config">Configuración</button>
     </nav>
-    <div class="side-foot">Control de Cremaciones · v9.51</div>
+    <div class="side-foot">Control de Cremaciones · v9.52</div>
   </aside>
   <div class="sidebar-scrim" id="sideScrim" onclick="toggleSide(false)"></div>
   <div class="mainarea">
@@ -1321,6 +1321,7 @@ function renderCtasGob(){
   var pvpLast=n2(precioGobDe(fondos[fondos.length-1].id));
   var pendVal=n2(pendCount*pvpLast);
   var prestados=n2(totCancel+pendVal);
+  var pendTasa=(d.funds.length?Number(d.funds[d.funds.length-1].tasa)||0:0);var pendValBs=n2(pendVal*pendTasa);var prestadosBs=n2(totCancelBs+pendValBs);
   var cxc=pendVal;
   var card=function(k,v,s,c){return '<div style="background:#fff;border:1px solid var(--line);border-radius:13px;padding:14px 16px"><div style="font-size:10.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--slate)">'+k+'</div><div class="num" style="font-size:19px;font-weight:800;margin-top:5px;color:'+(c||'#231640')+'">'+v+'</div><div style="font-size:11px;color:var(--slate);margin-top:2px">'+s+'</div></div>';};
   var h='<div style="font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#4B2D8F;margin:0 0 12px">Servicios pagados por fondo</div>';
@@ -1502,13 +1503,14 @@ function generarReciboFondo(id){
 }
 function descargarEstadoGob(){
   var d=ctasRelacionData();
-  var totFondos=0,totCancel=0,totCasos=0,totSaldo=0;
-  d.funds.forEach(function(fd){totFondos+=fd.fu;totCancel+=fd.usado;totCasos+=fd.casos.length;totSaldo+=fd.saldo;});
+  var totFondos=0,totCancel=0,totCasos=0,totSaldo=0,totFondosBs=0,totCancelBs=0,totSaldoBs=0;
+  d.funds.forEach(function(fd){var tr=Number(fd.tasa)||0;totFondos+=fd.fu;totCancel+=fd.usado;totCasos+=fd.casos.length;totSaldo+=fd.saldo;totFondosBs+=fd.fu*tr;totCancelBs+=fd.usado*tr;totSaldoBs+=fd.saldo*tr;});
   totFondos=n2(totFondos);totCancel=n2(totCancel);totSaldo=n2(totSaldo);totCasos=Math.round(totCasos);
   var padTot=padron.length,pendCount=Math.max(0,padTot-totCasos);
   var pvpLast=n2(precioGobDe(fondos[fondos.length-1].id));
   var pendVal=n2(pendCount*pvpLast),prestados=n2(totCancel+pendVal),netoPend=n2(pendVal-totSaldo);
-  var frows=d.funds.map(function(fd){return '<tr><td style="font-weight:700">'+esc(fd.nombre)+'</td><td class="r">'+fmtUsd(fd.pvp)+'</td><td class="r">'+fmtNum(fd.casos.length,0)+'</td><td class="r">'+fmtUsd(fd.usado)+'</td><td class="r">'+fmtUsd(fd.fu)+'</td><td class="r" style="color:#0e9488;font-weight:700">'+fmtUsd(fd.saldo)+'</td></tr>';}).join('');
+  var pendTasa=(d.funds.length?Number(d.funds[d.funds.length-1].tasa)||0:0);var pendValBs=n2(pendVal*pendTasa);var prestadosBs=n2(totCancelBs+pendValBs);
+  var frows=d.funds.map(function(fd){var tr=Number(fd.tasa)||0;var bsu=function(u,col){return '<td class="r"'+(col?' style="color:'+col+'"':'')+'><div>'+fmtBs(n2(u*tr))+'</div><div style="font-size:9px;color:#888">$'+fmtNum(u,2)+'</div></td>';};return '<tr><td style="font-weight:700">'+esc(fd.nombre)+'<div style="font-size:9px;color:#888;font-weight:400">BCV '+fmtNum(tr,4)+'</div></td>'+bsu(fd.pvp)+'<td class="r">'+fmtNum(fd.casos.length,0)+'</td>'+bsu(fd.usado)+bsu(fd.fu)+bsu(fd.saldo,'#0e9488')+'</tr>';}).join('');
   var kpi=function(k,v,c){return '<div class="kpi"><div class="k">'+k+'</div><div class="v" style="color:'+c+'">'+v+'</div></div>';};
   var rrow=function(l,v,c,bold){return '<tr class="'+(bold?'rbold':'')+'"><td>'+l+'</td><td class="r" style="color:'+(c||'#231640')+'">'+v+'</td></tr>';};
   var doc='<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><title>Estado de Cuenta · Gobernación La Guaira</title>'+
@@ -1525,16 +1527,16 @@ function descargarEstadoGob(){
   '<div class="head"><img src="'+LAFE_LOGO+'"><div><div class="eyebrow">Gobernación del Estado La Guaira</div><h1>Administración de Fondos para Gestión de Asistencia Funeraria Integral</h1><div class="sub">Estado de Cuenta · Operador: Seguros La Fe, C.A. · Emitido: '+fmtDate(today())+'</div></div></div>'+
   '<div class="sect">Servicios pagados por fondo</div>'+
   '<table><thead><tr><th>Fondo</th><th class="r">PVP por caso</th><th class="r">Casos atendidos</th><th class="r">Servicios cancelados</th><th class="r">Fondos recibidos</th><th class="r">Saldo a favor</th></tr></thead><tbody>'+frows+'</tbody>'+
-  '<tfoot><tr><td class="r">TOTAL</td><td></td><td class="r">'+fmtNum(totCasos,0)+'</td><td class="r">'+fmtUsd(totCancel)+'</td><td class="r">'+fmtUsd(totFondos)+'</td><td class="r" style="color:#0e9488">'+fmtUsd(totSaldo)+'</td></tr></tfoot></table>'+
+  '<tfoot><tr><td class="r">TOTAL</td><td></td><td class="r">'+fmtNum(totCasos,0)+'</td>'+'<td class="r"><div>'+fmtBs(totCancelBs)+'</div><div style="font-size:9px;color:#888">$'+fmtNum(totCancel,2)+'</div></td>'+'<td class="r"><div>'+fmtBs(totFondosBs)+'</div><div style="font-size:9px;color:#888">$'+fmtNum(totFondos,2)+'</div></td>'+'<td class="r" style="color:#0e9488"><div>'+fmtBs(totSaldoBs)+'</div><div style="font-size:9px;color:#0e9488">$'+fmtNum(totSaldo,2)+'</div></td></tr></tfoot></table>'+
   '<div class="sect">Resumen de servicios (según padrón)</div>'+
-  '<div class="kpis">'+kpi('Total servicios prestados',fmtUsd(prestados),'#4B2D8F')+kpi('Servicios cancelados por la Gobernación',fmtUsd(totCancel),'#0D7A4E')+kpi('Servicios pendientes por pagar',fmtUsd(pendVal),'#B07A00')+'</div>'+
+  '<div class="kpis">'+kpi('Total servicios prestados','<div>'+fmtBs(prestadosBs)+'</div><div style="font-size:11px;color:#888;font-weight:400">$'+fmtNum(prestados,2)+'</div>','#4B2D8F')+kpi('Servicios cancelados por la Gobernación','<div>'+fmtBs(totCancelBs)+'</div><div style="font-size:11px;color:#888;font-weight:400">$'+fmtNum(totCancel,2)+'</div>','#0D7A4E')+kpi('Servicios pendientes por pagar','<div>'+fmtBs(pendValBs)+'</div><div style="font-size:11px;color:#888;font-weight:400">$'+fmtNum(pendVal,2)+'</div>','#B07A00')+'</div>'+
   '<div class="sect">Resumen de fondos</div>'+
   '<div class="resumen"><div class="rh">Resumen de fondos</div><table>'+
-    rrow('Total servicios prestados',fmtUsd(prestados))+
-    rrow('(−) Servicios cancelados por la Gobernación',fmtUsd(totCancel),'#0D7A4E')+
-    rrow('= Servicios pendientes por pagar',fmtUsd(pendVal),'#B07A00',true)+
-    rrow('(−) Saldo a favor del fondo',fmtUsd(totSaldo),'#0e9488')+
-    rrow('= Servicios pendientes por pagar (neto)',fmtUsd(netoPend),'#9d2f2c',true)+
+    rrow('Total servicios prestados','<div>'+fmtBs(prestadosBs)+'</div><div style="font-size:9px;color:#888;font-weight:400">$'+fmtNum(prestados,2)+'</div>')+
+    rrow('(−) Servicios cancelados por la Gobernación','<div>'+fmtBs(totCancelBs)+'</div><div style="font-size:9px;color:#888;font-weight:400">$'+fmtNum(totCancel,2)+'</div>','#0D7A4E')+
+    rrow('= Servicios pendientes por pagar','<div>'+fmtBs(pendValBs)+'</div><div style="font-size:9px;color:#888;font-weight:400">$'+fmtNum(pendVal,2)+'</div>','#B07A00',true)+
+    rrow('(−) Saldo a favor del fondo','<div>'+fmtBs(totSaldoBs)+'</div><div style="font-size:9px;color:#888;font-weight:400">$'+fmtNum(totSaldo,2)+'</div>','#0e9488')+
+    rrow('= Servicios pendientes por pagar (neto)','<div>'+fmtBs(n2(pendValBs-totSaldoBs))+'</div><div style="font-size:9px;color:#888;font-weight:400">$'+fmtNum(netoPend,2)+'</div>','#9d2f2c',true)+
   '</table></div>'+
   '<div class="foot">Documento generado por el sistema Control de Asistencia Funeraria Integral La Guaira · Seguros La Fe, C.A.</div>'+
   '</body></html>';
@@ -2892,7 +2894,7 @@ function renderRentabilidad(){
   totRetIva=n2(totRetIva);totRetIslr=n2(totRetIslr);fondoBruto=n2(fondoBruto);
   var _cremUsdFix=n2((_spEC.cremUsd||0)+(segCremB-(_spEC.cremBs||0))/bh);
   var _trasUsdFix=n2((_spEC.trasUsd||0)+(segTrasB-(_spEC.trasBs||0))/bh);
-  var erogItems=[{l:'Retención IVA (abono)',v:totRetIva,c:'#9d6b2a'},{l:'Retención ISLR (abono)',v:totRetIslr,c:'#8a5f2a'},{l:'Timbre fiscal (1×1000)',v:retDonB,c:'#c98a1e'},{l:'Patente municipal',v:patB,c:'#c9781e'},{l:'IVA Seniat',v:ivaSB,c:'#b5762a'},{l:'Cremaciones (base)',v:segCremB,c:'#c0433f',usd:_cremUsdFix},{l:'Traslados (Org. Vallés del Tuy)',v:segTrasB,c:'#a13c38',usd:_trasUsdFix},{l:'Gastos de logística',v:segGastB,c:'#B07A00',usd:n2((gtE.pagUsd||0)+(gtE.pendUsd||0))},{l:'Operacionales (manipulación, etc.)',v:segOperB,c:'#7a5cc0'}].filter(function(x){return x.v>0.005;});
+  var erogItems=[{l:'Retención IVA (abono)',v:totRetIva,c:'#9d6b2a'},{l:'Retención ISLR (abono)',v:totRetIslr,c:'#8a5f2a'},{l:'Timbre fiscal (1×1000)',v:retDonB,c:'#c98a1e'},{l:'Patente municipal',v:patB,c:'#c9781e'},{l:'IVA Seniat',v:ivaSB,c:'#b5762a'},{l:'Cremaciones (base)',v:segCremB,c:'#c0433f',usd:_cremUsdFix},{l:'Traslados (Org. Vallés del Tuy)',v:segTrasB,c:'#a13c38',usd:_trasUsdFix},{l:'Gastos de logística',v:segGastB,c:'#B07A00',usd:n2((gtE.pagUsd||0)+(gtE.pendUsd||0))},{l:'Operacionales (manipulación, etc.)',v:segOperB,c:'#7a5cc0',usd:n2((opE.pagUsd||0)-(opE.trPagUsd||0)+(opE.pendUsd||0)-(opE.trPendUsd||0))}].filter(function(x){return x.v>0.005;});
   var totalErogUsd=n2(erogItems.reduce(function(s,x){return s+(x.usd!=null?x.usd:(bh?x.v/bh:0));},0));
   var _saldoDispUsd=n2((bh?fondoBruto/bh:0)-totalErogUsd);
   var totalErogB=n2(erogItems.reduce(function(s,x){return s+x.v;},0));
