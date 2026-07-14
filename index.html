@@ -396,7 +396,7 @@ table.flujo tr.saldo td{border-top:2px solid var(--tp);font-weight:800}
       <div class="side-group">Sistema</div>
       <button data-view="config">Configuración</button>
     </nav>
-    <div class="side-foot">Control de Cremaciones · v9.52</div>
+    <div class="side-foot">Control de Cremaciones · v9.53</div>
   </aside>
   <div class="sidebar-scrim" id="sideScrim" onclick="toggleSide(false)"></div>
   <div class="mainarea">
@@ -1529,12 +1529,12 @@ function descargarEstadoGob(){
   '<table><thead><tr><th>Fondo</th><th class="r">PVP por caso</th><th class="r">Casos atendidos</th><th class="r">Servicios cancelados</th><th class="r">Fondos recibidos</th><th class="r">Saldo a favor</th></tr></thead><tbody>'+frows+'</tbody>'+
   '<tfoot><tr><td class="r">TOTAL</td><td></td><td class="r">'+fmtNum(totCasos,0)+'</td>'+'<td class="r"><div>'+fmtBs(totCancelBs)+'</div><div style="font-size:9px;color:#888">$'+fmtNum(totCancel,2)+'</div></td>'+'<td class="r"><div>'+fmtBs(totFondosBs)+'</div><div style="font-size:9px;color:#888">$'+fmtNum(totFondos,2)+'</div></td>'+'<td class="r" style="color:#0e9488"><div>'+fmtBs(totSaldoBs)+'</div><div style="font-size:9px;color:#0e9488">$'+fmtNum(totSaldo,2)+'</div></td></tr></tfoot></table>'+
   '<div class="sect">Resumen de servicios (según padrón)</div>'+
-  '<div class="kpis">'+kpi('Total servicios prestados','<div>'+fmtBs(prestadosBs)+'</div><div style="font-size:11px;color:#888;font-weight:400">$'+fmtNum(prestados,2)+'</div>','#4B2D8F')+kpi('Servicios cancelados por la Gobernación','<div>'+fmtBs(totCancelBs)+'</div><div style="font-size:11px;color:#888;font-weight:400">$'+fmtNum(totCancel,2)+'</div>','#0D7A4E')+kpi('Servicios pendientes por pagar','<div>'+fmtBs(pendValBs)+'</div><div style="font-size:11px;color:#888;font-weight:400">$'+fmtNum(pendVal,2)+'</div>','#B07A00')+'</div>'+
+  '<div class="kpis">'+kpi('Total servicios prestados ('+fmtNum(padTot,0)+' según padrón: '+fmtNum(totCasos,0)+' cancelados + '+fmtNum(pendCount,0)+' pendientes)','<div>'+fmtBs(prestadosBs)+'</div><div style="font-size:11px;color:#888;font-weight:400">$'+fmtNum(prestados,2)+'</div>','#4B2D8F')+kpi('Servicios cancelados por la Gobernación ('+fmtNum(totCasos,0)+' casos pagados)','<div>'+fmtBs(totCancelBs)+'</div><div style="font-size:11px;color:#888;font-weight:400">$'+fmtNum(totCancel,2)+'</div>','#0D7A4E')+kpi('Servicios pendientes por pagar ('+fmtNum(pendCount,0)+' servicios)','<div>'+fmtBs(pendValBs)+'</div><div style="font-size:11px;color:#888;font-weight:400">$'+fmtNum(pendVal,2)+'</div>','#B07A00')+'</div>'+
   '<div class="sect">Resumen de fondos</div>'+
   '<div class="resumen"><div class="rh">Resumen de fondos</div><table>'+
-    rrow('Total servicios prestados','<div>'+fmtBs(prestadosBs)+'</div><div style="font-size:9px;color:#888;font-weight:400">$'+fmtNum(prestados,2)+'</div>')+
-    rrow('(−) Servicios cancelados por la Gobernación','<div>'+fmtBs(totCancelBs)+'</div><div style="font-size:9px;color:#888;font-weight:400">$'+fmtNum(totCancel,2)+'</div>','#0D7A4E')+
-    rrow('= Servicios pendientes por pagar','<div>'+fmtBs(pendValBs)+'</div><div style="font-size:9px;color:#888;font-weight:400">$'+fmtNum(pendVal,2)+'</div>','#B07A00',true)+
+    rrow('Total servicios prestados ('+fmtNum(padTot,0)+' según padrón)','<div>'+fmtBs(prestadosBs)+'</div><div style="font-size:9px;color:#888;font-weight:400">$'+fmtNum(prestados,2)+'</div>')+
+    rrow('(−) Servicios cancelados por la Gobernación ('+fmtNum(totCasos,0)+' servicios)','<div>'+fmtBs(totCancelBs)+'</div><div style="font-size:9px;color:#888;font-weight:400">$'+fmtNum(totCancel,2)+'</div>','#0D7A4E')+
+    rrow('= Servicios pendientes por pagar ('+fmtNum(pendCount,0)+' servicios)','<div>'+fmtBs(pendValBs)+'</div><div style="font-size:9px;color:#888;font-weight:400">$'+fmtNum(pendVal,2)+'</div>','#B07A00',true)+
     rrow('(−) Saldo a favor del fondo','<div>'+fmtBs(totSaldoBs)+'</div><div style="font-size:9px;color:#888;font-weight:400">$'+fmtNum(totSaldo,2)+'</div>','#0e9488')+
     rrow('= Servicios pendientes por pagar (neto)','<div>'+fmtBs(n2(pendValBs-totSaldoBs))+'</div><div style="font-size:9px;color:#888;font-weight:400">$'+fmtNum(netoPend,2)+'</div>','#9d2f2c',true)+
   '</table></div>'+
@@ -2862,10 +2862,10 @@ function renderRentabilidad(){
     '<tr style="border-top:2px solid var(--line-2);background:#eef4fb"><td class="op" style="color:#245e94">=</td><td><b style="color:#245e94">Saldo Disponible para pagos</b> '+sub+'(neto − patente'+(ivaSeniatOn?' − IVA Seniat':'')+')</span></td><td class="r num" style="color:#245e94;font-weight:800">'+fmtBs(fondoDispB)+usdu(U(fondoDispB))+'</td></tr>'+
     ecSec('Pagos efectuados')+
     ecRow('−','Pago en Cremaciones '+sub+'(base + IVA · panel)</span>',pagCremBaseB,null,false,pagCremUsdFijo())+
-    ecRow('−','Pago por traslados '+sub+'('+esc(trasCremLbl)+')</span>',trasCremPagB)+
-    ecRow('−','Pago por gastos de logística'+supG,pagGastB)+
-    ecRow('−','Pago operacionales '+sub+'(manipulación / carga / traslados de funerarias)</span>',opE.pagBs)+
-    '<tr style="border-top:2px solid var(--line-2);background:#faf9fe"><td class="op">=</td><td><b>Saldo Pagado</b> '+sub+'(suma de todos los pagos)</span></td><td class="r num" style="color:#4B2D8F;font-weight:800">'+fmtBs(saldoPagB)+usdu(n2(pagTotUsdFijo()+(bh?((pagGastB||0)+(pagOperB||0))/bh:0)))+'</td></tr>'+
+    ecRow('−','Pago por traslados '+sub+'('+esc(trasCremLbl)+')</span>',trasCremPagB,null,false,n2(pagTotUsdFijo()-pagCremUsdFijo()))+
+    ecRow('−','Pago por gastos de logística'+supG,pagGastB,null,false,(gtE.pagUsd||0))+
+    ecRow('−','Pago operacionales '+sub+'(manipulación / carga / traslados de funerarias)</span>',opE.pagBs,null,false,(opE.pagUsd||0))+
+    '<tr style="border-top:2px solid var(--line-2);background:#faf9fe"><td class="op">=</td><td><b>Saldo Pagado</b> '+sub+'(suma de todos los pagos)</span></td><td class="r num" style="color:#4B2D8F;font-weight:800">'+fmtBs(saldoPagB)+usdu(n2(pagTotUsdFijo()+(gtE.pagUsd||0)+(opE.pagUsd||0)))+'</td></tr>'+
     '<tr style="background:#eef4fb"><td class="op" style="color:#245e94">=</td><td><b style="color:#245e94">Disponibilidad del Fondo</b> '+sub+'(saldo disponible para pagos − saldo pagado)</span></td><td class="r num" style="color:'+(dispB>=0?'#245e94':'#c0433f')+';font-weight:800">'+fmtBs(dispB)+usdu(U(dispB))+'</td></tr>'+
     ecSec('Pendiente de pago')+
     ecRow('·','Cremaciones sin pagar '+sub+'('+fmtNum(cremBasePendCount(),0)+' × '+fmtUsd(baseTarifaUsd())+')</span>',cremPendB,'#B07A00')+
