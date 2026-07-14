@@ -396,7 +396,7 @@ table.flujo tr.saldo td{border-top:2px solid var(--tp);font-weight:800}
       <div class="side-group">Sistema</div>
       <button data-view="config">Configuración</button>
     </nav>
-    <div class="side-foot">Control de Cremaciones · v9.53</div>
+    <div class="side-foot">Control de Cremaciones · v9.54</div>
   </aside>
   <div class="sidebar-scrim" id="sideScrim" onclick="toggleSide(false)"></div>
   <div class="mainarea">
@@ -530,9 +530,9 @@ table.flujo tr.saldo td{border-top:2px solid var(--tp);font-weight:800}
           <select id="opActor" style="min-width:180px"></select>
           <select id="opConc" style="min-width:150px"></select>
           <input type="number" id="opCuerpos" placeholder="Cuerpos" style="width:100px" min="0">
-          <input type="date" id="opFecha">
-          <input type="number" id="opUsd" placeholder="Monto USD" style="width:130px" step="0.01">
-          <input type="number" id="opTasa" placeholder="Tasa BCV" style="width:110px" step="0.0001">
+          <input type="date" id="opFecha" onchange="opAutoTasa()">
+          <input type="number" id="opBs" placeholder="Monto en Bs" style="width:150px" step="0.01" oninput="opPreviewUsd()">
+          <input type="number" id="opTasa" placeholder="Tasa BCV (auto)" style="width:120px" step="0.0001" oninput="opPreviewUsd()"><span id="opUsdPrev" style="font-size:11px;color:var(--slate);align-self:center"></span>
           <select id="opEstado"><option value="pend">Pendiente de pago</option><option value="pag">Pagado</option></select>
           <select id="opFondo" title="¿A qué fondo se imputa?" style="max-width:210px"><option value="">Fondo: automático (por fecha)</option></select>
           <label style="display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:600;color:#0b5f58;background:#e4f4f2;border:1px solid #bfe6e1;border-radius:8px;padding:6px 11px;cursor:pointer"><input type="checkbox" id="opUsdt" style="width:16px;height:16px;accent-color:#0e9488">Fondos USDT</label>
@@ -800,7 +800,7 @@ table.flujo tr.saldo td{border-top:2px solid var(--tp);font-weight:800}
     <div class="grid3">
       <label class="fld">Crematorio <span class="req">*</span><select id="fPagoCrem" onchange="calcPagoMonto()"></select></label>
       <label class="fld">Fecha de pago <span class="req">*</span><input type="date" id="fPagoFecha" onchange="calcPagoRet()"></label>
-      <label class="fld">Fondo (a cuál se asigna) <select id="fPagoFondo"></select></label>
+      <label class="fld">Fondo (a cuál se asigna) <select id="fPagoFondo" onchange="pagoAutoIslr()"></select></label>
       <label class="fld">Cremaciones pagadas (cantidad) <span class="req">*</span><input type="number" min="1" step="1" id="fPagoCant" oninput="calcPagoMonto()"></label>
     </div>
     <div class="calc" style="margin-top:14px"><span>Monto del pago (cantidad × tarifa):</span><b class="num" id="fPagoMonto">$ 0.00</b></div>
@@ -812,6 +812,7 @@ table.flujo tr.saldo td{border-top:2px solid var(--tp);font-weight:800}
     <div class="grid2" style="margin-top:10px">
       <label class="fld"><span class="cap">Monto exonerado de IVA (Bs.)</span><input type="number" step="0.01" id="fPagoExonerado" oninput="calcPagoRet()" placeholder="Ánforas u otros conceptos sin IVA"></label>
       <label class="fld"><span class="cap">Retención de IVA aplicada</span><select id="fPagoRetIvaSel" onchange="calcPagoRet()"><option value="75">75% del IVA</option><option value="100">100% del IVA</option></select></label>
+      <label class="fld"><span class="cap">Retención ISLR (%)</span><input type="number" step="0.01" id="fPagoRetIslr" onchange="calcPagoRet()" oninput="calcPagoRet()" placeholder="auto según fondo"></label>
     </div>
     <div class="tarifabox" id="fPagoRetBox" style="margin-top:14px"></div>
     <div class="grid2" style="margin-top:14px">
@@ -1893,17 +1894,19 @@ function renderOpAtt(){var p=opPagos.find(function(x){return x.id===window._opAt
 function pickOpAtt(ev){var p=opPagos.find(function(x){return x.id===window._opAttId;});if(!p){ev.target.value='';return;}p.att=p.att||[];var files=ev.target.files;var pending=files.length;if(!pending)return;Array.prototype.forEach.call(files,function(f){var r=new FileReader();r.onload=function(){p.att.push({name:f.name,type:f.type||'',data:r.result});pending--;if(pending===0){save(K.opPagos,opPagos);renderOpAtt();try{renderOper();}catch(e){}toast('Adjunto(s) agregado(s)');}};r.onerror=function(){pending--;};r.readAsDataURL(f);});ev.target.value='';}
 function viewOpAtt(i){var p=opPagos.find(function(x){return x.id===window._opAttId;});if(p&&p.att&&p.att[i])openData(p.att[i].data);}
 function delOpAtt(i){var p=opPagos.find(function(x){return x.id===window._opAttId;});if(!p||!p.att)return;p.att.splice(i,1);save(K.opPagos,opPagos);renderOpAtt();try{renderOper();}catch(e){}}
-function editOpPago(id){var p=opPagos.find(function(x){return x.id===id;});if(!p)return;window._opEditId=id;var set=function(eid,v){var e=document.getElementById(eid);if(e)e.value=(v==null?'':v);};set('opActor',p.actorId);set('opConc',p.concepto);set('opCuerpos',p.cuerpos);set('opFecha',p.fecha);set('opUsd',p.usd);set('opTasa',p.tasa);set('opBenef',p.beneficiario);set('opBanco',p.banco);set('opCuenta',p.cuenta);set('opUnid',p.unidades);set('opTarifaU',p.tarifaU);set('opFondo',p.fondoId||'');var es=document.getElementById('opEstado');if(es)es.value=(p.estado==='pagado'?'pag':'pend');var uc=document.getElementById('opUsdt');if(uc)uc.checked=!!p.usdtPagado;var b=document.getElementById('opAddBtn');if(b)b.textContent='✔ Guardar cambios';var h=document.getElementById('opActor');if(h&&h.scrollIntoView)h.scrollIntoView({behavior:'smooth',block:'center'});toast('Editando pago operacional — modifique y guarde');}
+function opAutoTasa(){var f=document.getElementById('opFecha'),t=document.getElementById('opTasa');if(!f||!t)return;if(f.value){var r=bcvRate(f.value);if(r>0)t.value=r;}opPreviewUsd();}
+function opPreviewUsd(){var bE=document.getElementById('opBs'),tE=document.getElementById('opTasa'),o=document.getElementById('opUsdPrev');if(!o)return;var b=Number(bE&&bE.value)||0,t=Number(tE&&tE.value)||0;o.textContent=(b>0&&t>0)?('= $'+fmtNum(b/t,2)):'';}
+function editOpPago(id){var p=opPagos.find(function(x){return x.id===id;});if(!p)return;window._opEditId=id;var set=function(eid,v){var e=document.getElementById(eid);if(e)e.value=(v==null?'':v);};set('opActor',p.actorId);set('opConc',p.concepto);set('opCuerpos',p.cuerpos);set('opFecha',p.fecha);set('opBs',p.bs);set('opTasa',p.tasa);set('opBenef',p.beneficiario);set('opBanco',p.banco);set('opCuenta',p.cuenta);set('opUnid',p.unidades);set('opTarifaU',p.tarifaU);set('opFondo',p.fondoId||'');var es=document.getElementById('opEstado');if(es)es.value=(p.estado==='pagado'?'pag':'pend');var uc=document.getElementById('opUsdt');if(uc)uc.checked=!!p.usdtPagado;var b=document.getElementById('opAddBtn');if(b)b.textContent='✔ Guardar cambios';var h=document.getElementById('opActor');if(h&&h.scrollIntoView)h.scrollIntoView({behavior:'smooth',block:'center'});toast('Editando pago operacional — modifique y guarde');}
 function addOpPago(){
-  var actorId=document.getElementById('opActor').value,concepto=document.getElementById('opConc').value,cuerpos=Number(document.getElementById('opCuerpos').value)||0,fecha=document.getElementById('opFecha').value||today(),usd=Number(document.getElementById('opUsd').value)||0,tasa=Number(document.getElementById('opTasa').value)||bcvHoyRate(),estado=document.getElementById('opEstado').value==='pag'?'pagado':'pendiente';
+  var actorId=document.getElementById('opActor').value,concepto=document.getElementById('opConc').value,cuerpos=Number(document.getElementById('opCuerpos').value)||0,fecha=document.getElementById('opFecha').value||today(),bs=Number(document.getElementById('opBs').value)||0,tasa=Number(document.getElementById('opTasa').value)||bcvRate(document.getElementById('opFecha').value||today())||bcvHoyRate(),usd=(tasa>0?bs/tasa:0),estado=document.getElementById('opEstado').value==='pag'?'pagado':'pendiente';
   var benef=((document.getElementById('opBenef')||{}).value||'').trim(),banco=((document.getElementById('opBanco')||{}).value||'').trim(),cuenta=((document.getElementById('opCuenta')||{}).value||'').trim(),unid=Number((document.getElementById('opUnid')||{}).value)||0,tarU=Number((document.getElementById('opTarifaU')||{}).value)||0;
-  if(!concepto){toast('Seleccione un concepto');return;}if(usd<=0||tasa<=0){toast('Indique monto USD (o cantidad × tarifa) y tasa');return;}
+  if(!concepto){toast('Seleccione un concepto');return;}if(bs<=0||tasa<=0){toast('Indique el monto en Bs y la fecha (la tasa se carga sola)');return;}
   var act=opActores.find(function(a){return a.id===actorId;});
   var nom=act?opActorLbl(act):(benef||'—');
   var _fid=((document.getElementById('opFondo')||{}).value||'');
-  var _rec={fecha:fecha,actorId:actorId,actorNom:nom,beneficiario:benef,banco:banco,cuenta:cuenta,unidades:unid,tarifaU:tarU,concepto:concepto,cuerpos:cuerpos,bs:n2(usd*tasa),tasa:tasa,usd:n2(usd),estado:estado,fondoId:_fid,usdtPagado:!!document.getElementById('opUsdt').checked};
+  var _rec={fecha:fecha,actorId:actorId,actorNom:nom,beneficiario:benef,banco:banco,cuenta:cuenta,unidades:unid,tarifaU:tarU,concepto:concepto,cuerpos:cuerpos,bs:n2(bs),tasa:tasa,usd:n2(usd),estado:estado,fondoId:_fid,usdtPagado:!!document.getElementById('opUsdt').checked};
   if(window._opEditId){var ei=opPagos.findIndex(function(p){return p.id===window._opEditId;});if(ei>=0)Object.assign(opPagos[ei],_rec);window._opEditId=null;var _ob=document.getElementById('opAddBtn');if(_ob)_ob.textContent='＋ Registrar pago';}else{_rec.id=uid();opPagos.push(_rec);}
-  save(K.opPagos,opPagos);['opUsd','opCuerpos','opBenef','opBanco','opCuenta','opUnid','opTarifaU'].forEach(function(id){var e=document.getElementById(id);if(e)e.value='';});var _ou=document.getElementById('opUsdt');if(_ou)_ou.checked=false;
+  save(K.opPagos,opPagos);['opBs','opCuerpos','opBenef','opBanco','opCuenta','opUnid','opTarifaU'].forEach(function(id){var e=document.getElementById(id);if(e)e.value='';});var _ou=document.getElementById('opUsdt');if(_ou)_ou.checked=false;
   renderOper();renderDashboard();if(document.getElementById('rentabilidadHost'))renderRentabilidad();toast('Pago operacional registrado');
 }
 function delOpPago(id){opPagos=opPagos.filter(function(p){return p.id!==id;});save(K.opPagos,opPagos);renderOper();renderDashboard();if(document.getElementById('rentabilidadHost'))renderRentabilidad();}
@@ -2235,12 +2238,14 @@ function openData(d){try{var url=URL.createObjectURL(dataURLtoBlob(d));window.op
 function openPagoAtt(id,which){var p=pagos.find(function(x){return x.id===id;});if(!p)return;var d=which==='factura'?p.factura:p.transfer;if(d)openData(d);}
 function calcPagoMonto(){var c=document.getElementById('fPagoCrem').value,cant=Number(document.getElementById('fPagoCant').value)||0,b=tarifaBreak(c),el=document.getElementById('fPagoMonto');if(b.conTraslado){el.innerHTML=fmtUsd(cant*b.total)+' <span style="font-size:10px;color:var(--slate);font-weight:400">(cremación '+fmtUsd(cant*b.base)+' + traslado '+fmtUsd(cant*(b.tras+b.ivaTras))+')</span>';}else{el.textContent=fmtUsd(cant*b.total);}}
 function islrPctDe(fid){var m=cfg.retIslrFondo||{};if(fid&&m[fid]!=null&&m[fid]!=='')return Number(m[fid])||0;return Number(cfg.retIslrPct)||0;}
+function pagoAutoIslr(){var e=document.getElementById('fPagoRetIslr');if(!e)return;var fid=fondoDeReg({fondoId:((document.getElementById('fPagoFondo')||{}).value||''),fecha:((document.getElementById('fPagoFecha')||{}).value||today())},'fecha');e.value=islrPctDe(fid);if(window.calcPagoRet)calcPagoRet();}
 function pagoRetVals(){
   var S=Number(document.getElementById('fPagoSubtotal').value)||0;
   var E=Number(document.getElementById('fPagoExonerado').value)||0;
   var selEl=document.getElementById('fPagoRetIvaSel');
   var _fid=fondoDeReg({fondoId:((document.getElementById('fPagoFondo')||{}).value||''),fecha:((document.getElementById('fPagoFecha')||{}).value||today())},'fecha');
-  var ivaP=Number(cfg.ivaPct)||0,riP=selEl?(Number(selEl.value)||Number(cfg.retIvaPct)||0):(Number(cfg.retIvaPct)||0),rislrP=islrPctDe(_fid);
+  var _rislrIn=document.getElementById('fPagoRetIslr');
+  var ivaP=Number(cfg.ivaPct)||0,riP=selEl?(Number(selEl.value)||Number(cfg.retIvaPct)||0):(Number(cfg.retIvaPct)||0),rislrP=(_rislrIn&&String(_rislrIn.value).trim()!=='')?(Number(_rislrIn.value)||0):islrPctDe(_fid);
   var iva=S*ivaP/100,total=S+iva+E,retIva=iva*riP/100,retIslr=S*rislrP/100,neto=total-retIva-retIslr;
   var T=Number(document.getElementById('fPagoTransferBs').value)||0;
   return {S:S,E:E,ivaP:ivaP,riP:riP,rislrP:rislrP,iva:iva,total:total,retIva:retIva,retIslr:retIslr,neto:neto,T:T,diff:T-neto};
@@ -2270,7 +2275,7 @@ function openPago(id){
     document.getElementById('mPagoTitle').textContent='Editar pago';
     document.getElementById('fPagoId').value=p.id;document.getElementById('fPagoCrem').value=p.crematorio;document.getElementById('fPagoFecha').value=p.fecha;document.getElementById('fPagoFondo').value=p.fondoId||'';document.getElementById('fPagoCant').value=p.cantidad;document.getElementById('fPagoObs').value=p.obs||'';
     document.getElementById('fPagoSubtotal').value=p.subtotal||'';document.getElementById('fPagoTransferBs').value=p.transferBs||'';
-    document.getElementById('fPagoExonerado').value=p.exonerado||'';document.getElementById('fPagoRetIvaSel').value=String(p.retIvaPct||cfg.retIvaPct||75);
+    document.getElementById('fPagoExonerado').value=p.exonerado||'';document.getElementById('fPagoRetIvaSel').value=String(p.retIvaPct||cfg.retIvaPct||75);document.getElementById('fPagoRetIslr').value=(p.rislrP!=null?p.rislrP:islrPctDe(fondoDeReg(p,'fecha')));
     document.getElementById('fPagoBanco').value=p.banco||'';document.getElementById('fPagoRef').value=p.ref||'';
     _attFactura=p.factura||null;_attFacturaName=p.facturaName||'';_attTransfer=p.transfer||null;_attTransferName=p.transferName||'';
     document.getElementById('fPagoFacturaName').textContent=p.facturaName||(p.factura?'archivo adjunto':'—');
@@ -2279,7 +2284,7 @@ function openPago(id){
     document.getElementById('mPagoTitle').textContent='Registrar pago';
     document.getElementById('fPagoId').value='';document.getElementById('fPagoFecha').value=today();document.getElementById('fPagoCant').value='';document.getElementById('fPagoObs').value='';
     document.getElementById('fPagoSubtotal').value='';document.getElementById('fPagoTransferBs').value='';
-    document.getElementById('fPagoExonerado').value='';document.getElementById('fPagoRetIvaSel').value=String(cfg.retIvaPct||75);
+    document.getElementById('fPagoExonerado').value='';document.getElementById('fPagoRetIvaSel').value=String(cfg.retIvaPct||75);var _e=document.getElementById('fPagoRetIslr');if(_e)_e.value='';
     document.getElementById('fPagoBanco').value='';document.getElementById('fPagoRef').value='';
   }
   calcPagoMonto();calcPagoRet();var _uc=document.getElementById('fPagoUsdt');if(_uc)_uc.checked=!!(id&&(pagos.find(function(x){return x.id===id;})||{}).usdtPagado);document.getElementById('modalPago').classList.add('open');
