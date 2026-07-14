@@ -396,7 +396,7 @@ table.flujo tr.saldo td{border-top:2px solid var(--tp);font-weight:800}
       <div class="side-group">Sistema</div>
       <button data-view="config">Configuración</button>
     </nav>
-    <div class="side-foot">Control de Cremaciones · v9.46</div>
+    <div class="side-foot">Control de Cremaciones · v9.47</div>
   </aside>
   <div class="sidebar-scrim" id="sideScrim" onclick="toggleSide(false)"></div>
   <div class="mainarea">
@@ -1505,7 +1505,7 @@ function descargarEstadoGob(){
   '.foot{margin-top:20px;font-size:10px;color:#888;text-align:center;border-top:1px solid #e7e4f0;padding-top:10px}'+
   '@media print{body{padding:10px 14px}.noprint{display:none}}.bar{text-align:center;margin-bottom:16px}.bar button{font-size:13px;font-weight:bold;background:#4B2D8F;color:#fff;border:none;border-radius:8px;padding:9px 18px;cursor:pointer}</style></head><body>'+
   '<div class="bar noprint"><button onclick="window.print()">Imprimir / Guardar como PDF</button></div>'+
-  '<div class="head"><img src="'+LAFE_LOGO+'"><div><div class="eyebrow">República Bolivariana de Venezuela · Gobernación del Estado La Guaira</div><h1>Administración de Fondos para Gestión de Asistencia Funeraria Integral</h1><div class="sub">Estado de Cuenta · Operador: Seguros La Fe, C.A. · Emitido: '+fmtDate(today())+'</div></div></div>'+
+  '<div class="head"><img src="'+LAFE_LOGO+'"><div><div class="eyebrow">Gobernación del Estado La Guaira</div><h1>Administración de Fondos para Gestión de Asistencia Funeraria Integral</h1><div class="sub">Estado de Cuenta · Operador: Seguros La Fe, C.A. · Emitido: '+fmtDate(today())+'</div></div></div>'+
   '<div class="sect">Servicios pagados por fondo (en dólares)</div>'+
   '<table><thead><tr><th>Fondo</th><th class="r">PVP por caso</th><th class="r">Casos atendidos</th><th class="r">Servicios cancelados</th><th class="r">Fondos recibidos</th><th class="r">Saldo a favor</th></tr></thead><tbody>'+frows+'</tbody>'+
   '<tfoot><tr><td class="r">TOTAL</td><td></td><td class="r">'+fmtNum(totCasos,0)+'</td><td class="r">'+fmtUsd(totCancel)+'</td><td class="r">'+fmtUsd(totFondos)+'</td><td class="r" style="color:#0e9488">'+fmtUsd(totSaldo)+'</td></tr></tfoot></table>'+
@@ -1527,7 +1527,7 @@ function descargarRelacionGob(){
   var d=ctasRelacionData();
   var rango=d.rango?(fmtDate(d.rango[0])+' \u2014 '+fmtDate(d.rango[1])):'\u2014';
   var casoRows=function(casos){return casos.map(function(c,i){return '<tr><td class="c num">'+(i+1)+'</td><td class="num">'+(c.fecha?fmtDate(c.fecha):'\u2014')+'</td><td class="num">'+esc(c.exp)+'</td><td>'+esc(c.nombre||'\u2014')+'</td><td class="num">'+esc(c.ced||'\u2014')+'</td></tr>';}).join('');};
-  var miniHead='<div class="minihead"><img src="'+LAFE_LOGO+'"><div><div class="mh-t">Rep\u00fablica Bolivariana de Venezuela \u00b7 Gobernaci\u00f3n del Estado La Guaira</div><div class="mh-s">Relaci\u00f3n de Asistencia Funeraria Integral \u00b7 Operador: Seguros La Fe, C.A.</div></div><div class="mh-d">Emitido<br><b>'+fmtDate(today())+'</b></div></div>';
+  var miniHead='<div class="minihead"><img src="'+LAFE_LOGO+'"><div><div class="mh-t">Gobernaci\u00f3n del Estado La Guaira</div><div class="mh-s">Relaci\u00f3n de Asistencia Funeraria Integral \u00b7 Operador: Seguros La Fe, C.A.</div></div><div class="mh-d">Emitido<br><b>'+fmtDate(today())+'</b></div></div>';
   var thead='<thead><tr><th class="c">#</th><th>Fecha recepci\u00f3n</th><th>Expediente</th><th>Beneficiario (fallecido)</th><th>C\u00e9dula</th></tr></thead>';
   var secciones='';
   d.funds.forEach(function(fd,idx){
@@ -1564,7 +1564,7 @@ function exportRelacionExcel(){
   var inner='<table style="border-collapse:collapse;margin-bottom:4px"><tr>'+
     '<td style="border:none;padding:2px 12px 2px 2px;vertical-align:middle"><img src="'+LAFE_LOGO+'" height="82"></td>'+
     '<td style="border:none;padding:2px;font-family:Arial;vertical-align:middle">'+
-      '<div style="font-size:12px;color:#666;font-weight:bold">República Bolivariana de Venezuela · Gobernación del Estado La Guaira</div>'+
+      '<div style="font-size:12px;color:#666;font-weight:bold">Gobernación del Estado La Guaira</div>'+
       '<div style="font-size:19px;font-weight:bold;color:#3A1D6E;margin:2px 0">Administración de Fondos para Gestión de Asistencia Funeraria</div>'+
       '<div style="font-size:11.5px;color:#444">Relación de servicios y fondos &nbsp;·&nbsp; Operador: Seguros La Fe, C.A.</div>'+
       '<div style="font-size:11.5px;color:#444">Período de la relación: '+rango+' &nbsp;·&nbsp; Emitido: '+fmtDate(today())+'</div>'+
@@ -2364,7 +2364,7 @@ function importGastoExcel(ev){
         if(!cat){var raw=(map.cat!=null?String(row[map.cat]||'').trim():'')||'Otros';var cc=catCanon(raw);if(nuevasCatMap[cc])cat=nuevasCatMap[cc];else{cat=raw;nuevasCatMap[cc]=raw;nuevasCat.push(raw);}}
         var comp=map.comp!=null?String(row[map.comp]||'').trim():'';
         var prov=map.prov!=null?String(row[map.prov]||'').trim():'';
-        var rec={fecha:fecha,cat:cat,concepto:concepto,prov:prov,bs:n2(bs),tasa:Number(tasa),forma:map.forma!=null?String(row[map.forma]||'').trim():'',comp:comp,estado:'pagado',obs:map.obs!=null?String(row[map.obs]||'').trim():''};
+        var rec={fecha:fecha,cat:cat,concepto:concepto,prov:prov,bs:n2(bs),tasa:Number(tasa),forma:map.forma!=null?String(row[map.forma]||'').trim():'',comp:comp,estado:'pendiente',obs:map.obs!=null?String(row[map.obs]||'').trim():''};
         var k=gastoKey(fecha,concepto,prov,bs,comp);
         var occ=(seen[k]=(seen[k]||0)+1)-1;var arr=exIdx[k];
         if(arr&&occ<arr.length){var mid=arr[occ];updates[mid]=Object.assign({},updates[mid]||{},rec,{id:mid});}
@@ -2398,7 +2398,7 @@ function commitGastoImport(){
   var P=_gastoPreview;if(!P){closeModal('modalImportGasto');return;}var totalUpd=Object.keys(P.updates).length;
   if(!P.nuevos.length&&!totalUpd){closeModal('modalImportGasto');return;}
   P.nuevasCat.forEach(function(c){if(cats.indexOf(c)<0)cats.push(c);});if(P.nuevasCat.length)save(K.cats,cats);
-  Object.keys(P.updates).forEach(function(id){var i=gastos.findIndex(function(x){return x.id===id;});if(i>=0)Object.assign(gastos[i],P.updates[id]);else gastos.push(Object.assign({},P.updates[id],{id:uid()}));});
+  Object.keys(P.updates).forEach(function(id){var i=gastos.findIndex(function(x){return x.id===id;});if(i>=0){var _ke=gastos[i].estado;Object.assign(gastos[i],P.updates[id]);gastos[i].estado=_ke;}else gastos.push(Object.assign({},P.updates[id],{id:uid()}));});
   gastos=gastos.concat(P.nuevos);save(K.gasto,gastos);_gastoPreview=null;
   refreshSelects();renderChips();renderGasto();renderDashboard();closeModal('modalImportGasto');
   toast(P.nuevos.length+' nuevos · '+totalUpd+' actualizados');
