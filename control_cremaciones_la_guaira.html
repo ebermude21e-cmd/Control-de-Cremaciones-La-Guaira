@@ -396,7 +396,7 @@ table.flujo tr.saldo td{border-top:2px solid var(--tp);font-weight:800}
       <div class="side-group">Sistema</div>
       <button data-view="config">Configuración</button>
     </nav>
-    <div class="side-foot">Control de Cremaciones · v9.64</div>
+    <div class="side-foot">Control de Cremaciones · v9.66</div>
   </aside>
   <div class="sidebar-scrim" id="sideScrim" onclick="toggleSide(false)"></div>
   <div class="mainarea">
@@ -1316,6 +1316,9 @@ function renderUsdtCorte(){
   acc+='<div style="display:grid;grid-template-columns:24px 1fr auto;gap:12px;align-items:center;padding:14px 18px;background:#f3eefb"><span></span><span style="font-weight:800;color:#231640;font-size:13px">TOTAL PAGADO CON FONDOS USDT</span><span class="num" style="font-weight:800;color:#231640;font-size:15px;text-align:right">'+fmtBs(d.totalPag)+'<div style="font-size:10.5px;color:var(--slate)">'+fmtNum(uV(d.totalPag),2)+' USDT'+'</div></span></div></div>';
   host.innerHTML='<div class="ec-sec-title" style="font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#4B2D8F;margin:0 0 12px">Estado de cuenta del manejo de USDT</div>'+hero+acc;
 }
+/* Etiqueta institucional para las pantallas de la Gobernacion.
+   NO altera el nombre interno del fondo (Finanzas, Rentabilidad, etc. lo conservan). Solo display. */
+function fondoLblGob(fd,idx){return 'Fondo '+(idx+1)+' \u2014 '+(fd&&fd.principal?'Funeraria Vall\u00e9s':'Seguros La Fe');}
 function declaradasData(){
   // Recorre la MISMA fuente que la relacion oficial (ctasRelacionData) y verifica unicidad caso por caso.
   var d=ctasRelacionData();
@@ -1325,7 +1328,7 @@ function declaradasData(){
       var k=padronKey(c.exp)+'|'+padronKey(c.ced)+'|'+padronKey(c.nombre);
       if(seen[k]){dupes.push({exp:c.exp,nombre:c.nombre,fondoA:seen[k],fondoB:fd.nombre});}
       else seen[k]=fd.nombre;
-      rows.push({fecha:c.fecha,exp:c.exp,nombre:c.nombre,ced:c.ced,declarado:true,fondo:fd.nombre,fondoIdx:i+1,pvp:fd.pvp});
+      rows.push({fecha:c.fecha,exp:c.exp,nombre:c.nombre,ced:c.ced,declarado:true,fondo:fondoLblGob(fd,i),fondoIdx:i+1,pvp:fd.pvp});
     });
   });
   (d.restCasos||[]).forEach(function(c){
@@ -1350,7 +1353,7 @@ function renderDeclaradas(){
     '<tr><td style="width:60%">Cada servicio declarado está cargado a <b>un solo fondo</b> (sin duplicación entre fondos)</td><td class="r"><b style="color:'+(okUnico?'#0D7A4E':'#9d2f2c')+'">'+(okUnico?'✔ CONFORME':'✘ '+D.dupes.length+' DUPLICADO(S)')+'</b></td></tr>'+
     '<tr><td>Declarados ('+fmtNum(D.decl,0)+') + No declarados ('+fmtNum(D.noDecl,0)+') = Total del padrón ('+fmtNum(D.padTot,0)+')</td><td class="r"><b style="color:'+(okTotal?'#0D7A4E':'#9d2f2c')+'">'+(okTotal?'✔ CONFORME':'✘ DIFERENCIA')+'</b></td></tr>'+
     D.funds.map(function(fd,i){var cubre=fd.pvp>0?Math.floor(fd.fu/fd.pvp+1e-6):0;var ok=(fd.casos.length<=cubre);
-      return '<tr><td>Fondo N° '+(i+1)+' — '+esc(fd.nombre)+': '+fmtNum(fd.casos.length,0)+' servicio(s) declarado(s), cobertura máxima '+fmtNum(cubre,0)+' ($'+fmtNum(fd.fu,2)+' ÷ $'+fmtNum(fd.pvp,2)+')</td><td class="r"><b style="color:'+(ok?'#0D7A4E':'#9d2f2c')+'">'+(ok?'✔ CONFORME':'✘ EXCEDE')+'</b></td></tr>';}).join('')+
+      return '<tr><td>'+esc(fondoLblGob(fd,i))+': '+fmtNum(fd.casos.length,0)+' servicio(s) declarado(s), cobertura máxima '+fmtNum(cubre,0)+' ($'+fmtNum(fd.fu,2)+' ÷ $'+fmtNum(fd.pvp,2)+')</td><td class="r"><b style="color:'+(ok?'#0D7A4E':'#9d2f2c')+'">'+(ok?'✔ CONFORME':'✘ EXCEDE')+'</b></td></tr>';}).join('')+
     '</tbody></table>';
   if(D.dupes.length){h+='<div class="ecnote" style="margin-top:10px;border-color:#9d2f2c">Casos detectados en más de un fondo: '+D.dupes.map(function(x){return esc(x.exp)+' ('+esc(x.fondoA)+' / '+esc(x.fondoB)+')';}).join(' · ')+'</div>';}
   else{h+='<div class="ecnote" style="margin-top:10px">La asignación es <b>secuencial y excluyente</b>: los casos se ordenan por fecha de recepción y cada fondo toma un tramo consecutivo (Fondo N° 1 los primeros, Fondo N° 2 los siguientes). Por construcción un mismo difunto <b>no puede</b> pertenecer a dos fondos, y esta verificación lo comprueba caso por caso en cada carga.</div>';}
@@ -1359,7 +1362,7 @@ function renderDeclaradas(){
   var fRows=D.rows.map(function(r,i){
     return '<tr><td class="c num">'+(i+1)+'</td><td class="num">'+(r.fecha?fmtDate(r.fecha):'—')+'</td><td class="num">'+esc(r.exp||'—')+'</td><td>'+esc(r.nombre||'—')+'</td><td class="num">'+esc(r.ced||'—')+'</td>'+
       '<td>'+(r.declarado?'<span style="font-weight:700;color:#0D7A4E">Declarado</span>':'<span style="font-weight:700;color:#B07A00">No declarado</span>')+'</td>'+
-      '<td>'+(r.declarado?('<b>Fondo N° '+r.fondoIdx+'</b> — '+esc(r.fondo)):'<span style="color:var(--slate)">—</span>')+'</td>'+
+      '<td>'+(r.declarado?('<b>'+esc(r.fondo)+'</b>'):'<span style="color:var(--slate)">—</span>')+'</td>'+
       '<td class="r num">'+(r.declarado?('$'+fmtNum(r.pvp,2)):'—')+'</td></tr>';
   }).join('');
   h+='<div class="panel"><div class="ph"><h3>Detalle de servicios declarados y no declarados</h3><span style="color:var(--slate);font-size:11.5px">Orden cronológico por fecha de recepción · '+fmtNum(D.total,0)+' caso(s)</span></div><div class="pb" style="padding:0"><div class="tablewrap" style="border:none;box-shadow:none;max-height:520px;overflow:auto"><table class="data" id="tbl_declaradas"><thead><tr><th class="c">#</th><th>Fecha recepción</th><th>Expediente</th><th>Difunto</th><th>Cédula</th><th>Estatus</th><th>Fondo con cargo</th><th class="r">Tarifa</th></tr></thead><tbody>'+(fRows||'<tr><td colspan="8"><div class="empty" style="padding:20px"><div class="em-t">Sin padrón cargado</div></div></td></tr>')+'</tbody></table></div></div></div>';
@@ -1712,12 +1715,12 @@ function renderCtasGob(){
   var d=ctasRelacionData();
   var totFondos=0,totCancel=0,totCasos=0,totSaldo=0;
   var totFondosBs=0,totCancelBs=0,totSaldoBs=0;
-  var frows=d.funds.map(function(fd){
+  var frows=d.funds.map(function(fd,_fi){
     var tr=Number(fd.tasa)||0;
     totFondos+=fd.fu;totCancel+=fd.usado;totCasos+=fd.casos.length;totSaldo+=fd.saldo;
     totFondosBs+=fd.fu*tr;totCancelBs+=fd.usado*tr;totSaldoBs+=fd.saldo*tr;
     var bsu=function(usd,col){return '<td class="r num"><div'+(col?' style="color:'+col+'"':'')+'>'+fmtBs(n2(usd*tr))+'</div><div style="font-size:9.5px;color:#8a84a0;font-weight:400">$'+fmtNum(usd,2)+'</div></td>';};
-    return '<tr><td style="font-weight:700">'+esc(fd.nombre)+'<div style="font-size:9.5px;color:#8a84a0;font-weight:400">BCV '+fmtNum(tr,4)+'</div></td>'+bsu(fd.pvp)+'<td class="r num">'+fmtNum(fd.casos.length,0)+'</td>'+bsu(fd.usado)+bsu(fd.fu)+bsu(fd.saldo,'#0e9488')+'</tr>';
+    return '<tr><td style="font-weight:700">'+esc(fondoLblGob(fd,_fi))+'<div style="font-size:9.5px;color:#8a84a0;font-weight:400">BCV '+fmtNum(tr,4)+'</div></td>'+bsu(fd.pvp)+'<td class="r num">'+fmtNum(fd.casos.length,0)+'</td>'+bsu(fd.usado)+bsu(fd.fu)+bsu(fd.saldo,'#0e9488')+'</tr>';
   }).join('');
   totFondos=n2(totFondos);totCancel=n2(totCancel);totSaldo=n2(totSaldo);totCasos=Math.round(totCasos);totFondosBs=n2(totFondosBs);totCancelBs=n2(totCancelBs);totSaldoBs=n2(totSaldoBs);
   var padTot=padron.length;
@@ -1771,12 +1774,12 @@ function ctasRelacionData(){
 function ctasRelacionHtml(){
   var d=ctasRelacionData();
   var h='<div style="font-size:12.5px;color:var(--slate);margin-bottom:18px;line-height:1.55">Relación controlada en <b>dólares</b>: cada fondo paga solo los <b>servicios completos de asistencia funeraria integral</b> que su monto alcanza al PVP acordado (no se paga medio servicio ni se sobregira). El sobrante queda como <b>saldo a favor del fondo</b>. Los casos entran en orden de fecha y <b>ningún fallecido se repite</b> entre fondos.</div>';
-  d.funds.forEach(function(fd){
+  d.funds.forEach(function(fd,_fi){
     var det=fd.casos.map(function(c,i){return '<tr><td class="c num">'+(i+1)+'</td><td class="num">'+fmtDate(c.fecha)+'</td><td class="num">'+esc(c.exp)+'</td><td>'+esc(c.nombre)+'</td><td class="num">'+esc(c.ced)+'</td></tr>';}).join('');
     if(!det)det='<tr><td colspan="5" style="color:var(--slate);text-align:center;padding:14px">Este fondo aún no alcanza para pagar un servicio completo.</td></tr>';
     var cell=function(k,v,bg,cl){return '<div style="background:'+(bg||'#faf9fd')+';padding:12px 14px"><div style="font-size:10px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:'+(cl||'var(--slate)')+'">'+k+'</div><div class="num" style="font-size:15px;font-weight:800;margin-top:3px'+(cl?';color:'+cl:'')+'">'+v+'</div></div>';};
     h+='<div style="background:#fff;border:1px solid var(--line);border-radius:15px;overflow:hidden;margin-bottom:20px;box-shadow:0 12px 30px -22px rgba(58,29,110,.3)">'+
-      '<div style="background:linear-gradient(135deg,#3A1D6E,#4B2D8F);color:#fff;padding:15px 20px"><div style="font-size:15px;font-weight:800">'+esc(fd.nombre)+' · Relación de asistencia funeraria integral con cargo al fondo</div><div style="font-size:11.5px;opacity:.8;margin-top:2px">Gobernación del Estado La Guaira · pago al PVP acordado</div></div>'+
+      '<div style="background:linear-gradient(135deg,#3A1D6E,#4B2D8F);color:#fff;padding:15px 20px"><div style="font-size:15px;font-weight:800">'+esc(fondoLblGob(fd,_fi))+' · Relación de asistencia funeraria integral con cargo al fondo</div><div style="font-size:11.5px;opacity:.8;margin-top:2px">Gobernación del Estado La Guaira · pago al PVP acordado</div></div>'+
       '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:var(--line-2)">'+
         cell('Fondos recibidos',fmtUsd(fd.fu))+cell('PVP por caso',fmtUsd(fd.pvp))+cell('Servicios atendidos',fmtNum(fd.casos.length,0),'#faf9fd','#0D7A4E')+cell('Monto usado',fmtUsd(fd.usado))+cell('Saldo a favor',fmtUsd(fd.saldo),'#e4f4f2','#0e9488')+
       '</div>'+
@@ -1917,7 +1920,7 @@ function descargarEstadoGob(){
      Se valoran SIEMPRE a la tasa BCV del ultimo dia disponible. Los cancelados mantienen su tasa historica. */
   var pendTasa=bcvHoyRate();var pendFecha=bcvHoyFechaEf();
   var pendValBs=n2(pendVal*pendTasa);var netoPendBs=n2(netoPend*pendTasa);var prestadosBs=n2(totCancelBs+pendValBs);
-  var frows=d.funds.map(function(fd){var tr=Number(fd.tasa)||0;var bsu=function(u,col){return '<td class="r"'+(col?' style="color:'+col+'"':'')+'><div>'+fmtBs(n2(u*tr))+'</div><div style="font-size:9px;color:#000">$'+fmtNum(u,2)+'</div></td>';};return '<tr><td style="font-weight:700">'+esc(fd.nombre)+'<div style="font-size:9px;color:#000;font-weight:400">BCV '+fmtNum(tr,4)+'</div></td>'+bsu(fd.pvp)+'<td class="r">'+fmtNum(fd.casos.length,0)+'</td>'+bsu(fd.usado)+bsu(fd.fu)+bsu(fd.saldo,'#0e9488')+'</tr>';}).join('');
+  var frows=d.funds.map(function(fd,_fi){var tr=Number(fd.tasa)||0;var bsu=function(u,col){return '<td class="r"'+(col?' style="color:'+col+'"':'')+'><div>'+fmtBs(n2(u*tr))+'</div><div style="font-size:9px;color:#000">$'+fmtNum(u,2)+'</div></td>';};return '<tr><td style="font-weight:700">'+esc(fondoLblGob(fd,_fi))+'<div style="font-size:9px;color:#000;font-weight:400">BCV '+fmtNum(tr,4)+'</div></td>'+bsu(fd.pvp)+'<td class="r">'+fmtNum(fd.casos.length,0)+'</td>'+bsu(fd.usado)+bsu(fd.fu)+bsu(fd.saldo,'#0e9488')+'</tr>';}).join('');
   var kpi=function(k,v,c){return '<div class="kpi"><div class="k">'+k+'</div><div class="v" style="color:'+c+'">'+v+'</div></div>';};
   var rrow=function(l,v,c,bold){return '<tr class="'+(bold?'rbold':'')+'"><td>'+l+'</td><td class="r" style="color:'+(c||'#000')+'">'+v+'</td></tr>';};
   var doc='<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><title>Estado de Cuenta · Gobernación La Guaira</title>'+
@@ -1936,16 +1939,16 @@ function descargarEstadoGob(){
   '<table><thead><tr><th>Fondo</th><th class="r">PVP por caso</th><th class="r">Casos atendidos</th><th class="r">Servicios cancelados</th><th class="r">Fondos recibidos</th><th class="r">Saldo a favor</th></tr></thead><tbody>'+frows+'</tbody>'+
   '<tfoot><tr><td class="r">TOTAL</td><td></td><td class="r">'+fmtNum(totCasos,0)+'</td>'+'<td class="r"><div>'+fmtBs(totCancelBs)+'</div><div style="font-size:9px;color:#000">$'+fmtNum(totCancel,2)+'</div></td>'+'<td class="r"><div>'+fmtBs(totFondosBs)+'</div><div style="font-size:9px;color:#000">$'+fmtNum(totFondos,2)+'</div></td>'+'<td class="r" style="color:#0e9488"><div>'+fmtBs(totSaldoBs)+'</div><div style="font-size:9px;color:#0e9488">$'+fmtNum(totSaldo,2)+'</div></td></tr></tfoot></table>'+
   '<div class="sect">Resumen de servicios (según padrón)</div>'+
-  '<div class="kpis">'+kpi('Total servicios prestados ('+fmtNum(padTot,0)+' según padrón: '+fmtNum(totCasos,0)+' cancelados + '+fmtNum(pendCount,0)+' pendientes)','<div>'+fmtBs(prestadosBs)+'</div><div style="font-size:11px;color:#000;font-weight:400">$'+fmtNum(prestados,2)+'</div>','#4B2D8F')+kpi('Servicios cancelados por la Gobernación ('+fmtNum(totCasos,0)+' casos pagados)','<div>'+fmtBs(totCancelBs)+'</div><div style="font-size:11px;color:#000;font-weight:400">$'+fmtNum(totCancel,2)+'</div>','#0D7A4E')+kpi('Servicios pendientes por pagar ('+fmtNum(pendCount,0)+' servicios)','<div>'+fmtBs(pendValBs)+'</div><div style="font-size:11px;color:#000;font-weight:400">$'+fmtNum(pendVal,2)+'</div>','#B07A00')+'</div>'+
+  '<div class="kpis">'+kpi('Total servicios prestados ('+fmtNum(padTot,0)+' según padrón: '+fmtNum(totCasos,0)+' cancelados + '+fmtNum(pendCount,0)+' pendientes)',fmtUsd(prestados),'#4B2D8F')+kpi('Servicios cancelados por la Gobernación ('+fmtNum(totCasos,0)+' casos pagados)',fmtUsd(totCancel),'#0D7A4E')+kpi('Servicios pendientes por pagar ('+fmtNum(pendCount,0)+' servicios)',fmtUsd(pendVal),'#B07A00')+'</div>'+
   '<div class="sect">Resumen de fondos</div>'+
   '<div class="resumen"><div class="rh">Resumen de fondos</div><table>'+
-    rrow('Total servicios prestados ('+fmtNum(padTot,0)+' según padrón)','<div>'+fmtBs(prestadosBs)+'</div><div style="font-size:9px;color:#000;font-weight:400">$'+fmtNum(prestados,2)+'</div>')+
-    rrow('(−) Servicios cancelados por la Gobernación ('+fmtNum(totCasos,0)+' servicios)','<div>'+fmtBs(totCancelBs)+'</div><div style="font-size:9px;color:#000;font-weight:400">$'+fmtNum(totCancel,2)+'</div>','#0D7A4E')+
-    rrow('= Servicios pendientes por pagar ('+fmtNum(pendCount,0)+' servicios)','<div>'+fmtBs(pendValBs)+'</div><div style="font-size:9px;color:#000;font-weight:400">$'+fmtNum(pendVal,2)+'</div>','#B07A00',true)+
-    rrow('(−) Saldo a favor del fondo','<div>'+fmtBs(totSaldoBs)+'</div><div style="font-size:9px;color:#000;font-weight:400">$'+fmtNum(totSaldo,2)+'</div>','#0e9488')+
-    rrow('= Servicios pendientes por pagar (neto)','<div>'+fmtBs(netoPendBs)+'</div><div style="font-size:9px;color:#000;font-weight:400">$'+fmtNum(netoPend,2)+'</div>','#9d2f2c',true)+
+    rrow('Total servicios prestados ('+fmtNum(padTot,0)+' según padrón)',fmtUsd(prestados))+
+    rrow('(−) Servicios cancelados por la Gobernación ('+fmtNum(totCasos,0)+' servicios)',fmtUsd(totCancel),'#0D7A4E')+
+    rrow('= Servicios pendientes por pagar ('+fmtNum(pendCount,0)+' servicios)',fmtUsd(pendVal),'#B07A00',true)+
+    rrow('(−) Saldo a favor del fondo',fmtUsd(totSaldo),'#0e9488')+
+    rrow('= Servicios pendientes por pagar (neto)',fmtUsd(netoPend),'#9d2f2c',true)+
   '</table></div>'+
-  '<div class="nota-bcv"><b>Nota:</b> el c\u00e1lculo en Bs. de los <b>servicios pendientes por pagar</b> y del <b>pendiente neto</b> est\u00e1 en base a la tasa de d\u00f3lares del <b>Banco Central de Venezuela al d\u00eda '+fmtDate(pendFecha)+'</b> (<b>Bs. '+fmtNum(pendTasa,4)+' por USD</b>), por tratarse de montos a\u00fan no cobrados. Los servicios ya cancelados conservan la tasa hist\u00f3rica del d\u00eda en que se recibi\u00f3 cada fondo.</div>'+
+  '<div class="nota-bcv"><b>Nota:</b> el <b>Resumen de servicios</b> y el <b>Resumen de fondos</b> se expresan en <b>d\u00f3lares</b>. Los montos en <b>Bol\u00edvares</b> se presentan \u00fanicamente en el cuadro <b>Servicios pagados por fondo</b>, calculados a la <b>tasa hist\u00f3rica del Banco Central de Venezuela del d\u00eda en que se recibi\u00f3 cada fondo</b> (indicada bajo el nombre de cada uno). Referencia: tasa BCV al d\u00eda '+fmtDate(pendFecha)+' = <b>Bs. '+fmtNum(pendTasa,4)+' por USD</b>.</div>'+
   '<div class="foot">Documento generado por el sistema Control de Asistencia Funeraria Integral La Guaira · Seguros La Fe, C.A.</div>'+
   '</body></html>';
   try{var blob=new Blob([doc],{type:'text/html;charset=utf-8'});downloadBlob(blob,'Estado_Cuenta_Gobernacion_'+today()+'.html');toast('Estado de cuenta descargado — ábralo e imprima o guarde como PDF');}catch(e){toast('No se pudo descargar');}
