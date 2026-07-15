@@ -396,7 +396,7 @@ table.flujo tr.saldo td{border-top:2px solid var(--tp);font-weight:800}
       <div class="side-group">Sistema</div>
       <button data-view="config">Configuración</button>
     </nav>
-    <div class="side-foot">Control de Cremaciones · v9.66</div>
+    <div class="side-foot">Control de Cremaciones · v9.67</div>
   </aside>
   <div class="sidebar-scrim" id="sideScrim" onclick="toggleSide(false)"></div>
   <div class="mainarea">
@@ -1948,7 +1948,6 @@ function descargarEstadoGob(){
     rrow('(−) Saldo a favor del fondo',fmtUsd(totSaldo),'#0e9488')+
     rrow('= Servicios pendientes por pagar (neto)',fmtUsd(netoPend),'#9d2f2c',true)+
   '</table></div>'+
-  '<div class="nota-bcv"><b>Nota:</b> el <b>Resumen de servicios</b> y el <b>Resumen de fondos</b> se expresan en <b>d\u00f3lares</b>. Los montos en <b>Bol\u00edvares</b> se presentan \u00fanicamente en el cuadro <b>Servicios pagados por fondo</b>, calculados a la <b>tasa hist\u00f3rica del Banco Central de Venezuela del d\u00eda en que se recibi\u00f3 cada fondo</b> (indicada bajo el nombre de cada uno). Referencia: tasa BCV al d\u00eda '+fmtDate(pendFecha)+' = <b>Bs. '+fmtNum(pendTasa,4)+' por USD</b>.</div>'+
   '<div class="foot">Documento generado por el sistema Control de Asistencia Funeraria Integral La Guaira · Seguros La Fe, C.A.</div>'+
   '</body></html>';
   try{var blob=new Blob([doc],{type:'text/html;charset=utf-8'});downloadBlob(blob,'Estado_Cuenta_Gobernacion_'+today()+'.html');toast('Estado de cuenta descargado — ábralo e imprima o guarde como PDF');}catch(e){toast('No se pudo descargar');}
